@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Hello!</title>
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css" integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://unpkg.com/bootstrap-table@1.18.2/dist/bootstrap-table.min.css">
+</head>
+<body>
+<table id="table" data-toggle="table" data-url="portfolio" data-search="true" data-show-footer="true">
+    <thead>
+    <tr>
+        <th data-field="Symbol" data-sortable="true">Symbol</th>
+        <th data-field="Last" data-sortable="true">Last</th>
+        <th data-field="Average Cost" data-sortable="true">Cost</th>
+        <th data-field="Change" data-cell-style="cellStyle" data-sortable="true">Change</th>
+        <th data-field="percent_change" data-formatter="roundPercent" data-cell-style="cellStyle" data-sortable="true">% Change</th>
+        <th data-field="Day's Value" data-cell-style="cellStyle" data-sortable="true">Day's Value</th>
+        <th data-field="Qty" data-sortable="true">Qty</th>
+        <th data-field="Gain" data-formatter="roundPercent" data-footer-formatter="gainTotal" data-cell-style="cellStyle" data-sortable="true">Gain %</th>
+        <th data-field="Profit/ Loss" data-footer-formatter="totalPrice" data-formatter="round" data-cell-style="cellStyle" data-sortable="true">Profit/Loss</th>
+        <th data-field="Value" data-footer-formatter="totalPrice" data-formatter="bigNum" data-sortable="true">Value</th>
+    </tr>
+    </thead>
+</table>
+
+<script>
+    // your custom ajax request here
+    function cellStyle(value) {
+        if (value > 0) {
+            return { classes: 'table-success' };
+        } else if (value < 0) {
+            return { classes: 'table-danger' };
+        }
+    }
+
+    function round(value) {
+        return Math.round((value + Number.EPSILON) * 100) / 100;
+    }
+
+    function roundPercent(value) {
+        return round(value) + " %";
+    }
+    function bigNum(value) {
+        return value.toString().replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",") + "$";
+
+    }
+
+    function gainTotal(data) {
+        let a = round(data.map(function (row) {
+            return row['Profit/ Loss'];
+        }).reduce(function (sum, i) {
+            return Number.parseFloat(sum + i);
+        }, 0))
+        let b = round(data.map(function (row) {
+            return row['Value'];
+        }).reduce(function (sum, i) {
+            return Number.parseFloat(sum + i);
+        }, 0))
+        return roundPercent((a / b) * 100);
+    }
+
+    function totalPrice(data) {
+        let field = this.field
+        return round(data.map(function (row) {
+            return row[field];
+        }).reduce(function (sum, i) {
+            return Number.parseFloat(sum + i);
+        }, 0)) + " $"
+    }
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/bootstrap-table@1.18.2/dist/bootstrap-table.min.js"></script>
+</body>
+</html>
