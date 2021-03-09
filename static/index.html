@@ -19,7 +19,7 @@
         <th data-field="Average Cost" data-sortable="true">Cost</th>
         <th data-field="Change" data-cell-style="cellStyle" data-sortable="true">Change</th>
         <th data-field="percent_change" data-formatter="roundPercent" data-cell-style="cellStyle" data-sortable="true">% Change</th>
-        <th data-field="Day's Value" data-cell-style="cellStyle" data-sortable="true">Day's Value</th>
+        <th data-field="Day's Value" data-footer-formatter="totalPrice" data-cell-style="cellStyle" data-sortable="true">Day's Value</th>
         <th data-field="Qty" data-sortable="true">Qty</th>
         <th data-field="Gain" data-formatter="roundPercent" data-footer-formatter="gainTotal" data-cell-style="cellStyle" data-sortable="true">Gain %</th>
         <th data-field="Profit/ Loss" data-footer-formatter="totalPrice" data-formatter="round" data-cell-style="cellStyle" data-sortable="true">Profit/Loss</th>
@@ -49,7 +49,7 @@
         return round(value) + " %";
     }
     function bigNum(value) {
-        return value.toString().replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",") + "$";
+        return value.toString().replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",") + " $";
 
     }
 
@@ -68,12 +68,19 @@
     }
 
     function totalPrice(data) {
-        let field = this.field
-        return round(data.map(function (row) {
+        let field = this.field;
+        let result = round(data.map(function (row) {
             return row[field];
         }).reduce(function (sum, i) {
             return Number.parseFloat(sum + i);
-        }, 0)) + " $"
+        }, 0))
+        if (result > 0) {
+            return '<span class="text-success">' + result +' $</span>';
+        } else if (result < 0) {
+            return '<span class="text-danger">' + result +' $</span>';
+        } else { // result 0
+            return 0;
+        }
     }
 </script>
 
