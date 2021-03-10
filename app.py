@@ -1,4 +1,5 @@
 import json
+import os
 import requests
 import pandas as pd
 from flask import Flask
@@ -7,7 +8,7 @@ app = Flask(__name__, static_url_path='/static/')
 
 
 def get_table():
-    r = requests.get('<Your link goes here>')
+    r = requests.get(os.environ.get('portfolio_link'))
     return r.text
 
 
@@ -29,4 +30,4 @@ def root():
 
 
 if __name__ == '__main__':
-    app.run()
+    app.run(host='0.0.0.0', port=8080)
