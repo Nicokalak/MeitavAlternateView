@@ -3,6 +3,7 @@ import os
 import requests
 import pandas as pd
 from flask import Flask
+from flask import Flask, Response
 
 app = Flask(__name__, static_url_path='/static/')
 
@@ -21,7 +22,7 @@ def get_data():
         to_json(orient='records'))
     for d in data:
         d['percent_change'] = (float(d['Change']) / (float(d['Last']) - float(d['Change']))) * 100
-    return json.dumps(data)
+    return Response(json.dumps(data), mimetype='application/json')
 
 
 @app.route('/')
