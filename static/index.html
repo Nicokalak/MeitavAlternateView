@@ -52,8 +52,14 @@
     $('#table').bootstrapTable({
         onLoadSuccess: function () {
             $.get("trend", function (trendObj) {
-                span = trendObj.trend > 0 ? '<span class="badge bg-success">'+ round(trendObj.trend)+'</span>'
-                    : '<span class="badge bg-danger">\'+ round(trendObj.trend)+\'</span>'
+                let span;
+                if (trendObj.trend > 0) {
+                    span = '<span class="badge bg-success">'+ round(trendObj.trend)+'</span>';
+                } else if (trendObj.trend < 0) {
+                    span = '<span class="badge bg-danger">' + round(trendObj.trend) + '</span>'
+                } else { // == 0
+                    span = '<span class="badge bg-secondary">' + round(trendObj.trend) + '</span>'
+                }
                 $("#trend").html(trendObj.marketState + ' ' + span )
                console.log(trendObj);
             });

@@ -26,6 +26,7 @@ def calc_trend(market_state, data):
 @app.route('/trend')
 def get_trend():
     r = requests.get(API + ','.join(symbols_qty.keys()))
+    print(r.text)
     data = json.loads(r.text)['quoteResponse']['result']
     if len(data) > 0:
         return calc_trend(data[0]['marketState'], data)
