@@ -7,6 +7,7 @@ from flask import Flask
 app = Flask(__name__, static_url_path='/static/')
 symbols_qty = {}
 API = 'https://query1.finance.yahoo.com/v7/finance/quote?&symbols='
+api_data = []
 
 
 def get_table():
@@ -28,11 +29,20 @@ def get_trend():
     r = requests.get(API + ','.join(symbols_qty.keys()))
     print(r.text)
     data = json.loads(r.text)['quoteResponse']['result']
+    global api_data
+    api_data = data
     if len(data) > 0:
         return calc_trend(data[0]['marketState'], data)
     else:
         raise RuntimeError()
 
+
+@app.route('/ticker/<name>')
+def ticker_data(name):
+    for ticker in api_data:
+        if name == ticker['symbol']:
+            return ticker
+    return {}
 
 
 @app.route('/portfolio')
