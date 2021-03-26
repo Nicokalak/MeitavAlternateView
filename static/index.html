@@ -65,7 +65,7 @@
                     span = '<span class="badge bg-secondary">' + round(trendObj.trend) + '</span>'
                 }
                 market_state = trendObj.marketState.toLowerCase();
-                $("#trend").html(market_state + ' market  ' + span );
+                $("#trend").html(market_state.charAt(0).toUpperCase() + market_state.slice(1) + ' market  ' + span );
                console.log(trendObj);
             });
         }
