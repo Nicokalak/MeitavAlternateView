@@ -22,7 +22,6 @@
        data-url="portfolio"
        data-show-refresh="true"
        data-show-columns-toggle-all="true"
-       data-show-toggle="true"
        data-show-columns="true"
        data-search="true"
        data-show-footer="true"
@@ -36,7 +35,7 @@
         <th data-field="Symbol" data-sortable="true">Symbol</th>
         <th data-field="Last" data-sortable="true">Last</th>
         <th data-field="Average Cost" data-sortable="true">Cost</th>
-        <th data-field="Change" data-cell-style="cellStyle" data-sortable="true">Change</th>
+        <th data-visible="false" data-field="Change" data-cell-style="cellStyle" data-sortable="true">Change</th>
         <th data-field="percent_change" data-formatter="roundPercent" data-cell-style="cellStyle" data-sortable="true">% Change</th>
         <th data-field="Day's Value" data-footer-formatter="totalPrice" data-cell-style="cellStyle" data-sortable="true">Day's Value</th>
         <th data-field="Qty" data-sortable="true">Qty</th>
@@ -85,14 +84,23 @@
             + getDetailedRow('prev close', stock['regularMarketPreviousClose'], round )
             + '</div><div class="row">'
             + getDetailedRow('vol', stock['regularMarketVolume'], bigNum )
-            + getDetailedRow(market_state + ' price', stock[market_state  + 'MarketPrice'], round )
-            + getDetailedRow(market_state + ' change', (stock[market_state + 'MarketChange'] * row.Qty), round )
+            + getDetailedRow(market_state + ' change', stock[market_state  + 'MarketChange'] * row.Qty, round, true )
+            + getDetailedRow(market_state + ' % change', (stock[market_state + 'MarketChangePercent']), roundPercent, true )
             + '</div>')
         });
         return html;
     }
-    function getDetailedRow(key, val, formater) {
-        return '<div class="col-sm-4"><b>' + key  + ':</b> ' + (formater != undefined ? formater(val) : val) + '</div>'
+    function getDetailedRow(key, val, formater, color=false) {
+        let clazz = "";
+        if (color) {
+            if(val > 0) {
+                clazz = "text-success";
+            } else if (val < 0) {
+                clazz = "text-danger";
+            }
+        }
+        return '<div class="col-sm-4"><b>' + key  + ':</b> <span class="' + clazz + '">'
+            + (formater !== undefined ? formater(val) : val) + '</span></div>'
     }
 
     function cellStyle(value) {
@@ -124,7 +132,7 @@
             return Number.parseFloat(sum + i);
         }, 0))
         let b = round(data.map(function (row) {
-            return row['Value'];
+            return row['Average Cost'] * row['Qty'];
         }).reduce(function (sum, i) {
             return Number.parseFloat(sum + i);
         }, 0))

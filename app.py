@@ -53,7 +53,8 @@ def get_data():
         df[['Symbol', 'Qty', 'Change', 'Last', 'Day\'s Value', 'Average Cost',  'Gain', 'Profit/ Loss', 'Value']].
         to_json(orient='records'))
     for d in data:
-        d['percent_change'] = (float(d['Change']) / (float(d['Last']) - float(d['Change']))) * 100
+        d['percent_change'] = 0 if d['Change'] == 0 \
+            else (float(d['Change']) / (float(d['Last']) - float(d['Change']))) * 100
     global symbols_qty
     symbols_qty = dict(map(lambda kv: (kv['Symbol'], kv['Qty']), data))
     return json.dumps(data)
