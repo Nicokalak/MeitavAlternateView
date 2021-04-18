@@ -34,7 +34,7 @@ jobs:
 
       - name: Push image
         run: |
-          IMAGE_ID=${{ secrets.DOCKER_USER }}/ntrader
+          IMAGE_ID=${{ secrets.DOCKER_USER }}/meitav-alternate-view
           # Change all uppercase to lowercase
           IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
           # Strip git ref prefix from version
