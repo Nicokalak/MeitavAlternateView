@@ -4,7 +4,7 @@ import time
 
 import requests
 import pandas as pd
-from flask import Flask, send_from_directory
+from flask import Flask, send_from_directory, Response
 
 app = Flask(__name__, static_url_path='/static/')
 symbols_qty = {}
@@ -74,7 +74,7 @@ def get_data():
             else (float(d['Change']) / (float(d['Last']) - float(d['Change']))) * 100
     global symbols_qty
     symbols_qty = dict(map(lambda kv: (kv['Symbol'], kv['Qty']), data))
-    return json.dumps(data)
+    return Response(json.dumps(data), mimetype='application/json')
 
 
 @app.route('/js/<path:path>')
