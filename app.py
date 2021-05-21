@@ -4,7 +4,7 @@ import time
 
 import requests
 import pandas as pd
-from flask import Flask, send_from_directory, Response
+from flask import Flask, send_from_directory
 
 app = Flask(__name__, static_url_path='/static/')
 symbols_qty = {}
@@ -44,22 +44,22 @@ def get_market_state():
     global api_data
     api_data = data
     if len(data) > 0:
-        return return_as_json(calc_trend(data[0]['marketState'], data))
+        return calc_trend(data[0]['marketState'], data)
     else:
         raise RuntimeError()
 
 
 @app.route('/trends')
 def get_trends():
-    return return_as_json(trends)
+    return trends
 
 
 @app.route('/ticker/<name>')
 def ticker_data(name):
     for ticker in api_data:
         if name == ticker['symbol']:
-            return return_as_json(ticker)
-    return return_as_json({})
+            return ticker
+    return {}
 
 
 @app.route('/portfolio')
@@ -74,7 +74,7 @@ def get_data():
             else (float(d['Change']) / (float(d['Last']) - float(d['Change']))) * 100
     global symbols_qty
     symbols_qty = dict(map(lambda kv: (kv['Symbol'], kv['Qty']), data))
-    return return_as_json(json.dumps(data))
+    return json.dumps(data)
 
 
 @app.route('/js/<path:path>')
@@ -90,10 +90,6 @@ def favicon():
 @app.route('/')
 def root():
     return app.send_static_file('index.html')
-
-
-def return_as_json(response):
-    return Response(response, mimetype='application/json')
 
 
 if __name__ == '__main__':
