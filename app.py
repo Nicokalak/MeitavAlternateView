@@ -1,18 +1,29 @@
 import json
 import os
+import time
+
 import requests
 import pandas as pd
-from flask import Flask
+from flask import Flask, send_from_directory
 
 app = Flask(__name__, static_url_path='/static/')
 symbols_qty = {}
 API = 'https://query1.finance.yahoo.com/v7/finance/quote?&symbols='
 api_data = []
+trends = {}
 
 
 def get_table():
     r = requests.get(os.getenv('portfolio_link'))
     return r.text
+
+
+def add_trend(trend: float):
+    global trends
+    if len(trends) > 10:
+        first = min(trends.keys())
+        del trends[first]
+    trends[time.time()] = trend
 
 
 def calc_trend(market_state, data):
@@ -21,11 +32,12 @@ def calc_trend(market_state, data):
     for d in data:
         if key in d:
             result['trend'] += d[key] * symbols_qty[d['symbol']]
+    add_trend(result['trend'])
     return result
 
 
-@app.route('/trend')
-def get_trend():
+@app.route('/marketState')
+def get_market_state():
     r = requests.get(API + ','.join(symbols_qty.keys()))
     print(r.text)
     data = json.loads(r.text)['quoteResponse']['result']
@@ -35,6 +47,11 @@ def get_trend():
         return calc_trend(data[0]['marketState'], data)
     else:
         raise RuntimeError()
+
+
+@app.route('/trends')
+def get_trends():
+    return trends
 
 
 @app.route('/ticker/<name>')
@@ -58,6 +75,16 @@ def get_data():
     global symbols_qty
     symbols_qty = dict(map(lambda kv: (kv['Symbol'], kv['Qty']), data))
     return json.dumps(data)
+
+
+@app.route('/js/<path:path>')
+def send_js(path):
+    return send_from_directory('static/js', path)
+
+
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory('static', 'favicon.ico', mimetype='image/x-icon')
 
 
 @app.route('/')

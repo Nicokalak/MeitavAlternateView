@@ -4,16 +4,21 @@
     <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>Meitav View</title>
-
+    <title>Portfolio Meitav Viewer</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BmbxuPwQa2lc/FVzBcNJ7UAyJxM6wuqIj61tLrc4wSX0szH/Ev+nYRRuWlolflfl" crossorigin="anonymous">
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css" integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
     <link rel="stylesheet" href="https://unpkg.com/bootstrap-table@1.18.2/dist/bootstrap-table.min.css"></head>
 <body>
 <div class="container-fluid">
     <div class="row">
-        <div class="col-md-12">
-            <h2 id="trend"></h2>
+        <div class="col-md-3">
+            <h2 id="market_status"></h2>
+        </div>
+        <div class="col-md-3">
+            <div>
+                <canvas id="trends"></canvas>
+            </div>
+
         </div>
     </div>
 </div>
@@ -50,118 +55,30 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/bootstrap-table@1.18.2/dist/bootstrap-table.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="js/table.js"></script>
+<script src="js/trendschart.js"></script>
 <script>
     var market_state;
     $('#table').bootstrapTable({
         onLoadSuccess: function () {
-            $.get("trend", function (trendObj) {
+            $.get("marketState", function (trendObj) {
                 let span;
                 if (trendObj.trend > 0) {
-                    span = '<span class="badge bg-success">'+ round(trendObj.trend)+'</span>';
+                    span = '<span class="badge bg-success">' + round(trendObj.trend) + '</span>';
                 } else if (trendObj.trend < 0) {
                     span = '<span class="badge bg-danger">' + round(trendObj.trend) + '</span>'
                 } else { // == 0
                     span = '<span class="badge bg-secondary">' + round(trendObj.trend) + '</span>'
                 }
                 market_state = trendObj.marketState.toLowerCase();
-                $("#trend").html(market_state.charAt(0).toUpperCase() + market_state.slice(1) + ' market  ' + span );
-               console.log(trendObj);
+                $("#market_status").html(market_state.charAt(0).toUpperCase() + market_state.slice(1) + ' market  ' + span);
+                console.log(trendObj);
             });
+            trends();
         }
-    })
-
-    function detailFormatter(index, row) {
-        let html = '<div class="container" id="ticker-' + row.Symbol +'"></div>'
-        $.get("ticker/" + row.Symbol, function (stock) {
-            let container = $("#ticker-" + row.Symbol);
-        container.append('<div class="row">'
-            + getDetailedRow('day high', stock['regularMarketDayHigh'], round )
-            + getDetailedRow('52w high',  stock['fiftyTwoWeekHigh'], round )
-            + getDetailedRow('52d avg', stock['fiftyDayAverage'], round )
-            + '</div><div class="row">'
-            + getDetailedRow('day low', stock['regularMarketDayLow'], round )
-            + getDetailedRow('52w low', stock['fiftyTwoWeekLow'], round )
-            + getDetailedRow('prev close', stock['regularMarketPreviousClose'], round )
-            + '</div><div class="row">'
-            + getDetailedRow('vol', stock['regularMarketVolume'], bigNum )
-            + getDetailedRow(market_state + ' change', stock[market_state  + 'MarketChange'] * row.Qty, round, true )
-            + getDetailedRow(market_state + ' % change', (stock[market_state + 'MarketChangePercent']), roundPercent, true )
-            + '</div>')
-        });
-        return html;
-    }
-    function getDetailedRow(key, val, formater, color=false) {
-        let clazz = "";
-        if (color) {
-            if(val > 0) {
-                clazz = "text-success";
-            } else if (val < 0) {
-                clazz = "text-danger";
-            }
-        }
-        return '<div class="col-sm-4"><b>' + key  + ':</b> <span class="' + clazz + '">'
-            + (formater !== undefined ? formater(val) : val) + '</span></div>'
-    }
-
-    function cellStyle(value) {
-        if (value > 0) {
-            return { classes: 'table-success' };
-        } else if (value < 0) {
-            return { classes: 'table-danger' };
-        } else {
-            return { classes: '' }
-        }
-    }
-
-    function round(value) {
-        return Math.round((value + Number.EPSILON) * 100) / 100;
-    }
-
-    function roundPercent(value) {
-        return round(value) + " %";
-    }
-    function bigNum(value) {
-        return value.toString().replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",") + " $";
-
-    }
-
-    function gainTotal(data) {
-        let a = round(data.map(function (row) {
-            return row['Profit/ Loss'];
-        }).reduce(function (sum, i) {
-            return Number.parseFloat(sum + i);
-        }, 0))
-        let b = round(data.map(function (row) {
-            return row['Average Cost'] * row['Qty'];
-        }).reduce(function (sum, i) {
-            return Number.parseFloat(sum + i);
-        }, 0))
-
-        let result = (a / b) * 100 ;
-        if (result > 0) {
-            return '<span class="text-success">' + roundPercent(result) +'</span>';
-        } else if (result < 0) {
-            return '<span class="text-danger">' + roundPercent(result) +'</span>';
-        } else { // result 0
-            return roundPercent(result);
-        }
-    }
-
-    function totalPrice(data) {
-        let field = this.field;
-        let result = round(data.map(function (row) {
-            return row[field];
-        }).reduce(function (sum, i) {
-            return Number.parseFloat(sum + i);
-        }, 0))
-        if (result > 0) {
-            return '<span class="text-success">' + bigNum(result) +'</span>';
-        } else if (result < 0) {
-            return '<span class="text-danger">' + bigNum(result) +'</span>';
-        } else { // result 0
-            return result;
-        }
-    }
+    });
 </script>
+
 </body>
 </html>
