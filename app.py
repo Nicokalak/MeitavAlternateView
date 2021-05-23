@@ -20,18 +20,24 @@ def get_table():
 
 def add_trend(trend: float):
     global trends
-    if len(trends) > 10:
+    if len(trends) > 15:
         first = min(trends.keys())
+        if trend == 0:
+            return
         del trends[first]
     trends[time.time()] = trend
 
 
 def calc_trend(market_state, data):
     result = {'marketState': market_state, 'trend': 0}
-    key = market_state.lower() + 'MarketChange'
+    change = market_state.lower() + 'MarketChange'
+    vol = market_state.lower() + 'Volume'
     for d in data:
-        if key in d:
-            result['trend'] += d[key] * symbols_qty[d['symbol']]
+        if change in d:
+            result['trend'] += d[change] * symbols_qty[d['symbol']]
+    result['top-gainer'] = max(data, key=lambda x: x[change] if change in x else 0)
+    result['top-loser'] = min(data, key=lambda x: x[change] if change in x else 0)
+    result['top-mover'] = max(data, key=lambda x: x[vol] if vol in x else 0)
     add_trend(result['trend'])
     return result
 
@@ -93,4 +99,4 @@ def root():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080)
+    app.run( port=8080)

@@ -1,7 +1,25 @@
+function trend_stats(trendObj) {
+    let span;
+    if (trendObj.trend > 0) {
+        span = '<span class="badge bg-success">' + round(trendObj.trend) + '</span>';
+    } else if (trendObj.trend < 0) {
+        span = '<span class="badge bg-danger">' + round(trendObj.trend) + '</span>';
+    } else { // == 0
+        span = '<span class="badge bg-secondary">' + round(trendObj.trend) + '</span>';
+    }
+    market_state = trendObj.marketState.toLowerCase();
+    $("#market_status").html(market_state.charAt(0).toUpperCase() + market_state.slice(1) + ' market  ' + span);
+    $("#top-gainer").text(trendObj['top-gainer'].symbol);
+    $("#top-mover").text(trendObj['top-mover'].symbol);
+    $("#top-loser").text(trendObj['top-loser'].symbol);
+    $("#market-stats").show(200);
+    console.log(trendObj);
+}
+
 function trends() {
     $.get("trends", function (trends) {
         const down = (ctx, value) => ctx.p0.parsed.y > ctx.p1.parsed.y ? value : undefined;
-        const up = (ctx, value) => ctx.p0.parsed.y <= ctx.p1.parsed.y ? value : undefined;
+        const up = (ctx, value) => ctx.p0.parsed.y < ctx.p1.parsed.y ? value : undefined;
         const data = {
             datasets: [{
                 label: "trends",

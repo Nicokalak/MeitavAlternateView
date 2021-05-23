@@ -14,6 +14,13 @@
     <div class="row">
         <div class="col-md-3">
             <h2 id="market_status"></h2>
+            <div>
+                <p id="market-stats" style="display: none">
+                    <b>Top mover: </b><span id="top-mover"></span><br/>
+                    <b>Top gainer: </b><span id="top-gainer"></span><br/>
+                    <b>Top loser: </b><span id="top-loser"></span><br/>
+                </p>
+            </div>
         </div>
         <div class="col-md-3">
             <div>
@@ -64,19 +71,10 @@
     $('#table').bootstrapTable({
         onLoadSuccess: function () {
             $.get("marketState", function (trendObj) {
-                let span;
-                if (trendObj.trend > 0) {
-                    span = '<span class="badge bg-success">' + round(trendObj.trend) + '</span>';
-                } else if (trendObj.trend < 0) {
-                    span = '<span class="badge bg-danger">' + round(trendObj.trend) + '</span>'
-                } else { // == 0
-                    span = '<span class="badge bg-secondary">' + round(trendObj.trend) + '</span>'
-                }
-                market_state = trendObj.marketState.toLowerCase();
-                $("#market_status").html(market_state.charAt(0).toUpperCase() + market_state.slice(1) + ' market  ' + span);
-                console.log(trendObj);
+                trend_stats(trendObj)
+            }).done(function (e) {
+                trends();
             });
-            trends();
         }
     });
 </script>
