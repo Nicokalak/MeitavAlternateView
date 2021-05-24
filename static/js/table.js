@@ -1,21 +1,20 @@
 
 function detailFormatter(index, row) {
-    let html = '<div class="container-fluid"><div class="row" id="ticker-' + row.Symbol +'"></div></div>'
+    let html = '<div class="container"><div class="row" id="ticker-' + row.Symbol +'"></div></div>'
     $.get("ticker/" + row.Symbol, function (stock) {
         let container = $("#ticker-" + row.Symbol);
-        container.append('<div class="col"><dl class="row">'
+        container.append('<dl class="row">'
             + getDetailedRow('day high', stock['regularMarketDayHigh'], round )
             + getDetailedRow('52w high',  stock['fiftyTwoWeekHigh'], round )
             + getDetailedRow('52d avg', stock['fiftyDayAverage'], round )
-            + '</dl></div><div class="col"><dl class="row">'
             + getDetailedRow('day low', stock['regularMarketDayLow'], round )
             + getDetailedRow('52w low', stock['fiftyTwoWeekLow'], round )
             + getDetailedRow('prev close', stock['regularMarketPreviousClose'], round )
-            + '</dl></div><div class="col"><dl class="row">'
             + getDetailedRow('vol', stock['regularMarketVolume'], bigNum )
-            + getDetailedRow(market_state + ' change', stock[market_state  + 'MarketChange'] * row.Qty, round, true )
-            + getDetailedRow(market_state + ' % change', (stock[market_state + 'MarketChangePercent']), roundPercent, true )
-            + '</dl></div>')
+            + getDetailedRow('change', stock[market_state  + 'MarketChange'] * row.Qty, round, true )
+            + getDetailedRow('change (%)', (stock[market_state + 'MarketChangePercent']), roundPercent, true )
+            + '</dl>'
+        )
     });
     return html;
 }
@@ -29,8 +28,8 @@ function getDetailedRow(key, val, formater, color=false) {
         }
     }
 
-    return '<dt class="col-sm-3">' + key + '</dt>' +
-        '<dd class="col-sm-9"><span class="' + clazz + '">'+ (formater !== undefined ? formater(val) : val) + '</span></dd>'
+    return '<dt class="col-sm-2">' + key + '</dt>' +
+        '<dd class="col-sm-2"><span class="' + clazz + '">'+ (formater !== undefined ? formater(val) : val) + '</span></dd>'
 }
 
 function cellStyle(value) {
