@@ -14,13 +14,18 @@
     <div class="row">
         <div class="col-md-3">
             <h2 id="market_status"></h2>
-            <div>
-                <p id="market-stats" style="display: none">
-                    <b>Top mover: </b><span id="top-mover"></span><br/>
-                    <b>Top gainer: </b><span id="top-gainer"></span><br/>
-                    <b>Top loser: </b><span id="top-loser"></span><br/>
-                </p>
-            </div>
+            <dl id="market-stats" class="row" style="display: none">
+                <dt class="col-sm-4">Top gainer:</dt>
+                <dd class="col-sm-8"><span class="text-success" id="top-gainer"></span></dd>
+                <dt class="col-sm-4">Top gainer (%):</dt>
+                <dd class="col-sm-8"><span class="text-success" id="top-gainer-percent"></span></dd>
+                <dt class="col-sm-4">Top mover:</dt>
+                <dd class="col-sm-8"><span id="top-mover"></span></dd>
+                <dt class="col-sm-4">Top loser:</dt>
+                <dd class="col-sm-8"><span class="text-danger" id="top-loser"></span></dd>
+                <dt class="col-sm-4">Top loser (%):</dt>
+                <dd class="col-sm-8"><span class="text-danger" id="top-loser-percent"></span></dd>
+            </dl>
         </div>
         <div class="col-md-3">
             <div>

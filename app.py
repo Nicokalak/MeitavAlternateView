@@ -31,13 +31,15 @@ def add_trend(trend: float):
 def calc_trend(market_state, data):
     result = {'marketState': market_state, 'trend': 0}
     change = market_state.lower() + 'MarketChange'
-    vol = market_state.lower() + 'Volume'
+    change_per = market_state.lower() + 'MarketChangePercent'
     for d in data:
         if change in d:
             result['trend'] += d[change] * symbols_qty[d['symbol']]
     result['top-gainer'] = max(data, key=lambda x: x[change] if change in x else 0)
+    result['top-gainer%'] = max(data, key=lambda x: x[change_per] if change in x else 0)
     result['top-loser'] = min(data, key=lambda x: x[change] if change in x else 0)
-    result['top-mover'] = max(data, key=lambda x: x[vol] if vol in x else 0)
+    result['top-loser%'] = min(data, key=lambda x: x[change_per] if change in x else 0)
+    result['top-mover'] = max(data, key=lambda x: x['regularMarketVolume'] if 'regularMarketVolume' in x else 0)
     add_trend(result['trend'])
     return result
 

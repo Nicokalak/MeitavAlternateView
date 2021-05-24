@@ -10,16 +10,20 @@ function trend_stats(trendObj) {
     market_state = trendObj.marketState.toLowerCase();
     $("#market_status").html(market_state.charAt(0).toUpperCase() + market_state.slice(1) + ' market  ' + span);
     $("#top-gainer").text(trendObj['top-gainer'].symbol);
+    $("#top-gainer-percent").text(trendObj['top-gainer%'].symbol);
     $("#top-mover").text(trendObj['top-mover'].symbol);
     $("#top-loser").text(trendObj['top-loser'].symbol);
+    $("#top-loser-percent").text(trendObj['top-loser%'].symbol);
     $("#market-stats").show(200);
     console.log(trendObj);
 }
 
 function trends() {
+    const down = (ctx, value) => ctx.p0.parsed.y > ctx.p1.parsed.y ? value : undefined;
+    const up = (ctx, value) => ctx.p0.parsed.y < ctx.p1.parsed.y ? value : undefined;
+
+
     $.get("trends", function (trends) {
-        const down = (ctx, value) => ctx.p0.parsed.y > ctx.p1.parsed.y ? value : undefined;
-        const up = (ctx, value) => ctx.p0.parsed.y < ctx.p1.parsed.y ? value : undefined;
         const data = {
             datasets: [{
                 label: "trends",
@@ -36,7 +40,7 @@ function trends() {
                 scales: {
                     x: {
                         display: false
-                    }
+                    },
                 },
                 plugins: {
                     legend: {
@@ -45,9 +49,6 @@ function trends() {
                 }
             }
         };
-        var myChart = new Chart(
-            $('#trends'),
-            config
-        );
+        new Chart($('#trends'), config);
     });
 }

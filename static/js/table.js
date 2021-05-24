@@ -1,21 +1,21 @@
 
 function detailFormatter(index, row) {
-    let html = '<div class="container" id="ticker-' + row.Symbol +'"></div>'
+    let html = '<div class="container-fluid"><div class="row" id="ticker-' + row.Symbol +'"></div></div>'
     $.get("ticker/" + row.Symbol, function (stock) {
         let container = $("#ticker-" + row.Symbol);
-        container.append('<div class="row">'
+        container.append('<div class="col"><dl class="row">'
             + getDetailedRow('day high', stock['regularMarketDayHigh'], round )
             + getDetailedRow('52w high',  stock['fiftyTwoWeekHigh'], round )
             + getDetailedRow('52d avg', stock['fiftyDayAverage'], round )
-            + '</div><div class="row">'
+            + '</dl></div><div class="col"><dl class="row">'
             + getDetailedRow('day low', stock['regularMarketDayLow'], round )
             + getDetailedRow('52w low', stock['fiftyTwoWeekLow'], round )
             + getDetailedRow('prev close', stock['regularMarketPreviousClose'], round )
-            + '</div><div class="row">'
+            + '</dl></div><div class="col"><dl class="row">'
             + getDetailedRow('vol', stock['regularMarketVolume'], bigNum )
             + getDetailedRow(market_state + ' change', stock[market_state  + 'MarketChange'] * row.Qty, round, true )
             + getDetailedRow(market_state + ' % change', (stock[market_state + 'MarketChangePercent']), roundPercent, true )
-            + '</div>')
+            + '</dl></div>')
     });
     return html;
 }
@@ -28,8 +28,9 @@ function getDetailedRow(key, val, formater, color=false) {
             clazz = "text-danger";
         }
     }
-    return '<div class="col-sm-4"><b>' + key  + ':</b> <span class="' + clazz + '">'
-        + (formater !== undefined ? formater(val) : val) + '</span></div>'
+
+    return '<dt class="col-sm-3">' + key + '</dt>' +
+        '<dd class="col-sm-9"><span class="' + clazz + '">'+ (formater !== undefined ? formater(val) : val) + '</span></dd>'
 }
 
 function cellStyle(value) {
