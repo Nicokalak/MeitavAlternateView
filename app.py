@@ -1,6 +1,6 @@
+import datetime
 import json
 import os
-import time
 
 import requests
 import pandas as pd
@@ -11,7 +11,7 @@ symbols_qty = {}
 API = 'https://query1.finance.yahoo.com/v7/finance/quote?&symbols='
 api_data = []
 trends = {}
-
+time_format = '%Y%m%dT%H:%M:%S'
 
 def get_table():
     r = requests.get(os.getenv('portfolio_link'))
@@ -25,7 +25,8 @@ def add_trend(trend: float):
         if trend == 0:
             return
         del trends[first]
-    trends[time.time()] = trend
+    trends[datetime.datetime.now().strftime(time_format)] = trend
+
 
 
 def calc_trend(market_state, data):
@@ -35,9 +36,9 @@ def calc_trend(market_state, data):
     for d in data:
         if change in d:
             result['trend'] += d[change] * symbols_qty[d['symbol']]
-    result['top-gainer'] = max(data, key=lambda x: x[change] if change in x else 0)
+    result['top-gainer'] = max(data, key=lambda x: x[change] * symbols_qty[x['symbol']] if change in x else 0)
     result['top-gainer%'] = max(data, key=lambda x: x[change_per] if change in x else 0)
-    result['top-loser'] = min(data, key=lambda x: x[change] if change in x else 0)
+    result['top-loser'] = min(data, key=lambda x: x[change] * symbols_qty[x['symbol']] if change in x else 0)
     result['top-loser%'] = min(data, key=lambda x: x[change_per] if change in x else 0)
     result['top-mover'] = max(data, key=lambda x: x['regularMarketVolume'] if 'regularMarketVolume' in x else 0)
     add_trend(result['trend'])

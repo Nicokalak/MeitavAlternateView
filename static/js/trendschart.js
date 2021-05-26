@@ -21,6 +21,7 @@ function trend_stats(trendObj) {
 function trends() {
     const down = (ctx, value) => ctx.p0.parsed.y > ctx.p1.parsed.y ? value : undefined;
     const up = (ctx, value) => ctx.p0.parsed.y < ctx.p1.parsed.y ? value : undefined;
+    const skipped = (ctx, value) => new Date(ctx.p1.parsed.x).getDay() - new Date(ctx.p0.parsed.x).getDay() > 0 ? value : undefined;
 
 
     $.get("trends", function (trends) {
@@ -29,7 +30,8 @@ function trends() {
                 label: "trends",
                 data: trends,
                 segment: {
-                    borderColor: ctx => up(ctx, 'rgba(72,141,22,0.2)') || down(ctx, 'rgb(234,15,15)'),
+                    borderColor: ctx => skipped(ctx, 'rgb(0,0,0,0.2)') ||up(ctx, 'rgba(72,141,22,0.2)') || down(ctx, 'rgb(234,15,15)'),
+                    borderDash: ctx => skipped(ctx, [6, 6]),
                 }
             },]
         };
@@ -39,7 +41,12 @@ function trends() {
             options: {
                 scales: {
                     x: {
-                        display: false
+                        display: false,
+                        type: 'time',
+                        time: {
+                            parser: 'YYYYMMDDTHH:mm:ss',
+                            minUnit: 'minute'
+                        },
                     },
                 },
                 plugins: {
