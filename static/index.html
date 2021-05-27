@@ -75,12 +75,13 @@
 <script src="js/trendschart.js"></script>
 <script>
     var market_state;
+    init_chart();
     $('#table').bootstrapTable({
         onLoadSuccess: function () {
             $.get("marketState", function (trendObj) {
                 trend_stats(trendObj)
             }).done(function () {
-                trends();
+                update_trends();
             });
         }
     });
