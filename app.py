@@ -13,6 +13,7 @@ api_data = []
 trends = {}
 time_format = '%Y%m%dT%H:%M:%S'
 
+
 def get_table():
     r = requests.get(os.getenv('portfolio_link'))
     return r.text
