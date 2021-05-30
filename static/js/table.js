@@ -1,6 +1,6 @@
 
 function detailFormatter(index, row) {
-    let html = '<div class="container"><div class="row" id="ticker-' + row.Symbol +'"></div></div>'
+    let html = '<div class="container-fluid"><div class="row justify-content-start" id="ticker-' + row.Symbol +'"></div></div>'
     $.get("ticker/" + row.Symbol, function (stock) {
         let container = $("#ticker-" + row.Symbol);
         container.append('<dl class="row">'
@@ -28,8 +28,9 @@ function getDetailedRow(key, val, formater, color=false) {
         }
     }
 
-    return '<dt class="col-sm-2">' + key + '</dt>' +
-        '<dd class="col-sm-2"><span class="' + clazz + '">'+ (formater !== undefined ? formater(val) : val) + '</span></dd>'
+    return '<dt class="col-2">' + key + '</dt>' +
+        '<dd class="col-2"><span class="' + clazz + '">'+ (formater !== undefined ? formater(val) : val) + '</span></dd>' +
+        '<div class="w-100 d-md-none d-sm-block"></div>'
 }
 
 function cellStyle(value) {

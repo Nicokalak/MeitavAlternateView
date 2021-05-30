@@ -34,36 +34,43 @@
 
         </div>
     </div>
+    <div class="row">
+        <div class="col-12">
+            <table id="table"
+                   data-toggle="table"
+                   data-url="portfolio"
+                   data-show-refresh="true"
+                   data-show-columns-toggle-all="true"
+                   data-show-columns="true"
+                   data-search="true"
+                   data-show-footer="true"
+                   data-sort-name="percent_change"
+                   data-detail-view="true"
+                   data-detail-view-icon="true"
+                   data-detail-formatter="detailFormatter"
+                   data-sort-order="desc">
+                <thead>
+                <tr>
+                    <th data-field="Symbol" data-sortable="true">Symbol</th>
+                    <th data-field="Last" data-sortable="true">Last</th>
+                    <th data-field="Average Cost" data-sortable="true">Cost</th>
+                    <th data-visible="false" data-field="Change" data-cell-style="cellStyle" data-sortable="true">Change</th>
+                    <th data-field="percent_change" data-formatter="roundPercent" data-cell-style="cellStyle" data-sortable="true">% Change</th>
+                    <th data-field="Day's Value" data-footer-formatter="totalPrice" data-cell-style="cellStyle" data-sortable="true">Day's Value</th>
+                    <th data-field="Qty" data-sortable="true">Qty</th>
+                    <th data-field="Gain" data-formatter="roundPercent" data-footer-formatter="gainTotal" data-cell-style="cellStyle" data-sortable="true">Gain %</th>
+                    <th data-field="Profit/ Loss" data-footer-formatter="totalPrice" data-formatter="round" data-cell-style="cellStyle" data-sortable="true">Profit/Loss</th>
+                    <th data-field="Value" data-footer-formatter="totalPrice" data-formatter="bigNum" data-sortable="true">Value</th>
+                </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
 </div>
-<table id="table"
-       data-toggle="table"
-       data-url="portfolio"
-       data-show-refresh="true"
-       data-show-columns-toggle-all="true"
-       data-show-columns="true"
-       data-search="true"
-       data-show-footer="true"
-       data-sort-name="percent_change"
-       data-detail-view="true"
-       data-detail-view-icon="true"
-       data-detail-formatter="detailFormatter"
-       data-sort-order="desc">
-    <thead>
-    <tr>
-        <th data-field="Symbol" data-sortable="true">Symbol</th>
-        <th data-field="Last" data-sortable="true">Last</th>
-        <th data-field="Average Cost" data-sortable="true">Cost</th>
-        <th data-visible="false" data-field="Change" data-cell-style="cellStyle" data-sortable="true">Change</th>
-        <th data-field="percent_change" data-formatter="roundPercent" data-cell-style="cellStyle" data-sortable="true">% Change</th>
-        <th data-field="Day's Value" data-footer-formatter="totalPrice" data-cell-style="cellStyle" data-sortable="true">Day's Value</th>
-        <th data-field="Qty" data-sortable="true">Qty</th>
-        <th data-field="Gain" data-formatter="roundPercent" data-footer-formatter="gainTotal" data-cell-style="cellStyle" data-sortable="true">Gain %</th>
-        <th data-field="Profit/ Loss" data-footer-formatter="totalPrice" data-formatter="round" data-cell-style="cellStyle" data-sortable="true">Profit/Loss</th>
-        <th data-field="Value" data-footer-formatter="totalPrice" data-formatter="bigNum" data-sortable="true">Value</th>
-    </tr>
-    </thead>
-    <tbody></tbody>
-</table>
+
+
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
