@@ -19,15 +19,15 @@ def get_table():
     return r.text
 
 
-def add_trend(trend: float):
+def add_trend(trends_obj):
+    if trends_obj['marketState'] == 'CLOSED':
+        return
     global trends
+    trend: float = trends_obj['trend']
     if len(trends) > 15:
         first = min(trends.keys())
-        if trend == 0:
-            return
         del trends[first]
     trends[datetime.datetime.now().strftime(time_format)] = trend
-
 
 
 def calc_trend(market_state, data):
@@ -37,12 +37,14 @@ def calc_trend(market_state, data):
     for d in data:
         if change in d:
             result['trend'] += d[change] * symbols_qty[d['symbol']]
+
+    add_trend(result)
     result['top-gainer'] = max(data, key=lambda x: x[change] * symbols_qty[x['symbol']] if change in x else 0)
     result['top-gainer%'] = max(data, key=lambda x: x[change_per] if change in x else 0)
     result['top-loser'] = min(data, key=lambda x: x[change] * symbols_qty[x['symbol']] if change in x else 0)
     result['top-loser%'] = min(data, key=lambda x: x[change_per] if change in x else 0)
     result['top-mover'] = max(data, key=lambda x: x['regularMarketVolume'] if 'regularMarketVolume' in x else 0)
-    add_trend(result['trend'])
+    result['avg-trends'] = (sum(trends.values()) / len(trends.values())) if len(trends.values()) > 0 else 0
     return result
 
 

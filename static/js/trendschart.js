@@ -14,6 +14,7 @@ function trend_stats(trendObj) {
     $("#top-mover").text(trendObj['top-mover'].symbol);
     $("#top-loser").text(trendObj['top-loser'].symbol);
     $("#top-loser-percent").text(trendObj['top-loser%'].symbol);
+    $("#avg-trends").text(round(trendObj['avg-trends']));
     $("#market-stats").show(200);
     console.log(trendObj);
 }
