@@ -42,8 +42,8 @@ function detailFormatter(index, row) {
             + getDetailedRow('change (%)', (stock[market_state + 'MarketChangePercent']), roundPercent, true )
             + getDetailedRow('price', (stock[market_state + 'MarketPrice']), round, false )
             + getDetailedRow('rating', (stock['averageAnalystRating']), undefined, false )
-            +  (shouldShowEarning(stock['earningsTimestamp']) ?
-            getDetailedRow('earnings',stock['earningsTimestamp'], daysCountToEarn, false) : '')
+            +  (shouldShowEarning(stock['earningsTimestamp'] * 1000) ?
+            getDetailedRow('earnings',stock['earningsTimestamp'] * 1000, daysCountToEarn, false) : '')
             + '</dl>'
         )
         $("#ticker-" + row.Symbol + '-link').html(
