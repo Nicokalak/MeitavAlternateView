@@ -1,4 +1,28 @@
+function totalPercent (data) {
+    let daysVal = round(data.map(function (row) {
+        return row['Day\'s Value'];
+    }).reduce(function (sum, i) {
+        return Number.parseFloat(sum + i);
+    }, 0))
+    let avgcost = calcAvgCost(data);
 
+    let result = (daysVal / avgcost) * 100 ;
+    if (result > 0) {
+        return '<span class="text-success">' + roundPercent(result) +'</span>';
+    } else if (result < 0) {
+        return '<span class="text-danger">' + roundPercent(result) +'</span>';
+    } else { // result 0
+        return roundPercent(result);
+    }
+}
+
+function calcAvgCost(data) {
+    return round(data.map(function (row) {
+        return row['Average Cost'] * row['Qty'];
+    }).reduce(function (sum, i) {
+        return Number.parseFloat(sum + i);
+    }, 0))
+}
 function detailFormatter(index, row) {
     let html = '<div class="container-fluid">' +
         '<div class="row justify-content-start" id="ticker-' + row.Symbol +'"></div>' +
@@ -63,18 +87,14 @@ function bigNum(value) {
 }
 
 function gainTotal(data) {
-    let a = round(data.map(function (row) {
+    let totalProfit = round(data.map(function (row) {
         return row['Profit/ Loss'];
     }).reduce(function (sum, i) {
         return Number.parseFloat(sum + i);
     }, 0))
-    let b = round(data.map(function (row) {
-        return row['Average Cost'] * row['Qty'];
-    }).reduce(function (sum, i) {
-        return Number.parseFloat(sum + i);
-    }, 0))
+    let avgCost = calcAvgCost(data)
 
-    let result = (a / b) * 100 ;
+    let result = (totalProfit / avgCost) * 100 ;
     if (result > 0) {
         return '<span class="text-success">' + roundPercent(result) +'</span>';
     } else if (result < 0) {

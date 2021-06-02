@@ -15,18 +15,18 @@
         <div class="col-md-6">
             <h2 id="market_status"></h2>
             <dl id="market-stats" class="row" style="display: none">
-                <dt class="col-4">gainer:</dt>
-                <dd class="col-2"><span class="text-success" id="top-gainer"></span></dd>
-                <dt class="col-4">gainer (%):</dt>
-                <dd class="col-2"><span class="text-success" id="top-gainer-percent"></span></dd>
-                <dt class="col-4">mover:</dt>
-                <dd class="col-2"><span id="top-mover"></span></dd>
-                <dt class="col-4">loser:</dt>
-                <dd class="col-2"><span class="text-danger" id="top-loser"></span></dd>
-                <dt class="col-4">loser (%):</dt>
-                <dd class="col-2"><span class="text-danger" id="top-loser-percent"></span></dd>
-                <dt class="col-4 text-truncate">Trends avg:</dt>
-                <dd class="col-2"><span id="avg-trends"></span></dd>
+                <dt class="col-3">gainer:</dt>
+                <dd class="col-3"><span class="text-success" id="top-gainer"></span></dd>
+                <dt class="col-3">gainer (%):</dt>
+                <dd class="col-3"><span class="text-success" id="top-gainer-percent"></span></dd>
+                <dt class="col-3">mover:</dt>
+                <dd class="col-3"><span id="top-mover"></span></dd>
+                <dt class="col-3">loser:</dt>
+                <dd class="col-3"><span class="text-danger" id="top-loser"></span></dd>
+                <dt class="col-3">loser (%):</dt>
+                <dd class="col-3"><span class="text-danger" id="top-loser-percent"></span></dd>
+                <dt class="col-3 text-truncate">Trends avg:</dt>
+                <dd class="col-3"><span id="avg-trends"></span></dd>
             </dl>
         </div>
         <div class="col-lg-3 col-md-6">
@@ -57,7 +57,7 @@
                     <th data-field="Last" data-sortable="true">Last</th>
                     <th data-field="Average Cost" data-sortable="true">Cost</th>
                     <th data-visible="false" data-field="Change" data-cell-style="cellStyle" data-sortable="true">Change</th>
-                    <th data-field="percent_change" data-formatter="roundPercent" data-cell-style="cellStyle" data-sortable="true">% Change</th>
+                    <th data-field="percent_change" data-footer-formatter="totalPercent" data-formatter="roundPercent" data-cell-style="cellStyle" data-sortable="true">% Change</th>
                     <th data-field="Day's Value" data-footer-formatter="totalPrice" data-cell-style="cellStyle" data-sortable="true">Day's Value</th>
                     <th data-field="Qty" data-sortable="true">Qty</th>
                     <th data-field="Gain" data-formatter="roundPercent" data-footer-formatter="gainTotal" data-cell-style="cellStyle" data-sortable="true">Gain %</th>
