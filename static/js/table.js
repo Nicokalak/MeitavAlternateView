@@ -40,6 +40,10 @@ function detailFormatter(index, row) {
             + getDetailedRow('vol', stock['regularMarketVolume'], bigNum )
             + getDetailedRow('change', stock[market_state  + 'MarketChange'] * row.Qty, round, true )
             + getDetailedRow('change (%)', (stock[market_state + 'MarketChangePercent']), roundPercent, true )
+            + getDetailedRow('price', (stock[market_state + 'MarketPrice']), round, false )
+            + getDetailedRow('rating', (stock['averageAnalystRating']), undefined, false )
+            +  (shouldShowEarning(stock['earningsTimestamp']) ?
+            getDetailedRow('earnings',stock['earningsTimestamp'], daysCountToEarn, false) : '')
             + '</dl>'
         )
         $("#ticker-" + row.Symbol + '-link').html(
@@ -49,6 +53,17 @@ function detailFormatter(index, row) {
     });
     return html;
 }
+
+function shouldShowEarning(timestmp) {
+    let days = daysCountToEarn(timestmp);
+    return days >= 0 && days < 7
+}
+
+function daysCountToEarn(timestmp) {
+    let tdiff = new Date(timestmp) - new Date();
+    return Math.ceil(tdiff / (1000 * 60 * 60 * 24));
+}
+
 function getDetailedRow(key, val, formater, color=false) {
     let clazz = "";
     if (color) {
