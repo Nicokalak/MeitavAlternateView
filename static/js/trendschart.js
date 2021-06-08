@@ -7,7 +7,7 @@ function trend_stats(trendObj) {
     } else { // == 0
         span = '<span class="badge bg-secondary">' + round(trendObj.trend) + '</span>';
     }
-    market_state = trendObj.marketState.toLowerCase();
+    let market_state = trendObj.marketState.toLowerCase();
     $("#market_status").html(market_state.charAt(0).toUpperCase() + market_state.slice(1) + ' market  ' + span);
     $("#top-gainer").text(trendObj['top-gainer'].symbol);
     $("#top-gainer-percent").text(trendObj['top-gainer%'].symbol);

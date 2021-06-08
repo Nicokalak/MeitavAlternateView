@@ -19,9 +19,12 @@ def get_table():
     return r.text
 
 
-def add_trend(trends_obj):
-    if trends_obj['marketState'] == 'CLOSED':
+def add_trend(trends_obj, change, data):
+    if trends_obj['marketState'] in ('CLOSED', 'PREPRE', 'POSTPOST'):
         return
+    for d in data:
+        if change in d:
+            trends_obj['trend'] += d[change] * symbols_qty[d['symbol']]
     global trends
     trend: float = trends_obj['trend']
     if len(trends) > 15:
@@ -30,15 +33,17 @@ def add_trend(trends_obj):
     trends[datetime.datetime.now().strftime(time_format)] = trend
 
 
+def get_market_state_4calc(market_state):
+    return market_state if market_state in ("PRE", "POST", "REGULAR") else "POST"
+
+
 def calc_trend(market_state, data):
     result = {'marketState': market_state, 'trend': 0}
-    change = market_state.lower() + 'MarketChange'
-    change_per = market_state.lower() + 'MarketChangePercent'
-    for d in data:
-        if change in d:
-            result['trend'] += d[change] * symbols_qty[d['symbol']]
-
-    add_trend(result)
+    market_state_4calc = get_market_state_4calc(market_state)
+    change = market_state_4calc.lower() + 'MarketChange'
+    change_per = market_state_4calc.lower() + 'MarketChangePercent'
+    result['trend'] = 0
+    add_trend(result, change, data)
     result['top-gainer'] = max(data, key=lambda x: x[change] * symbols_qty[x['symbol']] if change in x else 0)
     result['top-gainer%'] = max(data, key=lambda x: x[change_per] if change in x else 0)
     result['top-loser'] = min(data, key=lambda x: x[change] * symbols_qty[x['symbol']] if change in x else 0)
@@ -51,7 +56,6 @@ def calc_trend(market_state, data):
 @app.route('/marketState')
 def get_market_state():
     r = requests.get(API + ','.join(symbols_qty.keys()))
-    print(r.text)
     data = json.loads(r.text)['quoteResponse']['result']
     global api_data
     api_data = data
@@ -70,6 +74,7 @@ def get_trends():
 def ticker_data(name):
     for ticker in api_data:
         if name == ticker['symbol']:
+            ticker['market-state-4calc'] = get_market_state_4calc(ticker['marketState'])
             return ticker
     return {}
 
@@ -84,6 +89,8 @@ def get_data():
     for d in data:
         d['percent_change'] = 0 if d['Change'] == 0 \
             else (float(d['Change']) / (float(d['Last']) - float(d['Change']))) * 100
+        d['Change'] *= d['Qty']
+
     global symbols_qty
     symbols_qty = dict(map(lambda kv: (kv['Symbol'], kv['Qty']), data))
     return Response(json.dumps(data), mimetype='application/json')

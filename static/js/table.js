@@ -29,6 +29,7 @@ function detailFormatter(index, row) {
         '<div class="row justify-content-start" id="ticker-' + row.Symbol +'-link"></div>' +
         '</div>'
     $.get("ticker/" + row.Symbol, function (stock) {
+        let state = stock['market-state-4calc'].toLowerCase();
         let container = $("#ticker-" + row.Symbol);
         container.append('<dl class="row">'
             + getDetailedRow('day high', stock['regularMarketDayHigh'], round )
@@ -38,9 +39,9 @@ function detailFormatter(index, row) {
             + getDetailedRow('52w low', stock['fiftyTwoWeekLow'], round )
             + getDetailedRow('prev close', stock['regularMarketPreviousClose'], round )
             + getDetailedRow('vol', stock['regularMarketVolume'], bigNum )
-            + getDetailedRow('change', stock[market_state  + 'MarketChange'] * row.Qty, round, true )
-            + getDetailedRow('change (%)', (stock[market_state + 'MarketChangePercent']), roundPercent, true )
-            + getDetailedRow('price', (stock[market_state + 'MarketPrice']), round, false )
+            + getDetailedRow('change', stock[state  + 'MarketChange'] * row.Qty, round, true )
+            + getDetailedRow('change (%)', (stock[state + 'MarketChangePercent']), roundPercent, true )
+            + getDetailedRow('price', (stock[state + 'MarketPrice']), round, false )
             + getDetailedRow('rating', (stock['averageAnalystRating']), undefined, false )
             +  (shouldShowEarning(stock['earningsTimestamp'] * 1000) ?
             getDetailedRow('earnings',stock['earningsTimestamp'] * 1000, daysCountToEarn, false) : '')
