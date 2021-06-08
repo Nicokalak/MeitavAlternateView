@@ -89,7 +89,6 @@ def get_data():
     for d in data:
         d['percent_change'] = 0 if d['Change'] == 0 \
             else (float(d['Change']) / (float(d['Last']) - float(d['Change']))) * 100
-        d['Change'] *= d['Qty']
 
     global symbols_qty
     symbols_qty = dict(map(lambda kv: (kv['Symbol'], kv['Qty']), data))
