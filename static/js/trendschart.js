@@ -31,7 +31,7 @@ function update_trends() {
 function init_chart() {
     const down = (ctx, value) => ctx.p0.parsed.y > ctx.p1.parsed.y ? value : undefined;
     const up = (ctx, value) => ctx.p0.parsed.y < ctx.p1.parsed.y ? value : undefined;
-    const skipped = (ctx, value) => new Date(ctx.p1.parsed.x).getDay() - new Date(ctx.p0.parsed.x).getDay() > 0 ? value : undefined;
+    const skipped = (ctx, value) => new Date(ctx.p1.parsed.x) - new Date(ctx.p0.parsed.x) > 86400 ? value : undefined;
     const data = {
         datasets: [{
             label: "trends",
