@@ -28,10 +28,16 @@ function update_trends() {
         chart.update();
     });
 }
+function dayDiff(d1, d0) {
+    let d1Num = d1.getMonth() * 100 + d1.getDate()
+    let d0Num = d0.getMonth() * 100 + d0.getDate()
+    return d1Num - d0Num > 0;
+}
+
 function init_chart() {
     const down = (ctx, value) => ctx.p0.parsed.y > ctx.p1.parsed.y ? value : undefined;
     const up = (ctx, value) => ctx.p0.parsed.y < ctx.p1.parsed.y ? value : undefined;
-    const skipped = (ctx, value) => (new Date(ctx.p1.parsed.x) - new Date(ctx.p0.parsed.x)) > 8640000 ? value : undefined;
+    const skipped = (ctx, value) => dayDiff(new Date(ctx.p1.parsed.x), new Date(ctx.p0.parsed.x)) ? value : undefined;
     const data = {
         datasets: [{
             label: "trends",
