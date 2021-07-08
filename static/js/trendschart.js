@@ -31,13 +31,13 @@ function update_trends() {
 function init_chart() {
     const down = (ctx, value) => ctx.p0.parsed.y > ctx.p1.parsed.y ? value : undefined;
     const up = (ctx, value) => ctx.p0.parsed.y < ctx.p1.parsed.y ? value : undefined;
-    const skipped = (ctx, value) => new Date(ctx.p1.parsed.x) - new Date(ctx.p0.parsed.x) > 86400 ? value : undefined;
+    const skipped = (ctx, value) => (new Date(ctx.p1.parsed.x) - new Date(ctx.p0.parsed.x)) > 8640000 ? value : undefined;
     const data = {
         datasets: [{
             label: "trends",
             data: trendsObj,
             segment: {
-                borderColor: ctx => skipped(ctx, 'rgb(0,0,0,0.2)') ||up(ctx, 'rgba(72,141,22,0.2)') || down(ctx, 'rgb(234,15,15)'),
+                borderColor: ctx => skipped(ctx, 'rgb(0,0,0,0.2)') || up(ctx, 'rgba(72,141,22,0.2)') || down(ctx, 'rgb(234,15,15)'),
                 borderDash: ctx => skipped(ctx, [6, 6]),
             }
         },]
