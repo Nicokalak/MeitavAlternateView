@@ -1,5 +1,6 @@
 import datetime
 import json
+import logging
 import os
 
 import requests
@@ -55,14 +56,15 @@ def calc_trend(market_state, data):
 
 @app.route('/marketState')
 def get_market_state():
-    r = requests.get(API + ','.join(symbols_qty.keys()))
-    data = json.loads(r.text)['quoteResponse']['result']
-    global api_data
-    api_data = data
-    if len(data) > 0:
-        return calc_trend(data[0]['marketState'], data)
-    else:
-        raise RuntimeError()
+    header = {'user-agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"}
+    r = requests.get(API + ','.join(symbols_qty.keys()), headers=header)
+    if r.status_code == 200:
+        data = json.loads(r.text)['quoteResponse']['result']
+        global api_data
+        api_data = data
+        if len(data) > 0:
+            return calc_trend(data[0]['marketState'], data)
+    raise RuntimeError()
 
 
 @app.route('/trends')
