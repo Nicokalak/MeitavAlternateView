@@ -143,6 +143,9 @@ function userButtons () {
             icon: 'fa-file-export',
             event: function () {
                 window.location += "/export"
+            },
+            attributes: {
+                title: "Export to File"
             }
         }
     }
