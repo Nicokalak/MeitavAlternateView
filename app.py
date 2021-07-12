@@ -1,11 +1,11 @@
 import datetime
+import io
 import json
-import logging
 import os
 
 import requests
 import pandas as pd
-from flask import Flask, send_from_directory, Response
+from flask import Flask, send_from_directory, Response, send_file
 
 app = Flask(__name__, static_url_path='/static/')
 symbols_qty = {}
@@ -83,18 +83,42 @@ def ticker_data(name):
 
 @app.route('/portfolio')
 def get_data():
-    # execute only if run as a script
-    df = pd.read_html(get_table())[0]
-    data = json.loads(
-        df[['Symbol', 'Qty', 'Change', 'Last', 'Day\'s Value', 'Average Cost',  'Gain', 'Profit/ Loss', 'Value']].
-        to_json(orient='records'))
-    for d in data:
-        d['percent_change'] = 0 if d['Change'] == 0 \
-            else (float(d['Change']) / (float(d['Last']) - float(d['Change']))) * 100
-
+    data = get_portfolio_data()
     global symbols_qty
     symbols_qty = dict(map(lambda kv: (kv['Symbol'], kv['Qty']), data))
     return Response(json.dumps(data), mimetype='application/json')
+
+
+@app.route('/export')
+def export():
+    df_json = pd.json_normalize(get_portfolio_data())
+    output = io.BytesIO()
+    writer = pd.ExcelWriter(output)
+    df_json.to_excel(writer)
+    writer.save()
+    # Creating the byteIO object from the StringIO Object
+    mem = io.BytesIO()
+    mem.write(output.getvalue())
+    output.close()
+
+    return send_file(
+        mem,
+        as_attachment=False,
+        download_name='portfolio.xlsx',
+        mimetype='application/x-xls'
+    )
+
+
+def get_portfolio_data():
+    # execute only if run as a script
+    df = pd.read_html(get_table())[0]
+    data = json.loads(
+        df[['Symbol', 'Qty', 'Change', 'Last', 'Day\'s Value',
+            'Average Cost', 'Gain', 'Profit/ Loss', 'Value']].to_json(orient='records'))
+    for d in data:
+        d['percent_change'] = 0 if d['Change'] == 0 \
+            else (float(d['Change']) / (float(d['Last']) - float(d['Change']))) * 100
+    return data
 
 
 @app.route('/js/<path:path>')

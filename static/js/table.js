@@ -135,3 +135,15 @@ function totalPrice(data) {
         return result;
     }
 }
+
+function userButtons () {
+    return {
+        btnExport: {
+            text: 'Export',
+            icon: 'fa-file-export',
+            event: function () {
+                window.location += "/export"
+            }
+        }
+    }
+}
