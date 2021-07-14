@@ -103,7 +103,7 @@ def export():
 
     return send_file(
         mem,
-        as_attachment=False,
+        as_attachment=True,
         download_name='portfolio.xlsx',
         mimetype='application/x-xls'
     )
