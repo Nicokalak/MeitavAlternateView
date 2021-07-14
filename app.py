@@ -99,6 +99,7 @@ def export():
     # Creating the byteIO object from the StringIO Object
     mem = io.BytesIO()
     mem.write(output.getvalue())
+    mem.seek(0)
     output.close()
 
     return send_file(
