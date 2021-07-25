@@ -85,8 +85,8 @@ function getDetailedRow(key, val, formater, color=false) {
         }
     }
 
-    return '<dt class="col-2 p-0">' + key + '</dt>' +
-        '<dd class="col-2 p-0"><span class="' + clazz + '">'+ (formater !== undefined ? formater(val) : val) + '</span></dd>' +
+    return '<dt class="col-xl-2 col-md-3 col-2">' + key + '</dt>' +
+        '<dd class="col-xl-2 col-md-3 col-3"><span class="' + clazz + '">'+ (formater !== undefined ? formater(val) : val) + '</span></dd>' +
         '<div class="w-100 d-md-none d-sm-block"></div>'
 }
 
