@@ -5,7 +5,7 @@ import os
 
 import requests
 import pandas as pd
-from flask import Flask, send_from_directory, Response, send_file
+from flask import Flask, send_from_directory, Response, send_file, request
 
 app = Flask(__name__, static_url_path='/static/')
 symbols_qty = {}
@@ -91,7 +91,8 @@ def get_data():
 
 @app.route('/export')
 def export():
-    df_json = pd.json_normalize(get_portfolio_data())
+    sort_name = request.args.get('sortName', default=None)
+    df_json = pd.json_normalize(get_portfolio_data(sort_name))
     output = io.BytesIO()
     writer = pd.ExcelWriter(output)
     df_json.to_excel(writer)
@@ -110,7 +111,7 @@ def export():
     )
 
 
-def get_portfolio_data():
+def get_portfolio_data(sort=None):
     # execute only if run as a script
     df = pd.read_html(get_table())[0]
     data = json.loads(
@@ -119,6 +120,9 @@ def get_portfolio_data():
     for d in data:
         d['percent_change'] = 0 if d['Change'] == 0 \
             else (float(d['Change']) / (float(d['Last']) - float(d['Change']))) * 100
+
+    if sort is not None:
+        data.sort(reverse=True, key=lambda s: s[sort] if sort in s else s['percent_change'])
     return data
 
 

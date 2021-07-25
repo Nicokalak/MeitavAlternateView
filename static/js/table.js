@@ -32,17 +32,19 @@ function detailFormatter(index, row) {
         let state = stock['market-state-4calc'].toLowerCase();
         let container = $("#ticker-" + row.Symbol);
         container.append('<dl class="row">'
-            + getDetailedRow('day high', stock['regularMarketDayHigh'], round )
-            + getDetailedRow('52w high',  stock['fiftyTwoWeekHigh'], round )
+           // + getDetailedRow('52w range', stock['fiftyTwoWeekLow']  + '<input disabled type="range" class="form-range range" value="' + stock[state + 'MarketPrice'] +'"' +
+            //    ' min="'+ stock['fiftyTwoWeekLow'] +'" max="' + stock['fiftyTwoWeekHigh'] +'" />' + stock['fiftyTwoWeekHigh'])
+            + getDetailedRow('52w range', getRange(round(stock['fiftyTwoWeekLow']),
+                round(stock['fiftyTwoWeekHigh']), round(stock[state + 'MarketPrice']) ) )
+            + getDetailedRow('price', (stock[state + 'MarketPrice']), round, false )
             + getDetailedRow('52d avg', stock['fiftyDayAverage'], round )
-            + getDetailedRow('day low', stock['regularMarketDayLow'], round )
-            + getDetailedRow('52w low', stock['fiftyTwoWeekLow'], round )
+            + getDetailedRow('day range', getRange(round(stock['regularMarketDayLow']),
+                round(stock['regularMarketDayHigh']), round(stock[state + 'MarketPrice']) ))
             + getDetailedRow('prev close', stock['regularMarketPreviousClose'], round )
             + getDetailedRow('vol', stock['regularMarketVolume'], bigNum )
             + getDetailedRow('change', stock[state  + 'MarketChange'] * row.Qty, round, true )
             + getDetailedRow('change (%)', (stock[state + 'MarketChangePercent']), roundPercent, true )
-            + getDetailedRow('price', (stock[state + 'MarketPrice']), round, false )
-            + getDetailedRow('rating', (stock['averageAnalystRating']), undefined, false )
+            + (stock['averageAnalystRating'] ? getDetailedRow('rating', (stock['averageAnalystRating']), undefined, false ) : "")
             +  (shouldShowEarning(stock['earningsTimestamp'] * 1000) ?
             getDetailedRow('earnings',stock['earningsTimestamp'] * 1000, daysCountToEarn, false) : '')
             + '</dl>'
@@ -53,6 +55,16 @@ function detailFormatter(index, row) {
             '</svg></a>')
     });
     return html;
+}
+
+function getRange(min, max, val) {
+    return '<div class="container-fluid p-0">' +
+        '<div class="row">' +
+        '<div class="col-4">' + min +'</div>' +
+        '<div class=col-4><input disabled="" type="range" class="form-range range"' +
+        ' value="' + val + '" min="' + min + '" max="' + max +'"></div>' +
+        '<div class=col-4>'+ max +'</div>' +
+        '</div></div>'
 }
 
 function shouldShowEarning(timestmp) {
@@ -142,7 +154,7 @@ function userButtons () {
             text: 'Export',
             icon: 'fa-file-export',
             event: function () {
-                window.location += "/export"
+                window.location += "/export?sortName=" + this.options['sortName']
             },
             attributes: {
                 title: "Export to File"
