@@ -32,8 +32,6 @@ function detailFormatter(index, row) {
         let state = stock['market-state-4calc'].toLowerCase();
         let container = $("#ticker-" + row.Symbol);
         container.append('<dl class="row">'
-           // + getDetailedRow('52w range', stock['fiftyTwoWeekLow']  + '<input disabled type="range" class="form-range range" value="' + stock[state + 'MarketPrice'] +'"' +
-            //    ' min="'+ stock['fiftyTwoWeekLow'] +'" max="' + stock['fiftyTwoWeekHigh'] +'" />' + stock['fiftyTwoWeekHigh'])
             + getDetailedRow('52w range', getRange(round(stock['fiftyTwoWeekLow']),
                 round(stock['fiftyTwoWeekHigh']), round(stock[state + 'MarketPrice']) ) )
             + getDetailedRow('price', (stock[state + 'MarketPrice']), round, false )
@@ -60,8 +58,8 @@ function detailFormatter(index, row) {
 function getRange(min, max, val) {
     return '<div class="container-fluid p-0">' +
         '<div class="row">' +
-        '<div class="col-3">' + min +'</div>' +
-        '<div class=col-6><input disabled="" type="range" class="form-range range"' +
+        '<div class="col-4">' + min +'</div>' +
+        '<div class=col-5><input disabled="" type="range" class="form-range range"' +
         ' value="' + val + '" min="' + min + '" max="' + max +'"></div>' +
         '<div class=col-3>'+ max +'</div>' +
         '</div></div>'
@@ -87,8 +85,8 @@ function getDetailedRow(key, val, formater, color=false) {
         }
     }
 
-    return '<dt class="col-2">' + key + '</dt>' +
-        '<dd class="col-2"><span class="' + clazz + '">'+ (formater !== undefined ? formater(val) : val) + '</span></dd>' +
+    return '<dt class="col-2 p-0">' + key + '</dt>' +
+        '<dd class="col-2 p-0"><span class="' + clazz + '">'+ (formater !== undefined ? formater(val) : val) + '</span></dd>' +
         '<div class="w-100 d-md-none d-sm-block"></div>'
 }
 
