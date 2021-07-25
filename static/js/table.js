@@ -59,9 +59,9 @@ function getRange(min, max, val) {
     return '<div class="container-fluid p-0">' +
         '<div class="row">' +
         '<div class="col-4">' + min +'</div>' +
-        '<div class=col-5><input disabled="" type="range" class="form-range range"' +
+        '<div class="col-5"><input disabled="" type="range" class="form-range range"' +
         ' value="' + val + '" min="' + min + '" max="' + max +'"></div>' +
-        '<div class=col-3>'+ max +'</div>' +
+        '<div class="col-3 p-0">'+ max +'</div>' +
         '</div></div>'
 }
 
