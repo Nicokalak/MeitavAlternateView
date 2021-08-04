@@ -8,7 +8,7 @@ import pandas as pd
 from flask import Flask, send_from_directory, Response, send_file, request
 
 app = Flask(__name__, static_url_path='/static/')
-symbols_qty = {}
+symbols_d = {}
 API = 'https://query1.finance.yahoo.com/v7/finance/quote?&symbols='
 api_data = []
 trends = {}
@@ -25,7 +25,7 @@ def add_trend(trends_obj, change, data):
         return
     for d in data:
         if change in d:
-            trends_obj['trend'] += d[change] * symbols_qty[d['symbol']]
+            trends_obj['trend'] += d[change] * symbols_d[d['symbol']]['q']
     global trends
     trend: float = trends_obj['trend']
     if len(trends) > 15:
@@ -45,19 +45,22 @@ def calc_trend(market_state, data):
     change_per = market_state_4calc.lower() + 'MarketChangePercent'
     result['trend'] = 0
     add_trend(result, change, data)
-    result['top-gainer'] = max(data, key=lambda x: x[change] * symbols_qty[x['symbol']] if change in x else 0)
+    result['top-gainer'] = max(data, key=lambda x: x[change] * symbols_d[x['symbol']]['q'] if change in x else 0)
     result['top-gainer%'] = max(data, key=lambda x: x[change_per] if change in x else 0)
-    result['top-loser'] = min(data, key=lambda x: x[change] * symbols_qty[x['symbol']] if change in x else 0)
+    result['top-loser'] = min(data, key=lambda x: x[change] * symbols_d[x['symbol']]['q'] if change in x else 0)
     result['top-loser%'] = min(data, key=lambda x: x[change_per] if change in x else 0)
     result['top-mover'] = max(data, key=lambda x: x['regularMarketVolume'] if 'regularMarketVolume' in x else 0)
-    result['avg-trends'] = (sum(trends.values()) / len(trends.values())) if len(trends.values()) > 0 else 0
+    result['up-down'] = {
+        'up': len(list(filter(lambda x: symbols_d[x['symbol']]['g'] > 0, data))),
+        'down': len(list(filter(lambda x: symbols_d[x['symbol']]['g'] < 0, data)))
+                        }
     return result
 
 
 @app.route('/marketState')
 def get_market_state():
     header = {'user-agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"}
-    r = requests.get(API + ','.join(symbols_qty.keys()), headers=header)
+    r = requests.get(API + ','.join(symbols_d.keys()), headers=header)
     if r.status_code == 200:
         data = json.loads(r.text)['quoteResponse']['result']
         global api_data
@@ -84,8 +87,8 @@ def ticker_data(name):
 @app.route('/portfolio')
 def get_data():
     data = get_portfolio_data()
-    global symbols_qty
-    symbols_qty = dict(map(lambda kv: (kv['Symbol'], kv['Qty']), data))
+    global symbols_d
+    symbols_d = dict(map(lambda kv: (kv['Symbol'], {'q': kv['Qty'], 'g': kv['Gain']}), data))
     return Response(json.dumps(data), mimetype='application/json')
 
 
