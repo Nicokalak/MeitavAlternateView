@@ -34,7 +34,8 @@ def add_trend(trends_obj, change_key, data):
     if m_state in ('CLOSED', 'PREPRE', 'POSTPOST'):
         return
     for d in data:
-        trends_obj['trend'] += symbols_d[d['symbol']]['v']
+        trends_obj['trend'] += symbols_d[d['symbol']]['v'] if m_state == "REGULAR" else\
+            d[change_key] * symbols_d[d['symbol']]['q']
         if change_key in d:
             histo_val += d[change_key] * symbols_d[d['symbol']]['q']
     global trends
