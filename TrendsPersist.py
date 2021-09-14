@@ -17,3 +17,9 @@ class TrendPersist(object):
         with open(os.environ.get("PERSIST_FILE", "/tmp/meitav_trends.json"), "w") as write_file:
             json.dump(self.trends, write_file, indent=4)
 
+    def load(self):
+        if os.path.exists(os.environ.get("PERSIST_FILE", "/tmp/meitav_trends.json")):
+            with open(os.environ.get("PERSIST_FILE", "/tmp/meitav_trends.json"), "r") as loadFile:
+                self.trends = json.load(loadFile)
+        return self.trends
+

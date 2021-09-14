@@ -156,4 +156,5 @@ def root():
 
 
 if __name__ == '__main__':
+    trends = persist.load()
     app.run(host='0.0.0.0', port=8080)

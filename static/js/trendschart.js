@@ -50,8 +50,9 @@ function init_chart() {
             {
                 label: "PRE Market",
                 data: trendsObj["PRE_histo"],
-                borderColor: 'rgb(212, 236, 221)',
-                backgroundColor: 'rgb(212, 236, 221)',
+                borderColor: 'rgb(111, 105, 172)',
+                backgroundColor: 'rgb(111, 105, 172)',
+                pointStyle: 'triangle',
                 tension: 0.1,
                 segment: {
                     borderColor: ctx => skipped(ctx) || up(ctx) || down(ctx),
@@ -61,8 +62,9 @@ function init_chart() {
             {
                 label: "Regular Market",
                 data: trendsObj["REGULAR_histo"],
-                borderColor: 'rgb(52, 91, 99)',
-                backgroundColor: 'rgb(52, 91, 99)',
+                borderColor: 'rgb(190,190,190)',
+                backgroundColor: 'rgb(190,190,190)',
+                pointStyle: 'triangle',
                 segment: {
                     borderColor: ctx => skipped(ctx) || up(ctx) || down(ctx),
                     borderDash: ctx => skipped(ctx, [6, 6]),
@@ -71,8 +73,9 @@ function init_chart() {
             {
                 label: "POST Market",
                 data: trendsObj["POST_histo"],
-                borderColor: 'rgb(21, 45, 53)',
-                backgroundColor: 'rgb(21, 45, 53)',
+                borderColor: 'rgb(255, 235, 161)',
+                backgroundColor: 'rgb(255, 235, 161)',
+                pointStyle: 'triangle',
                 tension: 0.1,
                 segment: {
                     borderColor: ctx => skipped(ctx) || up(ctx) || down(ctx),
