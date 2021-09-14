@@ -19,12 +19,18 @@ function trend_stats(trendObj) {
     $("#market-stats").show(200);
     console.log(trendObj);
 }
-const trendsObj = {}
+const trendsObj = {
+    "PRE_histo": {},
+    "REGULAR_histo": {},
+    "POST_histo": {}
+}
 let chart;
 function update_trends() {
     $.get("trends", function (trends) {
-        for (let key in trends) {
-            trendsObj[key] = trends[key];
+        for (let trendsKey in trends) {
+            for (let t in trends[trendsKey]) {
+                trendsObj[trendsKey][t] = trends[trendsKey][t];
+            }
         }
         chart.update();
     });
@@ -36,18 +42,44 @@ function dayDiff(d1, d0) {
 }
 
 function init_chart() {
-    const down = (ctx, value) => ctx.p0.parsed.y > ctx.p1.parsed.y ? value : undefined;
-    const up = (ctx, value) => ctx.p0.parsed.y < ctx.p1.parsed.y ? value : undefined;
-    const skipped = (ctx, value) => dayDiff(new Date(ctx.p1.parsed.x), new Date(ctx.p0.parsed.x)) ? value : undefined;
+    const down = (ctx) => ctx.p0.parsed.y > ctx.p1.parsed.y ? 'rgb(213, 76, 76)' : undefined;
+    const up = (ctx) => ctx.p0.parsed.y < ctx.p1.parsed.y ? 'rgb(0, 139, 0)' : undefined;
+    const skipped = (ctx) => dayDiff(new Date(ctx.p1.parsed.x), new Date(ctx.p0.parsed.x)) ? 'rgba(0,0,0,0.2)' : undefined;
     const data = {
-        datasets: [{
-            label: "trends",
-            data: trendsObj,
-            segment: {
-                borderColor: ctx => skipped(ctx, 'rgb(0,0,0,0.2)') || up(ctx, 'rgba(72,141,22,0.2)') || down(ctx, 'rgb(234,15,15)'),
-                borderDash: ctx => skipped(ctx, [6, 6]),
+        datasets: [
+            {
+                label: "PRE Market",
+                data: trendsObj["PRE_histo"],
+                borderColor: 'rgb(212, 236, 221)',
+                backgroundColor: 'rgb(212, 236, 221)',
+                tension: 0.1,
+                segment: {
+                    borderColor: ctx => skipped(ctx) || up(ctx) || down(ctx),
+                    borderDash: ctx => skipped(ctx, [6, 6]),
+                }
+            },
+            {
+                label: "Regular Market",
+                data: trendsObj["REGULAR_histo"],
+                borderColor: 'rgb(52, 91, 99)',
+                backgroundColor: 'rgb(52, 91, 99)',
+                segment: {
+                    borderColor: ctx => skipped(ctx) || up(ctx) || down(ctx),
+                    borderDash: ctx => skipped(ctx, [6, 6]),
+                }
+            },
+            {
+                label: "POST Market",
+                data: trendsObj["POST_histo"],
+                borderColor: 'rgb(21, 45, 53)',
+                backgroundColor: 'rgb(21, 45, 53)',
+                tension: 0.1,
+                segment: {
+                    borderColor: ctx => skipped(ctx) || up(ctx) || down(ctx),
+                    borderDash: ctx => skipped(ctx, [6, 6]),
+                }
             }
-        },]
+        ]
     };
     const config = {
         type: 'line',
@@ -65,7 +97,7 @@ function init_chart() {
             },
             plugins: {
                 legend: {
-                    display: false
+                    display: true
                 }
             }
         }

@@ -3,16 +3,23 @@ import io
 import json
 import os
 
-import requests
 import pandas as pd
+import requests
 from flask import Flask, send_from_directory, Response, send_file, request
+
+from TrendsPersist import TrendPersist
 
 app = Flask(__name__, static_url_path='/static/')
 symbols_d = {}
-API = 'https://query1.finance.yahoo.com/v7/finance/quote?&symbols='
+API = 'https://query2.finance.yahoo.com/v7/finance/quote?&symbols='
 api_data = []
-trends = {}
+trends = {
+    "PRE_histo": {},
+    "REGULAR_histo": {},
+    "POST_histo": {}
+}
 time_format = '%Y%m%dT%H:%M:%S'
+persist = TrendPersist(trends)
 
 
 def get_table():
@@ -20,18 +27,22 @@ def get_table():
     return r.text
 
 
-def add_trend(trends_obj, change, data):
-    if trends_obj['marketState'] in ('CLOSED', 'PREPRE', 'POSTPOST'):
+def add_trend(trends_obj, change_key, data):
+    m_state = trends_obj['marketState']
+    curr_trend = m_state + '_histo'
+    histo_val = 0.0
+    if m_state in ('CLOSED', 'PREPRE', 'POSTPOST'):
         return
     for d in data:
-        if change in d:
-            trends_obj['trend'] += d[change] * symbols_d[d['symbol']]['q']
+        trends_obj['trend'] += symbols_d[d['symbol']]['v']
+        if change_key in d:
+            histo_val += d[change_key] * symbols_d[d['symbol']]['q']
     global trends
-    trend: float = trends_obj['trend']
-    if len(trends) > 15:
-        first = min(trends.keys())
-        del trends[first]
-    trends[datetime.datetime.now().strftime(time_format)] = trend
+    if len(trends[curr_trend]) > 15:
+        first = min(trends[curr_trend].keys())
+        del trends[curr_trend][first]
+    trends[curr_trend][datetime.datetime.now().strftime(time_format)] = histo_val
+    persist.save()
 
 
 def get_market_state_4calc(market_state):
@@ -88,7 +99,7 @@ def ticker_data(name):
 def get_data():
     data = get_portfolio_data()
     global symbols_d
-    symbols_d = dict(map(lambda kv: (kv['Symbol'], {'q': kv['Qty'], 'g': kv['Gain']}), data))
+    symbols_d = dict(map(lambda kv: (kv['Symbol'], {'q': kv['Qty'], 'g': kv['Gain'], 'v': kv['Day\'s Value']}), data))
     return Response(json.dumps(data), mimetype='application/json')
 
 
