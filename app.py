@@ -34,10 +34,10 @@ def add_trend(trends_obj, change_key, data):
     if m_state in ('CLOSED', 'PREPRE', 'POSTPOST'):
         return
     for d in data:
-        trends_obj['trend'] += symbols_d[d['symbol']]['v'] if m_state == "REGULAR" else\
-            d[change_key] * symbols_d[d['symbol']]['q']
+        trends_obj['trend'] += symbols_d[d['symbol']]['v']
         if change_key in d:
             histo_val += d[change_key] * symbols_d[d['symbol']]['q']
+            trends_obj['yahoo_trend'] += d[change_key] * symbols_d[d['symbol']]['q']
     global trends
     if len(trends[curr_trend]) > 15:
         first = min(trends[curr_trend].keys())
@@ -51,7 +51,7 @@ def get_market_state_4calc(market_state):
 
 
 def calc_trend(market_state, data):
-    result = {'marketState': market_state, 'trend': 0}
+    result = {'marketState': market_state, 'trend': 0, 'yahoo_trend': 0}
     market_state_4calc = get_market_state_4calc(market_state)
     change = market_state_4calc.lower() + 'MarketChange'
     change_per = market_state_4calc.lower() + 'MarketChangePercent'

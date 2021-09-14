@@ -1,14 +1,25 @@
-function trend_stats(trendObj) {
-    let span;
-    if (trendObj.trend > 0) {
-        span = '<span class="badge bg-success">' + round(trendObj.trend) + '</span>';
-    } else if (trendObj.trend < 0) {
-        span = '<span class="badge bg-danger">' + round(trendObj.trend) + '</span>';
-    } else { // == 0
-        span = '<span class="badge bg-secondary">' + round(trendObj.trend) + '</span>';
+function createSpan(val, val2) {
+    function getClass(value) {
+        if (value > 0) {
+            return "success"
+        } else if (value < 0) {
+            return "danger"
+        } else { // == 0
+            return "secondary"
+        }
     }
+
+    return '<span class="state-badge state-badge-' + getClass(val) + ' position-relative">' +  val +
+        '<span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-' + getClass(val2) + '">' +
+        + val2 +'</span></span>';
+
+}
+
+function trend_stats(trendObj) {
+    let totalBadge = createSpan(round(trendObj['trend']), round(trendObj['yahoo_trend']));
     let market_state = trendObj.marketState.toLowerCase();
-    $("#market_status").html(market_state.charAt(0).toUpperCase() + market_state.slice(1) + ' market  ' + span);
+    $("#market_status").html(market_state.charAt(0).toUpperCase() + market_state.slice(1) + ' market  ' +  totalBadge );
+    $("#market_status_total").text(round(trendObj['trend']));
     $("#top-gainer").text(trendObj['top-gainer'].symbol);
     $("#top-gainer-percent").text(trendObj['top-gainer%'].symbol);
     $("#top-mover").text(trendObj['top-mover'].symbol);
