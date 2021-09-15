@@ -46,16 +46,11 @@ function update_trends() {
         chart.update();
     });
 }
-function dayDiff(d1, d0) {
-    let d1Num = d1.getMonth() * 100 + d1.getDate()
-    let d0Num = d0.getMonth() * 100 + d0.getDate()
-    return d1Num - d0Num > 0;
-}
 
 function init_chart() {
     const down = (ctx) => ctx.p0.parsed.y > ctx.p1.parsed.y ? 'rgb(213, 76, 76)' : undefined;
     const up = (ctx) => ctx.p0.parsed.y < ctx.p1.parsed.y ? 'rgb(0, 139, 0)' : undefined;
-    const skipped = (ctx) => dayDiff(new Date(ctx.p1.parsed.x), new Date(ctx.p0.parsed.x)) ? 'rgba(0,0,0,0.2)' : undefined;
+    const skipped = (ctx, value) => new Date(ctx.p1.parsed.x) - new Date(ctx.p0.parsed.x) > 3.6e+7 ? value : undefined;
     const data = {
         datasets: [
             {
@@ -66,7 +61,7 @@ function init_chart() {
                 pointStyle: 'triangle',
                 tension: 0.1,
                 segment: {
-                    borderColor: ctx => skipped(ctx) || up(ctx) || down(ctx),
+                    borderColor: ctx => skipped(ctx, 'rgba(0,0,0,0.2)') || up(ctx) || down(ctx),
                     borderDash: ctx => skipped(ctx, [6, 6]),
                 }
             },
@@ -77,7 +72,7 @@ function init_chart() {
                 backgroundColor: 'rgb(190,190,190)',
                 pointStyle: 'triangle',
                 segment: {
-                    borderColor: ctx => skipped(ctx) || up(ctx) || down(ctx),
+                    borderColor: ctx => skipped(ctx, 'rgba(0,0,0,0.2)') || up(ctx) || down(ctx),
                     borderDash: ctx => skipped(ctx, [6, 6]),
                 }
             },
@@ -89,7 +84,7 @@ function init_chart() {
                 pointStyle: 'triangle',
                 tension: 0.1,
                 segment: {
-                    borderColor: ctx => skipped(ctx) || up(ctx) || down(ctx),
+                    borderColor: ctx => skipped(ctx, 'rgba(0,0,0,0.2)') || up(ctx) || down(ctx),
                     borderDash: ctx => skipped(ctx, [6, 6]),
                 }
             }
