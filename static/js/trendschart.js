@@ -17,7 +17,7 @@ function createSpan(val, val2) {
 
 function trend_stats(trendObj) {
     let totalBadge = createSpan(round(trendObj['trend']), round(trendObj['yahoo_trend']));
-    let market_state = trendObj.marketState.toLowerCase();
+    let market_state = trendObj['marketState'].toLowerCase();
     $("#market_status").html(market_state.charAt(0).toUpperCase() + market_state.slice(1) + ' market  ' +  totalBadge );
     $("#market_status_total").text(round(trendObj['trend']));
     $("#top-gainer").text(trendObj['top-gainer'].symbol);
@@ -84,8 +84,8 @@ function init_chart() {
             {
                 label: "POST Market",
                 data: trendsObj["POST_histo"],
-                borderColor: 'rgb(255, 235, 161)',
-                backgroundColor: 'rgb(255, 235, 161)',
+                borderColor: 'rgb(72,64,159)',
+                backgroundColor: 'rgb(72,64,159)',
                 pointStyle: 'triangle',
                 tension: 0.1,
                 segment: {
@@ -111,7 +111,7 @@ function init_chart() {
             },
             plugins: {
                 legend: {
-                    display: true
+                    display: false
                 }
             }
         }
