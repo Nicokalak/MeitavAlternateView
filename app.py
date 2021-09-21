@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 import io
 import json
 import os
@@ -29,7 +29,7 @@ def get_table():
 
 def add_trend(trends_obj, change_key, data):
     m_state = trends_obj['marketState']
-    curr_trend = m_state + '_histo'
+    state_histo = m_state + '_histo'
     histo_val = 0.0
     if m_state in ('CLOSED', 'PREPRE', 'POSTPOST'):
         return
@@ -38,12 +38,22 @@ def add_trend(trends_obj, change_key, data):
         if change_key in d:
             histo_val += d[change_key] * symbols_d[d['symbol']]['q']
             trends_obj['yahoo_trend'] += d[change_key] * symbols_d[d['symbol']]['q']
-    global trends
-    if len(trends[curr_trend]) > 15:
-        first = min(trends[curr_trend].keys())
-        del trends[curr_trend][first]
-    trends[curr_trend][datetime.datetime.now().strftime(time_format)] = histo_val
+    trends_for_chart(state_histo, histo_val)
     persist.save()
+
+
+def trends_for_chart(state_histo, histo_val):
+    global trends
+    curr_histo = trends[state_histo]
+
+    if len(curr_histo) > 15:
+        first = min(curr_histo.keys())
+        del curr_histo[first]
+    to_delete = filter(lambda d: (datetime.strptime(d, time_format) - datetime.now()).days > 2, curr_histo.keys())
+    for k in to_delete:
+        del curr_histo[k]
+
+    curr_histo[datetime.now().strftime(time_format)] = histo_val
 
 
 def get_market_state_4calc(market_state):
