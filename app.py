@@ -49,7 +49,7 @@ def trends_for_chart(state_histo, histo_val):
     if len(curr_histo) > 15:
         first = min(curr_histo.keys())
         del curr_histo[first]
-    to_delete = list(filter(lambda d: (datetime .strptime(d, time_format) - datetime.now()).days <= 2, curr_histo.keys()))
+    to_delete = list(filter(lambda d: (datetime .strptime(d, time_format) - datetime.now()).days > 2, curr_histo.keys()))
     for k in to_delete:
         del curr_histo[k]
 
@@ -75,7 +75,7 @@ def calc_trend(market_state, data):
     result['up-down'] = {
         'up': len(list(filter(lambda x: symbols_d[x['symbol']]['g'] > 0, data))),
         'down': len(list(filter(lambda x: symbols_d[x['symbol']]['g'] < 0, data)))
-                        }
+    }
     return result
 
 
