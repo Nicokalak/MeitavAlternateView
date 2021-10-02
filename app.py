@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timedelta
 import io
 import json
@@ -6,10 +7,10 @@ import pandas as pd
 import requests
 from flask import Flask, send_from_directory, Response, send_file, request
 from TrendsPersist import TrendPersist
+from waitress import serve
 
 
 app = Flask(__name__, static_url_path='/static/')
-
 symbols_d = {}
 API = 'https://query2.finance.yahoo.com/v7/finance/quote?&symbols='
 api_data = []
@@ -20,6 +21,9 @@ trends = {
 }
 time_format = '%Y%m%dT%H:%M:%S'
 persist = TrendPersist(trends)
+logging.basicConfig()
+logger = logging.getLogger("waitress")
+logger.setLevel(logging.INFO)
 
 
 def get_table():
@@ -168,5 +172,7 @@ def root():
 
 
 if __name__ == '__main__':
+    logger.info("starting meitav-view app")
     trends = persist.load()
-    app.run(host='0.0.0.0', port=8080)
+    logger.info("trends were loaded")
+    serve(app, listen="*:8080")
