@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import io
 import json
 import os
@@ -46,12 +46,13 @@ def trends_for_chart(state_histo, histo_val):
     global trends
     curr_histo = trends[state_histo]
 
-    if len(curr_histo) > 15:
-        first = min(curr_histo.keys())
-        del curr_histo[first]
-    to_delete = filter(lambda d: (datetime.strptime(d, time_format) - datetime.now()).days > 2, curr_histo.keys())
-    for k in to_delete:
-        del curr_histo[k]
+    to_delete = []
+    for key, state_histo in trends.items():
+        for date in state_histo.keys():
+            if (datetime.now() - datetime.strptime(date, time_format)) > timedelta(days=1, seconds=43200):
+                to_delete.append((key, date))
+    for tup in to_delete:
+        del trends[tup[0]][tup[1]]
 
     curr_histo[datetime.now().strftime(time_format)] = histo_val
 

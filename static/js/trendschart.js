@@ -58,8 +58,8 @@ function init_chart() {
                 data: trendsObj["PRE_histo"],
                 borderColor: 'rgb(111, 105, 172)',
                 backgroundColor: 'rgb(111, 105, 172)',
-                pointStyle: 'dash',
-                tension: 0.1,
+                pointStyle: 'rectRounded',
+                tension: 0.3,
                 segment: {
                     borderColor: ctx => skipped(ctx, 'rgba(0,0,0,0.2)') || up(ctx) || down(ctx),
                     borderDash: ctx => skipped(ctx, [6, 6]),
@@ -70,7 +70,8 @@ function init_chart() {
                 data: trendsObj["REGULAR_histo"],
                 borderColor: 'rgb(190,190,190)',
                 backgroundColor: 'rgb(190,190,190)',
-                pointStyle: 'dash',
+                pointStyle: 'rectRounded',
+                tension: 0.3,
                 segment: {
                     borderColor: ctx => skipped(ctx, 'rgba(0,0,0,0.2)') || up(ctx) || down(ctx),
                     borderDash: ctx => skipped(ctx, [6, 6]),
@@ -81,8 +82,8 @@ function init_chart() {
                 data: trendsObj["POST_histo"],
                 borderColor: 'rgb(72,64,159)',
                 backgroundColor: 'rgb(72,64,159)',
-                pointStyle: 'dash',
-                tension: 0.1,
+                pointStyle: 'rectRounded',
+                tension: 0.3,
                 segment: {
                     borderColor: ctx => skipped(ctx, 'rgba(0,0,0,0.2)') || up(ctx) || down(ctx),
                     borderDash: ctx => skipped(ctx, [6, 6]),
