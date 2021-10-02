@@ -3,3 +3,4 @@ pandas~=1.2.4
 Flask~=2.0.1
 lxml~=4.6.3
 openpyxl~=3.0.7
+waitress~=2.0.0

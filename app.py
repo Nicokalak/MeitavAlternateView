@@ -2,14 +2,14 @@ from datetime import datetime, timedelta
 import io
 import json
 import os
-
 import pandas as pd
 import requests
 from flask import Flask, send_from_directory, Response, send_file, request
-
 from TrendsPersist import TrendPersist
 
+
 app = Flask(__name__, static_url_path='/static/')
+
 symbols_d = {}
 API = 'https://query2.finance.yahoo.com/v7/finance/quote?&symbols='
 api_data = []
