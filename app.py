@@ -76,7 +76,7 @@ def calc_trend(market_state, data):
     result['up-down'] = {
         'up': len(list(filter(lambda x: symbols_d[x['symbol']]['g'] > 0, data))),
         'down': len(list(filter(lambda x: symbols_d[x['symbol']]['g'] < 0, data)))
-                        }
+    }
     return result
 
 
