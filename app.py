@@ -151,10 +151,9 @@ def get_portfolio_data(sort=None):
         df[['Symbol', 'Qty', 'Change', 'Last', 'Day\'s Value',
             'Average Cost', 'Gain', 'Profit/ Loss', 'Value']].to_json(orient='records'))
     for d in data:
-        0 if d['Change'] == 0 \
-            else d['percent_change'] = (float(d['Change']) / (float(d['Last']) - float(d['Change']))) * 100
-        0 if d['Change'] == 0 \
-            else d['principle_change'] = (float(d['Change']) / d['Average Cost']) * 100
+        d['percent_change'] = 0 if d['Change'] == 0 \
+            else (float(d['Change']) / (float(d['Last']) - float(d['Change']))) * 100
+        d['principle_change'] = 0 if d['Change'] == 0 else (float(d['Change']) / d['Average Cost']) * 100
 
     if sort is not None:
         data.sort(reverse=True, key=lambda s: s[sort] if sort in s else s['percent_change'])
