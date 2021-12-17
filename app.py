@@ -86,7 +86,10 @@ def calc_trend(market_state, data):
 
 @app.route('/marketState')
 def get_market_state():
-    header = {'user-agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"}
+    header = {
+        'user-agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                      "(KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+              }
     r = requests.get(API + ','.join(symbols_d.keys()), headers=header)
     if r.status_code == 200:
         data = json.loads(r.text)['quoteResponse']['result']
@@ -148,8 +151,9 @@ def get_portfolio_data(sort=None):
         df[['Symbol', 'Qty', 'Change', 'Last', 'Day\'s Value',
             'Average Cost', 'Gain', 'Profit/ Loss', 'Value']].to_json(orient='records'))
     for d in data:
-        d['percent_change'] = (float(d['Change']) / (float(d['Last']) - float(d['Change']))) * 100
-        d['principle_change'] = (float(d['Change']) / d['Average Cost']) * 100
+        d['percent_change'] = 0 if d['Change'] == 0 \
+            else (float(d['Change']) / (float(d['Last']) - float(d['Change']))) * 100
+        d['principle_change'] = 0 if d['Change'] == 0 else (float(d['Change']) / d['Average Cost']) * 100
 
     if sort is not None:
         data.sort(reverse=True, key=lambda s: s[sort] if sort in s else s['percent_change'])

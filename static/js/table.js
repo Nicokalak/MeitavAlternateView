@@ -16,6 +16,24 @@ function totalPercent (data) {
     }
 }
 
+function totalDayPercent (data) {
+    let daysVal = round(data.map(function (row) {
+        return row['Day\'s Value'];
+    }).reduce(function (sum, i) {
+        return Number.parseFloat(sum + i);
+    }, 0))
+    let startPrice = calcStartPrice(data);
+
+    let result = (daysVal / startPrice) * 100 ;
+    if (result > 0) {
+        return '<span class="text-success">' + roundPercent(result) +'</span>';
+    } else if (result < 0) {
+        return '<span class="text-danger">' + roundPercent(result) +'</span>';
+    } else { // result 0
+        return roundPercent(result);
+    }
+}
+
 function calcAvgCost(data) {
     return round(data.map(function (row) {
         return row['Average Cost'] * row['Qty'];
@@ -23,6 +41,15 @@ function calcAvgCost(data) {
         return Number.parseFloat(sum + i);
     }, 0))
 }
+
+function calcStartPrice(data) {
+    return round(data.map(function (row) {
+        return (row['Last'] - row['Change'] )* row['Qty'];
+    }).reduce(function (sum, i) {
+        return Number.parseFloat(sum + i);
+    }, 0))
+}
+
 function detailFormatter(index, row) {
     let html = '<div class="container-fluid">' +
         '<div class="row justify-content-start" id="ticker-' + row.Symbol +'"></div>' +
