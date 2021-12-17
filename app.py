@@ -175,4 +175,5 @@ if __name__ == '__main__':
     logger.info("starting meitav-view app")
     trends = persist.load()
     logger.info("trends were loaded")
-    serve(app, listen="*:8080")
+
+    serve(app, listen="*:8080", url_prefix=os.getenv("URL_PREFIX", ""))
