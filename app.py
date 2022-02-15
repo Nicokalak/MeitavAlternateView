@@ -3,6 +3,8 @@ from datetime import datetime, timedelta
 import io
 import json
 import os
+from typing import List
+
 import pandas as pd
 import requests
 from flask import Flask, send_from_directory, Response, send_file, request
@@ -11,7 +13,7 @@ from waitress import serve
 
 
 app = Flask(__name__, static_url_path='/static/')
-symbols_d = {}
+symbols_d: List = []
 API = 'https://query2.finance.yahoo.com/v7/finance/quote?&symbols='
 api_data = []
 trends = {
@@ -38,12 +40,17 @@ def add_trend(trends_obj, change_key, data):
     if m_state in ('CLOSED', 'PREPRE', 'POSTPOST'):
         return
     for d in data:
-        trends_obj['trend'] += symbols_d[d['symbol']]['v']
+        trends_obj['trend'] += get_symbol_d_key_sum(d['symbol'], 'dv')
         if change_key in d:
-            histo_val += d[change_key] * symbols_d[d['symbol']]['q']
-            trends_obj['yahoo_trend'] += d[change_key] * symbols_d[d['symbol']]['q']
+            q = get_symbol_d_key_sum(d['symbol'], 'q')
+            histo_val += d[change_key] * q
+            trends_obj['yahoo_trend'] += d[change_key] * q
     trends_for_chart(state_histo, histo_val)
     persist.save()
+
+
+def get_symbol_d_key_sum(sym, key):
+    return sum(map(lambda sym_d: sym_d[key], filter(lambda t: t['s'] == sym, symbols_d)))
 
 
 def trends_for_chart(state_histo, histo_val):
@@ -72,14 +79,14 @@ def calc_trend(market_state, data):
     change_per = market_state_4calc.lower() + 'MarketChangePercent'
     result['trend'] = 0
     add_trend(result, change, data)
-    result['top-gainer'] = max(data, key=lambda x: x[change] * symbols_d[x['symbol']]['q'] if change in x else 0)
+    result['top-gainer'] = max(data, key=lambda x: x[change] * get_symbol_d_key_sum(x['symbol'], 'q') if change in x else 0)
     result['top-gainer%'] = max(data, key=lambda x: x[change_per] if change in x else 0)
-    result['top-loser'] = min(data, key=lambda x: x[change] * symbols_d[x['symbol']]['q'] if change in x else 0)
+    result['top-loser'] = min(data, key=lambda x: x[change] * get_symbol_d_key_sum(x['symbol'], 'q') if change in x else 0)
     result['top-loser%'] = min(data, key=lambda x: x[change_per] if change in x else 0)
     result['top-mover'] = max(data, key=lambda x: x['regularMarketVolume'] if 'regularMarketVolume' in x else 0)
     result['up-down'] = {
-        'up': len(list(filter(lambda x: symbols_d[x['symbol']]['g'] > 0, data))),
-        'down': len(list(filter(lambda x: symbols_d[x['symbol']]['g'] < 0, data)))
+        'up': len(list(filter(lambda sd: sd['g'] > 0, symbols_d))),
+        'down': len(list(filter(lambda sd: sd['g'] > 0, symbols_d)))
     }
     return result
 
@@ -90,7 +97,7 @@ def get_market_state():
         'user-agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
                       "(KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
               }
-    r = requests.get(API + ','.join(symbols_d.keys()), headers=header)
+    r = requests.get(API + ','.join(set(map(lambda s: s['s'], symbols_d))), headers=header)
     if r.status_code == 200:
         data = json.loads(r.text)['quoteResponse']['result']
         global api_data
@@ -118,7 +125,7 @@ def ticker_data(name):
 def get_data():
     data = get_portfolio_data()
     global symbols_d
-    symbols_d = dict(map(lambda kv: (kv['Symbol'], {'q': kv['Qty'], 'g': kv['Gain'], 'v': kv['Day\'s Value']}), data))
+    symbols_d = list(map(lambda d: {'s': d['Symbol'], 'q': d['Qty'], 'g': d['Gain'], 'dv': d['Day\'s Value']}, data))
     return Response(json.dumps(data), mimetype='application/json')
 
 
@@ -176,6 +183,7 @@ def root():
 
 
 if __name__ == '__main__':
+    app.logger = logger
     logger.info("starting meitav-view app")
     trends = persist.load()
     logger.info("trends were loaded")
