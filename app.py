@@ -86,7 +86,7 @@ def calc_trend(market_state, data):
     result['top-mover'] = max(data, key=lambda x: x['regularMarketVolume'] if 'regularMarketVolume' in x else 0)
     result['up-down'] = {
         'up': len(list(filter(lambda sd: sd['g'] > 0, symbols_d))),
-        'down': len(list(filter(lambda sd: sd['g'] > 0, symbols_d)))
+        'down': len(list(filter(lambda sd: sd['g'] < 0, symbols_d)))
     }
     return result
 
