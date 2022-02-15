@@ -1,6 +1,5 @@
 import logging
 from datetime import datetime, timedelta
-import io
 import json
 import os
 from typing import List
@@ -127,28 +126,6 @@ def get_data():
     global symbols_d
     symbols_d = list(map(lambda d: {'s': d['Symbol'], 'q': d['Qty'], 'g': d['Gain'], 'dv': d['Day\'s Value']}, data))
     return Response(json.dumps(data), mimetype='application/json')
-
-
-@app.route('/export')
-def export():
-    sort_name = request.args.get('sortName', default=None)
-    df_json = pd.json_normalize(get_portfolio_data(sort_name))
-    output = io.BytesIO()
-    writer = pd.ExcelWriter(output)
-    df_json.to_excel(writer)
-    writer.save()
-    # Creating the byteIO object from the StringIO Object
-    mem = io.BytesIO()
-    mem.write(output.getvalue())
-    mem.seek(0)
-    output.close()
-
-    return send_file(
-        mem,
-        as_attachment=True,
-        download_name='portfolio.xlsx',
-        mimetype='application/x-xls'
-    )
 
 
 def get_portfolio_data(sort=None):
