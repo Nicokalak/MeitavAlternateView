@@ -1,4 +1,5 @@
 # MeitavAlternateView
+[![MeitavAlternateView Docker Image CI](https://github.com/Nicokalak/MeitavAlternateView/actions/workflows/docker-image.yml/badge.svg)](https://github.com/Nicokalak/MeitavAlternateView/actions/workflows/docker-image.yml)
 
 ## About The Project
 This project provides alternative view for your Meitav Dash portfolio.
