@@ -142,7 +142,7 @@ function symbolFormatter(value, row) {
     let d = '<div class="d-flex">' + value +'</div>'
     if (row['Entry Type'] === 'O') {
         d += '<span class="badge text-bg-danger"><small>'
-            + row['Put/ Call'] + ':' + row['Strike'] + ' ' + row['Expiration'] +
+            + row['Put/ Call'] + row['Strike'] + ' ' + row['Expiration'] +
             '</small></span>'
     }
     console.log(value);
