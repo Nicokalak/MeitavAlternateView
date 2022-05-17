@@ -141,7 +141,9 @@ function bigNum(value) {
 function symbolFormatter(value, row) {
     let d = '<div class="d-flex">' + value +'</div>'
     if (row['Entry Type'] === 'O') {
-        d += '<div class="d-flex"><span class="badge text-bg-danger">' + row['Put/ Call'] + ' ' + row['Expiration'] + '</span></div>'
+        d += '<span class="badge text-bg-danger"><small>'
+            + row['Put/ Call'] + ':' + row['Strike'] + ' ' + row['Expiration'] +
+            '</small></span>'
     }
     console.log(value);
     console.log(row);
