@@ -145,8 +145,7 @@ function symbolFormatter(value, row) {
             + row['Put/ Call'] + row['Strike'] + ' ' + row['Expiration'] +
             '</small></span>'
     }
-    console.log(value);
-    console.log(row);
+
     return d;
 }
 
