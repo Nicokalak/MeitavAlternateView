@@ -138,6 +138,16 @@ function bigNum(value) {
     return round(value).toLocaleString("en-US");
 }
 
+function symbolFormatter(value, row) {
+    let d = '<div class="d-flex">' + value +'</div>'
+    if (row['Entry Type'] === 'O') {
+        d += '<div class="d-flex"><span class="badge text-bg-danger">' + row['Put/ Call'] + ' ' + row['Expiration'] + '</span></div>'
+    }
+    console.log(value);
+    console.log(row);
+    return d;
+}
+
 function gainTotal(data) {
     let totalProfit = round(data.map(function (row) {
         return row['Profit/ Loss'];

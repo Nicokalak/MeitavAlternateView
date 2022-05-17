@@ -133,7 +133,8 @@ def get_portfolio_data(sort=None):
     df = pd.read_html(get_table())[0]
     data = json.loads(
         df[['Symbol', 'Qty', 'Change', 'Last', 'Day\'s Value',
-            'Average Cost', 'Gain', 'Profit/ Loss', 'Value']].to_json(orient='records'))
+            'Average Cost', 'Gain', 'Profit/ Loss', 'Value',
+            'Entry Type', 'Expiration', 'Strike', 'Put/ Call']].to_json(orient='records'))
     for d in data:
         d['percent_change'] = 0 if d['Change'] == 0 \
             else (float(d['Change']) / (float(d['Last']) - float(d['Change']))) * 100
