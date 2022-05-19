@@ -6,7 +6,7 @@ from typing import List
 
 import pandas as pd
 import requests
-from flask import Flask, send_from_directory, Response, send_file, request
+from flask import Flask, send_from_directory, Response
 from TrendsPersist import TrendPersist
 from waitress import serve
 
@@ -14,7 +14,7 @@ from waitress import serve
 app = Flask(__name__, static_url_path='/static/')
 symbols_d: List = []
 API = 'https://query2.finance.yahoo.com/v7/finance/quote?&symbols='
-api_data = []
+api_data = {}
 trends = {
     "PRE_histo": {},
     "REGULAR_histo": {},
@@ -35,21 +35,22 @@ def get_table():
 def add_trend(trends_obj, change_key, data):
     m_state = trends_obj['marketState']
     state_histo = m_state + '_histo'
-    histo_val = 0.0
     if m_state in ('CLOSED', 'PREPRE', 'POSTPOST'):
         return
     for d in data:
-        trends_obj['trend'] += get_symbol_d_key_sum(d['symbol'], 'dv')
-        if change_key in d:
-            q = get_symbol_d_key_sum(d['symbol'], 'q')
-            histo_val += d[change_key] * q
-            trends_obj['yahoo_trend'] += d[change_key] * q
-    trends_for_chart(state_histo, histo_val)
+        yahoo_symbol_data = api_data[d['s']]
+        trends_obj['trend'] += d['dv']
+        if change_key in yahoo_symbol_data:
+            if d['t'] == "E":
+                trends_obj['yahoo_trend'] += yahoo_symbol_data[change_key] * d['q']
+            elif m_state == "REGULAR":
+                trends_obj['yahoo_trend'] += d['dv']
+    trends_for_chart(state_histo, trends_obj['yahoo_trend'])
     persist.save()
 
 
 def get_symbol_d_key_sum(sym, key):
-    return sum(map(lambda sym_d: sym_d[key], filter(lambda t: t['s'] == sym, symbols_d)))
+    return sum(map(lambda sym_d: sym_d[key], filter(lambda t: t['s'] == sym and t['t'] == 'E', symbols_d)))
 
 
 def trends_for_chart(state_histo, histo_val):
@@ -71,18 +72,18 @@ def get_market_state_4calc(market_state):
     return market_state if market_state in ("PRE", "POST", "REGULAR") else "POST"
 
 
-def calc_trend(market_state, data):
+def calc_trend(market_state):
     result = {'marketState': market_state, 'trend': 0, 'yahoo_trend': 0}
     market_state_4calc = get_market_state_4calc(market_state)
     change = market_state_4calc.lower() + 'MarketChange'
     change_per = market_state_4calc.lower() + 'MarketChangePercent'
     result['trend'] = 0
-    add_trend(result, change, data)
-    result['top-gainer'] = max(data, key=lambda x: x[change] * get_symbol_d_key_sum(x['symbol'], 'q') if change in x else 0)
-    result['top-gainer%'] = max(data, key=lambda x: x[change_per] if change in x else 0)
-    result['top-loser'] = min(data, key=lambda x: x[change] * get_symbol_d_key_sum(x['symbol'], 'q') if change in x else 0)
-    result['top-loser%'] = min(data, key=lambda x: x[change_per] if change in x else 0)
-    result['top-mover'] = max(data, key=lambda x: x['regularMarketVolume'] if 'regularMarketVolume' in x else 0)
+    add_trend(result, change, symbols_d)
+    result['top-gainer'] = max(api_data.values(), key=lambda x: x[change] * get_symbol_d_key_sum(x['symbol'], 'q') if change in x else 0)
+    result['top-gainer%'] = max(api_data.values(), key=lambda x: x[change_per] if change in x else 0)
+    result['top-loser'] = min(api_data.values(), key=lambda x: x[change] * get_symbol_d_key_sum(x['symbol'], 'q') if change in x else 0)
+    result['top-loser%'] = min(api_data.values(), key=lambda x: x[change_per] if change in x else 0)
+    result['top-mover'] = max(api_data.values(), key=lambda x: x['regularMarketVolume'] if 'regularMarketVolume' in x else 0)
     result['up-down'] = {
         'up': len(list(filter(lambda sd: sd['g'] > 0, symbols_d))),
         'down': len(list(filter(lambda sd: sd['g'] < 0, symbols_d)))
@@ -100,9 +101,9 @@ def get_market_state():
     if r.status_code == 200:
         data = json.loads(r.text)['quoteResponse']['result']
         global api_data
-        api_data = data
+        api_data = dict((v['symbol'], v) for v in data)
         if len(data) > 0:
-            return calc_trend(data[0]['marketState'], data)
+            return calc_trend(data[0]['marketState'])
     raise RuntimeError()
 
 
@@ -113,10 +114,10 @@ def get_trends():
 
 @app.route('/ticker/<name>')
 def ticker_data(name):
-    for ticker in api_data:
-        if name == ticker['symbol']:
-            ticker['market-state-4calc'] = get_market_state_4calc(ticker['marketState'])
-            return ticker
+    if name in api_data:
+        ticker = api_data[name]
+        ticker['market-state-4calc'] = get_market_state_4calc(ticker['marketState'])
+        return ticker
     return {}
 
 
@@ -124,7 +125,8 @@ def ticker_data(name):
 def get_data():
     data = get_portfolio_data()
     global symbols_d
-    symbols_d = list(map(lambda d: {'s': d['Symbol'], 'q': d['Qty'], 'g': d['Gain'], 'dv': d['Day\'s Value']}, data))
+    symbols_d = list(map(lambda d: {'s': d['Symbol'], 'q': d['Qty'], 'g': d['Gain'],
+                                    'dv': d['Day\'s Value'], 't': d['Entry Type']}, data))
     return Response(json.dumps(data), mimetype='application/json')
 
 
