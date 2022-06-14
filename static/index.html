@@ -132,6 +132,12 @@
                 update_trends();
             });
         },
+        onSearch: function (name, e, c) {
+            if (e.data.length === 0) {
+                $(e.$body).find('tr.no-records-found > td').append(
+                    ' for <a target="_blank" href="https://finance.yahoo.com/quote/' + name + '">' + name + '</a>');
+            }
+        },
         buttonsOrder: ['refresh', 'autoRefresh', 'columns', 'Export']
     });
     $('.columns-start.btn-group').prepend($('#customSearch').detach());
