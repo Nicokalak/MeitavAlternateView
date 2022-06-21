@@ -152,9 +152,9 @@ def send_js(path):
     return send_from_directory('static/js', path)
 
 
-@app.route('/favicon.ico')
-def favicon():
-    return send_from_directory('static', 'favicon.ico', mimetype='image/x-icon')
+@app.route('/favicon/<path:icon>')
+def favicon(icon):
+    return send_from_directory('static/favicon', icon, mimetype='image/x-icon')
 
 
 @app.route('/')
