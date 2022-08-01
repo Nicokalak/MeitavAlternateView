@@ -138,13 +138,21 @@ def get_portfolio_data(sort=None):
             'Average Cost', 'Gain', 'Profit/ Loss', 'Value',
             'Entry Type', 'Expiration', 'Strike', 'Put/ Call']].to_json(orient='records'))
     for d in data:
-        d['percent_change'] = 0 if d['Change'] == 0 or (float(d['Last']) - float(d['Change'])) == 0 \
-            else (float(d['Change']) / (float(d['Last']) - float(d['Change']))) * 100
+        d['percent_change'] = calc_oercent_change(d)
         d['principle_change'] = 0 if d['Change'] == 0 else (float(d['Change']) / d['Average Cost']) * 100
 
     if sort is not None:
         data.sort(reverse=True, key=lambda s: s[sort] if sort in s else s['percent_change'])
     return data
+
+
+def calc_oercent_change(d):
+    if d['Change'] == 0:
+        return 0
+    elif float(d['Last']) - float(d['Change']) == 0:
+        return (float(d['Change']) / (float(d['Last']) - float(d['Change']) + 0.0001)) * 100
+    else:
+        return float(d['Change']) / (float(d['Last']) - float(d['Change']))
 
 
 @app.route('/js/<path:path>')
