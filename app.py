@@ -152,7 +152,7 @@ def calc_percent_change(d):
     elif float(d['Last']) - float(d['Change']) == 0:
         return (float(d['Change']) / (float(d['Last']) - float(d['Change']) + 0.0001)) * 100
     else:
-        return float(d['Change']) / (float(d['Last']) - float(d['Change']))
+        return float(d['Change']) / (float(d['Last']) - float(d['Change'])) * 100
 
 
 @app.route('/js/<path:path>')
