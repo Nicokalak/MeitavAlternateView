@@ -138,7 +138,7 @@ def get_portfolio_data(sort=None):
             'Average Cost', 'Gain', 'Profit/ Loss', 'Value',
             'Entry Type', 'Expiration', 'Strike', 'Put/ Call']].to_json(orient='records'))
     for d in data:
-        d['percent_change'] = calc_oercent_change(d)
+        d['percent_change'] = calc_percent_change(d)
         d['principle_change'] = 0 if d['Change'] == 0 else (float(d['Change']) / d['Average Cost']) * 100
 
     if sort is not None:
@@ -146,7 +146,7 @@ def get_portfolio_data(sort=None):
     return data
 
 
-def calc_oercent_change(d):
+def calc_percent_change(d):
     if d['Change'] == 0:
         return 0
     elif float(d['Last']) - float(d['Change']) == 0:
