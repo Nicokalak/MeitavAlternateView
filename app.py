@@ -28,7 +28,8 @@ logger.setLevel(logging.INFO)
 
 
 def get_table():
-    r = requests.get(os.getenv('portfolio_link'))
+    r = requests.get(os.getenv('portfolio_link'),
+                     headers={'User-Agent': 'Meitav-Viewer/{}'.format(os.getenv("HOSTNAME"))})
     return r.text
 
 
