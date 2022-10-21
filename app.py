@@ -20,11 +20,13 @@ trends = {
     "REGULAR_histo": {},
     "POST_histo": {}
 }
-time_format = '%Y%m%dT%H:%M:%S'
-persist = TrendPersist(trends)
-logging.basicConfig()
-logger = logging.getLogger("waitress")
-logger.setLevel(logging.INFO)
+
+
+def load_config():
+    with open(os.getenv("DEFAULT_CONF", "config.json"), 'r') as config_file:
+        conf = json.load(config_file)
+        config_file.close()
+    return conf
 
 
 def get_table():
@@ -86,8 +88,8 @@ def calc_trend(market_state):
     result['top-loser%'] = min(api_data.values(), key=lambda x: x[change_per] if change in x else 0)
     result['top-mover'] = max(api_data.values(), key=lambda x: x['regularMarketVolume'] if 'regularMarketVolume' in x else 0)
     result['up-down'] = {
-        'up': len(list(filter(lambda sd: sd['g'] > 0, symbols_d))),
-        'down': len(list(filter(lambda sd: sd['g'] < 0, symbols_d)))
+        'up': len(list(filter(lambda sd: sd['g'] is not None and sd['g'] > 0, symbols_d))),
+        'down': len(list(filter(lambda sd: sd['g'] is not None and sd['g'] < 0, symbols_d)))
     }
     return result
 
@@ -122,16 +124,41 @@ def ticker_data(name):
     return {}
 
 
+def get_watch_list():
+    header = {
+        'user-agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                      "(KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    }
+    watch_list = set(config["watch_list"])
+    logger.info("watch list is {}".format( watch_list))
+    if len(watch_list) > 0:
+        r = requests.get(API + ','.join(watch_list), headers=header)
+        if r.status_code == 200:
+            data = json.loads(r.text)['quoteResponse']['result']
+            return list(map(lambda quote: {
+                'Symbol': quote['symbol'], 'Qty': 0,
+                'Gain': None,
+                'Day\'s Value': round(quote[get_market_state_4calc(quote['marketState']).lower() + 'MarketChange'], 2),
+                'Entry Type': 'W',
+                'Last': quote[get_market_state_4calc(quote['marketState']).lower() + 'MarketPrice'],
+                'percent_change': quote[get_market_state_4calc(quote['marketState']).lower() + 'MarketChangePercent']}
+                            , data))
+        else:
+            logger.error("failed to retrevie watch list {}", config["watch_list"])
+    return []
+
+
 @app.route('/portfolio')
 def get_data():
     data = get_portfolio_data()
+    data.extend(get_watch_list())
     global symbols_d
     symbols_d = list(map(lambda d: {'s': d['Symbol'], 'q': d['Qty'], 'g': d['Gain'],
                                     'dv': d['Day\'s Value'], 't': d['Entry Type']}, data))
     return Response(json.dumps(data), mimetype='application/json')
 
 
-def get_portfolio_data(sort=None):
+def get_portfolio_data():
     # execute only if run as a script
     df = pd.read_html(get_table())[0]
     data = json.loads(
@@ -142,10 +169,7 @@ def get_portfolio_data(sort=None):
         d['percent_change'] = calc_percent_change(d)
         d['principle_change'] = 0 if d['Change'] == 0 else (float(d['Change']) / d['Average Cost']) * 100
 
-    if sort is not None:
-        data.sort(reverse=True, key=lambda s: s[sort] if sort in s else s['percent_change'])
     return data
-
 
 def calc_percent_change(d):
     if d['Change'] == 0:
@@ -172,6 +196,12 @@ def root():
 
 
 if __name__ == '__main__':
+    config = load_config()
+    time_format = config["time_format"]
+    persist = TrendPersist(trends)
+    logging.basicConfig()
+    logger = logging.getLogger("waitress")
+    logger.setLevel(logging.INFO)
     app.logger = logger
     logger.info("starting meitav-view app")
     trends = persist.load()

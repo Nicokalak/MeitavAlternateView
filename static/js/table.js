@@ -1,5 +1,5 @@
 function totalPercent (data) {
-    let daysVal = round(data.map(function (row) {
+    let daysVal = round(data.filter(isInPortfolio).map(function (row) {
         return row['Day\'s Value'];
     }).reduce(function (sum, i) {
         return Number.parseFloat(sum + i);
@@ -14,6 +14,9 @@ function totalPercent (data) {
     } else { // result 0
         return roundPercent(result);
     }
+}
+function isInPortfolio(row) {
+   return row['Entry Type'].toLowerCase() !== "w";
 }
 
 function totalDayPercent (data) {
@@ -35,7 +38,7 @@ function totalDayPercent (data) {
 }
 
 function calcAvgCost(data) {
-    return round(data.map(function (row) {
+    return round(data.filter(isInPortfolio).map(function (row) {
         return row['Average Cost'] * row['Qty'];
     }).reduce(function (sum, i) {
         return Number.parseFloat(sum + i);
@@ -43,7 +46,7 @@ function calcAvgCost(data) {
 }
 
 function calcStartPrice(data) {
-    return round(data.map(function (row) {
+    return round(data.filter(isInPortfolio).map(function (row) {
         return (row['Last'] - row['Change'] )* row['Qty'];
     }).reduce(function (sum, i) {
         return Number.parseFloat(sum + i);
@@ -122,13 +125,23 @@ function getDetailedRow(key, val, formater, color=false) {
         '<div class="w-100 d-md-none d-sm-block"></div>'
 }
 
-function cellStyle(value) {
-    if (value > 0) {
-        return { classes: 'table-success' };
-    } else if (value < 0) {
-        return { classes: 'table-danger' };
+function cellStyle(value, row) {
+    if (isInPortfolio((row))) {
+        if (value > 0) {
+            return {classes: 'table-success'};
+        } else if (value < 0) {
+            return {classes: 'table-danger'};
+        } else {
+            return {classes: ''}
+        }
     } else {
-        return { classes: '' }
+        if (value > 0) {
+            return {classes: 'text-success'};
+        } else if (value < 0) {
+            return {classes: 'text-danger'};
+        } else {
+            return {classes: ''}
+        }
     }
 }
 
@@ -140,6 +153,7 @@ function roundPercent(value) {
     return round(value) + " %";
 }
 function bigNum(value) {
+    if (isNaN(value)) return "-"
     return round(value).toLocaleString("en-US");
 }
 
@@ -155,7 +169,7 @@ function symbolFormatter(value, row) {
 }
 
 function gainTotal(data) {
-    let totalProfit = round(data.map(function (row) {
+    let totalProfit = round(data.filter(isInPortfolio).map(function (row) {
         return row['Profit/ Loss'];
     }).reduce(function (sum, i) {
         return Number.parseFloat(sum + i);
@@ -174,7 +188,7 @@ function gainTotal(data) {
 
 function totalPrice(data) {
     let field = this.field;
-    let result = round(data.map(function (row) {
+    let result = round(data.filter(isInPortfolio).map(function (row) {
         return row[field];
     }).reduce(function (sum, i) {
         return Number.parseFloat(sum + i);
@@ -185,5 +199,16 @@ function totalPrice(data) {
         return '<span class="text-danger">' + bigNum(result) +'</span>';
     } else { // result 0
         return result;
+    }
+}
+
+function watchListStyle(row, index) {
+    if (!isInPortfolio(row)) {
+        return {
+            classes: "bg-info bg-opacity-10"
+        }
+    }
+    return {
+        classes: ""
     }
 }
