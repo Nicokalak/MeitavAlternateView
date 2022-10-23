@@ -44,6 +44,8 @@ def add_trend(trends_obj, change_key, data):
         yahoo_symbol_data = api_data[d['s']]
         trends_obj['trend'] += d['dv']
         if change_key in yahoo_symbol_data:
+            if d['t'] == "W":
+                continue
             if d['t'] == "E":
                 trends_obj['yahoo_trend'] += yahoo_symbol_data[change_key] * d['q']
             elif m_state == "REGULAR":
