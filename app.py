@@ -170,7 +170,7 @@ def get_portfolio_data():
     for d in data:
         d['percent_change'] = calc_percent_change(d)
         d['principle_change'] = 0 if d['Change'] == 0 else (float(d['Change']) / d['Average Cost']) * 100
-
+    logger.info("portfolio symbols: {}".format([ sub['Symbol'] for sub in data]))
     return data
 
 
