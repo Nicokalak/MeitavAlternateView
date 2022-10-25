@@ -15,12 +15,13 @@ function totalPercent (data) {
         return roundPercent(result);
     }
 }
+
 function isInPortfolio(row) {
    return row['Entry Type'].toLowerCase() !== "w";
 }
 
 function totalDayPercent (data) {
-    let daysVal = round(data.map(function (row) {
+    let daysVal = round(data.filter(isInPortfolio).map(function (row) {
         return row['Day\'s Value'];
     }).reduce(function (sum, i) {
         return Number.parseFloat(sum + i);
@@ -224,7 +225,7 @@ function buttons () {
                 this["watchlistToggle"] = !this["watchlistToggle"]
                 let toggle = this["watchlistToggle"]
                 $('#table').bootstrapTable('filterBy', {
-                    "Entry Type":  this["watchlistToggle"] ? ["E", "C"] : ["E", "C", "W"]
+                    "Entry Type":  this["watchlistToggle"] ? ["E", "O"] : ["E", "O", "W"]
                 });
                 if (toggle) {
                     $('[name=toggleWatchListBtn] > i').removeClass('bi-toggle-off').addClass('bi-toggle-on');
