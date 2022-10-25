@@ -74,7 +74,7 @@ function detailFormatter(index, row) {
             + getDetailedRow('change (%)', (stock[state + 'MarketChangePercent']), roundPercent, true )
             + (stock['averageAnalystRating'] ? getDetailedRow('rating', (stock['averageAnalystRating']), undefined, false ) : "")
             +  (shouldShowEarning(stock['earningsTimestamp'] * 1000) ?
-            getDetailedRow('earnings',stock['earningsTimestamp'] * 1000, earningsDate, false) : '')
+            getDetailedRow('earnings', stock['earningsTimestamp'], earningsDate, false) : '')
             + '</dl>'
         )
         $("#ticker-" + row.Symbol + '-link').html(
@@ -105,8 +105,10 @@ function daysCountToEarn(timestmp) {
     return Math.ceil(tdiff / (1000 * 60 * 60 * 24));
 }
 
-function earningsDate(timestmp) {
-    const options = { weekday: 'short', year: undefined, month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric' };
+function earningsDate(timestmp, forTrend=false) {
+    timestmp = timestmp * 1000
+    const options = { weekday: 'short', year: undefined, month: forTrend ? undefined :'numeric',
+        day: forTrend? undefined:'numeric', hour: 'numeric', minute: 'numeric' };
     return new Date(timestmp).toLocaleString("en-uk", options);
 }
 

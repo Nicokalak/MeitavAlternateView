@@ -10,7 +10,6 @@ from flask import Flask, send_from_directory, Response
 from TrendsPersist import TrendPersist
 from waitress import serve
 
-
 app = Flask(__name__, static_url_path='/static/')
 symbols_d: List = []
 API = 'https://query2.finance.yahoo.com/v7/finance/quote?&symbols='
@@ -36,13 +35,16 @@ def get_table():
 
 
 def add_trend(trends_obj, change_key, data):
+    trends_obj['trend'] = 0
+    trends_obj['watchlist_trend'] = 0
     m_state = trends_obj['marketState']
     state_histo = m_state + '_histo'
     if m_state in ('CLOSED', 'PREPRE', 'POSTPOST'):
         return
     for d in data:
         yahoo_symbol_data = api_data[d['s']]
-        trends_obj['trend'] += d['dv']
+        trends_obj['trend'] += d['dv'] if d['t'] != "W" else 0
+        trends_obj['watchlist_trend'] += d['dv'] if d['t'] == "W" else 0
         if change_key in yahoo_symbol_data:
             if d['t'] == "W":
                 continue
@@ -82,27 +84,29 @@ def calc_trend(market_state):
     market_state_4calc = get_market_state_4calc(market_state)
     change = market_state_4calc.lower() + 'MarketChange'
     change_per = market_state_4calc.lower() + 'MarketChangePercent'
-    result['trend'] = 0
     add_trend(result, change, symbols_d)
-    result['top-gainer'] = max(api_data.values(), key=lambda x: x[change] * get_symbol_d_key_sum(x['symbol'], 'q') if change in x else 0)
+    result['top-gainer'] = max(api_data.values(),
+                               key=lambda x: x[change] * get_symbol_d_key_sum(x['symbol'], 'q') if change in x else 0)
     result['top-gainer%'] = max(api_data.values(), key=lambda x: x[change_per] if change in x else 0)
-    result['top-loser'] = min(api_data.values(), key=lambda x: x[change] * get_symbol_d_key_sum(x['symbol'], 'q') if change in x else 0)
+    result['top-loser'] = min(api_data.values(),
+                              key=lambda x: x[change] * get_symbol_d_key_sum(x['symbol'], 'q') if change in x else 0)
     result['top-loser%'] = min(api_data.values(), key=lambda x: x[change_per] if change in x else 0)
-    result['top-mover'] = max(api_data.values(), key=lambda x: x['regularMarketVolume'] if 'regularMarketVolume' in x else 0)
+    result['top-mover'] = max(api_data.values(),
+                              key=lambda x: x['regularMarketVolume'] if 'regularMarketVolume' in x else 0)
     result['up-down'] = {
         'up': len(list(filter(lambda sd: sd['g'] is not None and sd['g'] > 0, symbols_d))),
         'down': len(list(filter(lambda sd: sd['g'] is not None and sd['g'] < 0, symbols_d)))
     }
+    result['coming_earnings'] = list(filter(
+        lambda v: 'earningsTimestamp' in v
+        and datetime.now() <= datetime.fromtimestamp(v['earningsTimestamp']) <= datetime.now() + timedelta(weeks=1),
+        api_data.values()))
     return result
 
 
 @app.route('/marketState')
 def get_market_state():
-    header = {
-        'user-agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-                      "(KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-              }
-    r = requests.get(API + ','.join(set(map(lambda s: s['s'], symbols_d))), headers=header)
+    r = requests.get(API + ','.join(set(map(lambda s: s['s'], symbols_d))), headers=config["api_headers"])
     if r.status_code == 200:
         data = json.loads(r.text)['quoteResponse']['result']
         global api_data
@@ -127,14 +131,10 @@ def ticker_data(name):
 
 
 def get_watch_list():
-    header = {
-        'user-agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-                      "(KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-    }
     watch_list = set(config["watch_list"])
-    logger.info("watch list is {}".format( watch_list))
+    logger.info("watch list is {}".format(watch_list))
     if len(watch_list) > 0:
-        r = requests.get(API + ','.join(watch_list), headers=header)
+        r = requests.get(API + ','.join(watch_list), headers=config["api_headers"])
         if r.status_code == 200:
             data = json.loads(r.text)['quoteResponse']['result']
             return list(map(lambda quote: {
@@ -172,6 +172,7 @@ def get_portfolio_data():
         d['principle_change'] = 0 if d['Change'] == 0 else (float(d['Change']) / d['Average Cost']) * 100
 
     return data
+
 
 def calc_percent_change(d):
     if d['Change'] == 0:
