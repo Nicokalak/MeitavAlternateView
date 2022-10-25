@@ -214,3 +214,29 @@ function watchListStyle(row, index) {
         classes: ""
     }
 }
+
+function buttons () {
+    return {
+        toggleWatchListBtn: {
+            text: 'toggle watch list',
+            icon: 'bi-toggle-off',
+            event: function () {
+                this["watchlistToggle"] = !this["watchlistToggle"]
+                let toggle = this["watchlistToggle"]
+                $('#table').bootstrapTable('filterBy', {
+                    "Entry Type":  this["watchlistToggle"] ? ["E", "C"] : ["E", "C", "W"]
+                });
+                if (toggle) {
+                    $('[name=toggleWatchListBtn] > i').removeClass('bi-toggle-off').addClass('bi-toggle-on');
+                } else {
+                    $('[name=toggleWatchListBtn] > i').removeClass('bi-toggle-on').addClass('bi-toggle-off');
+                }
+            },
+            attributes: {
+                title: 'toggle watch list'
+            }
+        }
+    }
+}
+
+
