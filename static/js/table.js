@@ -106,10 +106,10 @@ function daysCountToEarn(timestmp) {
     return Math.ceil(tdiff / (1000 * 60 * 60 * 24));
 }
 
-function earningsDate(timestmp, forTrend=false) {
+function earningsDate(timestmp, includeWeekday=true) {
     timestmp = timestmp * 1000
-    const options = { weekday: 'short', year: undefined, month: forTrend ? undefined :'numeric',
-        day: forTrend? undefined:'numeric', hour: 'numeric', minute: 'numeric' };
+    const options = { weekday: includeWeekday? 'short' : undefined, year: undefined, month: 'numeric',
+        day: 'numeric', hour: 'numeric', minute: 'numeric' };
     return new Date(timestmp).toLocaleString("en-uk", options);
 }
 
