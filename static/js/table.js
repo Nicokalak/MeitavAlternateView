@@ -153,7 +153,7 @@ function round(value) {
 }
 
 function roundPercent(value) {
-    return round(value) + " %";
+    return isNaN(value)? "-" : round(value) + " %";
 }
 function bigNum(value) {
     if (isNaN(value)) return "-"
