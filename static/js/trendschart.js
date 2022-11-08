@@ -30,8 +30,8 @@ function trend_stats(trendObj) {
     $("#up-down > .text-danger").text(round(trendObj['up-down']['down']));
     $("#earnings").html(trendObj['coming_earnings'] ? trendObj['coming_earnings']
         .sort((a,b) => a['earningsTimestamp'] - b['earningsTimestamp'])
-        .map(e => e.symbol + " <small>" + earningsDate(e['earningsTimestamp'], false) + "</small>")
-        .join(", ") : "None");
+        .map(e => '<p class="mb-0">' + e.symbol + ' <small>' + earningsDate(e['earningsTimestamp'], false) + '</small></p>')
+        .join("") : "None");
     $("#market-stats").show(200);
     console.log(trendObj);
 }
