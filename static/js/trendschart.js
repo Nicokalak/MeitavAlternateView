@@ -30,7 +30,7 @@ function trend_stats(trendObj) {
     $("#up-down > .text-danger").text(round(trendObj['up-down']['down']));
     $("#earnings").html(trendObj['coming_earnings'] ? trendObj['coming_earnings']
         .sort((a,b) => a['earningsTimestamp'] - b['earningsTimestamp'])
-        .map(e => "<b>" + e.symbol + "</b> " + earningsDate(e['earningsTimestamp'], false))
+        .map(e => e.symbol + " <small>" + earningsDate(e['earningsTimestamp'], false) + "</small>")
         .join(", ") : "None");
     $("#market-stats").show(200);
     console.log(trendObj);
