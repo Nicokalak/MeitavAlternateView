@@ -167,10 +167,14 @@ def get_portfolio_data():
         df[['Symbol', 'Qty', 'Change', 'Last', 'Day\'s Value',
             'Average Cost', 'Gain', 'Profit/ Loss', 'Value',
             'Entry Type', 'Expiration', 'Strike', 'Put/ Call']].to_json(orient='records'))
+    total_val = 0
     for d in data:
         d['percent_change'] = calc_percent_change(d)
+        total_val += d['Value']
         d['principle_change'] = 0 if d['Change'] == 0 else (float(d['Change']) / d['Average Cost']) * 100
-    logger.info("portfolio symbols: {}".format([ sub['Symbol'] for sub in data]))
+    for d in data:
+        d['weight'] = (d['Value'] / total_val) * 100
+    logger.info("portfolio symbols: {}".format([sub['Symbol'] for sub in data]))
     return data
 
 
