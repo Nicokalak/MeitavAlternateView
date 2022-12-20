@@ -140,7 +140,7 @@ def get_watch_list():
             return list(map(lambda quote: {
                 'Symbol': quote['symbol'], 'Qty': 0,
                 'Gain': None,
-                'Day\'s Value': round(quote[get_market_state_4calc(quote['marketState']).lower() + 'MarketChange'], 2),
+                'Day\'s Value': (round(quote[get_market_state_4calc(quote['marketState']).lower() + 'MarketChange'], 2) if get_market_state_4calc(quote['marketState']).lower() + 'MarketChange' in quote else 0),
                 'Entry Type': 'W',
                 'Last': quote[get_market_state_4calc(quote['marketState']).lower() + 'MarketPrice'],
                 'percent_change': quote[get_market_state_4calc(quote['marketState']).lower() + 'MarketChangePercent']}
