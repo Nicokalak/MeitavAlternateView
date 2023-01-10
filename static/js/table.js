@@ -40,7 +40,7 @@ function totalDayPercent (data) {
 
 function calcAvgCost(data) {
     return round(data.filter(isInPortfolio).map(function (row) {
-        return row['Average Cost'] * row['Qty'];
+        return (-1 * row['Profit/ Loss']) + row['Value'];
     }).reduce(function (sum, i) {
         return Number.parseFloat(sum + i);
     }, 0))

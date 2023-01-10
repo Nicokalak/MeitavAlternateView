@@ -214,4 +214,4 @@ if __name__ == '__main__':
     trends = persist.load()
     logger.info("trends were loaded")
 
-    serve(app, listen="*:8080", url_prefix=os.getenv("URL_PREFIX", ""))
+    serve(app, listen="*:{}".format(os.getenv("APP_PORT", 8080)), url_prefix=os.getenv("URL_PREFIX", ""))
