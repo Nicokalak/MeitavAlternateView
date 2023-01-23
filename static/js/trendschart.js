@@ -25,7 +25,7 @@ function trend_stats(trendObj) {
     $("#top-mover").text(trendObj['top-mover'].symbol);
     $("#top-loser").text(trendObj['top-loser'].symbol);
     $("#top-loser-percent").text(trendObj['top-loser%'].symbol);
-    $("#watchlist-trend").text(round(trendObj['watchlist_trend']));
+    $("#watchlist-trend").text(round(trendObj['watchlist_trend']) + '%');
     $("#up-down > .text-success").text(round(trendObj['up-down']['up']));
     $("#up-down > .text-danger").text(round(trendObj['up-down']['down']));
     $("#earnings").html(trendObj['coming_earnings'] ? trendObj['coming_earnings']

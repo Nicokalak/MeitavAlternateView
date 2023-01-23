@@ -39,12 +39,17 @@ def add_trend(trends_obj, change_key, data):
     trends_obj['watchlist_trend'] = 0
     m_state = trends_obj['marketState']
     state_histo = m_state + '_histo'
+    watchlist_sum = 0
+    watchlist_count = 0
     if m_state in ('CLOSED', 'PREPRE', 'POSTPOST'):
         return
     for d in data:
         yahoo_symbol_data = api_data[d['s']]
         trends_obj['trend'] += d['dv'] if d['t'] != "W" else 0
-        trends_obj['watchlist_trend'] += d['dv'] if d['t'] == "W" else 0
+        if d['t'] == "W":
+            watchlist_sum += d['g_percent']
+            watchlist_count += 1
+            trends_obj['watchlist_trend'] = watchlist_sum / watchlist_count
         if change_key in yahoo_symbol_data:
             if d['t'] == "W":
                 continue
@@ -156,7 +161,7 @@ def get_data():
     data.extend(get_watch_list())
     global symbols_d
     symbols_d = list(map(lambda d: {'s': d['Symbol'], 'q': d['Qty'], 'g': d['Gain'],
-                                    'dv': d['Day\'s Value'], 't': d['Entry Type']}, data))
+                                    'dv': d['Day\'s Value'], 't': d['Entry Type'], 'g_percent': d['percent_change']}, data))
     return Response(json.dumps(data), mimetype='application/json')
 
 
