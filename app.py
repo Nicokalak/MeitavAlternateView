@@ -199,7 +199,10 @@ def send_js(path):
 
 @app.route('/favicon/<path:icon>')
 def favicon(icon):
-    return send_from_directory('static/favicon', icon, mimetype='image/x-icon')
+    if icon == "favicon/site.webmanifest":
+        return send_from_directory('static/favicon', icon)
+    else:
+        return send_from_directory('static/favicon', icon, mimetype='image/x-icon')
 
 
 @app.route('/')
