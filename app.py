@@ -7,6 +7,8 @@ from typing import List
 import pandas as pd
 import requests
 from flask import Flask, send_from_directory, Response
+
+from Stock import Stock, StockEncoder
 from TrendsPersist import TrendPersist
 from waitress import serve
 
@@ -135,20 +137,20 @@ def ticker_data(name):
     return {}
 
 
-def get_watch_list():
+def get_watch_list() -> List[Stock]:
     watch_list = set(config["watch_list"])
     logger.info("watch list is {}".format(watch_list))
     if len(watch_list) > 0:
         r = requests.get(API + ','.join(watch_list), headers=config["api_headers"])
         if r.status_code == 200:
             data = json.loads(r.text)['quoteResponse']['result']
-            return list(map(lambda quote: {
+            return list(map(lambda quote: Stock({
                 'Symbol': quote['symbol'], 'Qty': 0,
                 'Gain': None,
                 'Day\'s Value': (round(quote[get_market_state_4calc(quote['marketState']).lower() + 'MarketChange'], 2) if get_market_state_4calc(quote['marketState']).lower() + 'MarketChange' in quote else 0),
                 'Entry Type': 'W',
                 'Last': quote[get_market_state_4calc(quote['marketState']).lower() + 'MarketPrice'],
-                'percent_change': quote[get_market_state_4calc(quote['marketState']).lower() + 'MarketChangePercent']}
+                'Change': quote[get_market_state_4calc(quote['marketState']).lower() + 'MarketChange']})
                             , data))
         else:
             logger.error("failed to retrevie watch list {}", config["watch_list"])
@@ -157,15 +159,15 @@ def get_watch_list():
 
 @app.route('/portfolio')
 def get_data():
-    data = get_portfolio_data()
+    data: List[Stock] = get_portfolio_data()
     data.extend(get_watch_list())
     global symbols_d
-    symbols_d = list(map(lambda d: {'s': d['Symbol'], 'q': d['Qty'], 'g': d['Gain'],
-                                    'dv': d['Day\'s Value'], 't': d['Entry Type'], 'g_percent': d['percent_change']}, data))
-    return Response(json.dumps(data), mimetype='application/json')
+    symbols_d = list(map(lambda s: {'s': s.symbol, 'q': s.quantity, 'g': s.gain,
+                                    'dv': s.day_val, 't': s.type, 'g_percent': s.percent_change}, data))
+    return Response(json.dumps(data, cls=StockEncoder), mimetype='application/json')
 
 
-def get_portfolio_data():
+def get_portfolio_data() -> List[Stock]:
     # execute only if run as a script
     df = pd.read_html(get_table())[0]
     data = json.loads(
@@ -173,23 +175,15 @@ def get_portfolio_data():
             'Average Cost', 'Gain', 'Profit/ Loss', 'Value',
             'Entry Type', 'Expiration', 'Strike', 'Put/ Call']].to_json(orient='records'))
     total_val = 0
+    stocks: List[Stock] = list()
     for d in data:
-        d['percent_change'] = calc_percent_change(d)
-        total_val += d['Value']
-        d['principle_change'] = 0 if d['Change'] == 0 else (float(d['Change']) / d['Average Cost']) * 100
-    for d in data:
-        d['weight'] = (d['Value'] / total_val) * 100
+        s = Stock(d)
+        stocks.append(s)
+        total_val += s.total_val
+    for s in stocks:
+        s.set_weight(total_val)
     logger.info("portfolio symbols: {}".format([sub['Symbol'] for sub in data]))
-    return data
-
-
-def calc_percent_change(d):
-    if d['Change'] == 0:
-        return 0
-    elif float(d['Last']) - float(d['Change']) == 0:
-        return (float(d['Change']) / (float(d['Last']) - float(d['Change']) + 0.0001)) * 100
-    else:
-        return float(d['Change']) / (float(d['Last']) - float(d['Change'])) * 100
+    return stocks
 
 
 @app.route('/js/<path:path>')
