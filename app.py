@@ -1,19 +1,20 @@
-import logging
-from datetime import datetime, timedelta
 import json
+import logging
 import os
+from datetime import datetime, timedelta
 from typing import List
 
 import pandas as pd
 import requests
-from flask import Flask, send_from_directory, Response
-from TrendsPersist import TrendPersist
+from flask import Flask, send_from_directory, request
 from waitress import serve
 
+from Stock import Stock
+from TrendsPersist import TrendPersist
+
 app = Flask(__name__, static_url_path='/static/')
-symbols_d: List = []
+stocks_cache: List[Stock] = list()
 API = 'https://query2.finance.yahoo.com/v7/finance/quote?&symbols='
-api_data = {}
 trends = {
     "PRE_histo": {},
     "REGULAR_histo": {},
@@ -28,13 +29,13 @@ def load_config():
     return conf
 
 
-def get_table():
+def get_portfolio_table():
     r = requests.get(os.getenv('portfolio_link'),
                      headers={'User-Agent': 'Meitav-Viewer/{}'.format(os.getenv("HOSTNAME"))})
     return r.text
 
 
-def add_trend(trends_obj, change_key, data):
+def add_trend(trends_obj, change_key):
     trends_obj['trend'] = 0
     trends_obj['watchlist_trend'] = 0
     m_state = trends_obj['marketState']
@@ -43,26 +44,22 @@ def add_trend(trends_obj, change_key, data):
     watchlist_count = 0
     if m_state in ('CLOSED', 'PREPRE', 'POSTPOST'):
         return
-    for d in data:
-        yahoo_symbol_data = api_data[d['s']]
-        trends_obj['trend'] += d['dv'] if d['t'] != "W" else 0
-        if d['t'] == "W":
-            watchlist_sum += d['g_percent']
+    for s in stocks_cache:
+        yahoo_symbol_data = s.api_data
+        trends_obj['trend'] += s.day_val if s.type != "W" else 0
+        if s.type == "W":
+            watchlist_sum += s.percent_change
             watchlist_count += 1
             trends_obj['watchlist_trend'] = watchlist_sum / watchlist_count
         if change_key in yahoo_symbol_data:
-            if d['t'] == "W":
+            if s.type == "W":
                 continue
-            if d['t'] == "E":
-                trends_obj['yahoo_trend'] += yahoo_symbol_data[change_key] * d['q']
+            if s.type == "E":
+                trends_obj['yahoo_trend'] += yahoo_symbol_data[change_key] * s.quantity
             elif m_state == "REGULAR":
-                trends_obj['yahoo_trend'] += d['dv']
+                trends_obj['yahoo_trend'] += s.day_val
     trends_for_chart(state_histo, trends_obj['yahoo_trend'])
     persist.save()
-
-
-def get_symbol_d_key_sum(sym, key):
-    return sum(map(lambda sym_d: sym_d[key], filter(lambda t: t['s'] == sym and t['t'] == 'E', symbols_d)))
 
 
 def trends_for_chart(state_histo, histo_val):
@@ -80,45 +77,31 @@ def trends_for_chart(state_histo, histo_val):
     curr_histo[datetime.now().strftime(time_format)] = histo_val
 
 
-def get_market_state_4calc(market_state):
-    return market_state if market_state in ("PRE", "POST", "REGULAR") else "POST"
-
-
-def calc_trend(market_state):
-    result = {'marketState': market_state, 'trend': 0, 'yahoo_trend': 0}
-    market_state_4calc = get_market_state_4calc(market_state)
-    change = market_state_4calc.lower() + 'MarketChange'
-    change_per = market_state_4calc.lower() + 'MarketChangePercent'
-    add_trend(result, change, symbols_d)
-    result['top-gainer'] = max(api_data.values(),
-                               key=lambda x: x[change] * get_symbol_d_key_sum(x['symbol'], 'q') if change in x else 0)
-    result['top-gainer%'] = max(api_data.values(), key=lambda x: x[change_per] if change in x else 0)
-    result['top-loser'] = min(api_data.values(),
-                              key=lambda x: x[change] * get_symbol_d_key_sum(x['symbol'], 'q') if change in x else 0)
-    result['top-loser%'] = min(api_data.values(), key=lambda x: x[change_per] if change in x else 0)
-    result['top-mover'] = max(api_data.values(),
-                              key=lambda x: x['regularMarketVolume'] if 'regularMarketVolume' in x else 0)
-    result['up-down'] = {
-        'up': len(list(filter(lambda sd: sd['g'] is not None and sd['g'] > 0, symbols_d))),
-        'down': len(list(filter(lambda sd: sd['g'] is not None and sd['g'] < 0, symbols_d)))
-    }
-    result['coming_earnings'] = list(filter(
-        lambda v: 'earningsTimestamp' in v
-        and datetime.now() <= datetime.fromtimestamp(v['earningsTimestamp']) <= datetime.now() + timedelta(weeks=1),
-        api_data.values()))
-    return result
+def get_market_state_key():
+    market_state = stocks_cache[0].api_data.get('marketState')
+    return market_state.lower() if market_state.lower() in ("pre", "post", "regular") else "post"
 
 
 @app.route('/marketState')
 def get_market_state():
-    r = requests.get(API + ','.join(set(map(lambda s: s['s'], symbols_d))), headers=config["api_headers"])
-    if r.status_code == 200:
-        data = json.loads(r.text)['quoteResponse']['result']
-        global api_data
-        api_data = dict((v['symbol'], v) for v in data)
-        if len(data) > 0:
-            return calc_trend(data[0]['marketState'])
-    raise RuntimeError()
+    result = {'marketState': stocks_cache[0].api_data.get('marketState'), 'trend': 0, 'yahoo_trend': 0}
+    change = get_market_state_key() + 'MarketChange'
+    change_per = get_market_state_key() + 'MarketChangePercent'
+    add_trend(result, change)
+    result['top-gainer'] = max(stocks_cache, key=lambda s: s.api_data.get(change, 0) * s.quantity)
+    result['top-gainer%'] = max(stocks_cache, key=lambda s: s.api_data.get(change_per, 0))
+    result['top-loser'] = min(stocks_cache, key=lambda s: s.api_data.get(change, 0) * s.quantity)
+    result['top-loser%'] = min(stocks_cache, key=lambda s: s.api_data.get(change, 0))
+    result['top-mover'] = max(stocks_cache, key=lambda s: s.api_data.get('regularMarketVolume', 0))
+    result['up-down'] = {
+        'up': len(list(filter(lambda sd: sd.gain is not None and sd.gain > 0, stocks_cache))),
+        'down': len(list(filter(lambda sd: sd.gain is not None and sd.gain < 0, stocks_cache)))
+    }
+    result['coming_earnings'] = list(filter(lambda v:
+                                            datetime.now() <= datetime.fromtimestamp(v.get('earningsTimestamp', 0))
+                                            <= datetime.now() + timedelta(weeks=1),
+                                            map(lambda s: s.api_data, stocks_cache)))
+    return result
 
 
 @app.route('/trends')
@@ -128,68 +111,60 @@ def get_trends():
 
 @app.route('/ticker/<name>')
 def ticker_data(name):
-    if name in api_data:
-        ticker = api_data[name]
-        ticker['market-state-4calc'] = get_market_state_4calc(ticker['marketState'])
-        return ticker
-    return {}
-
-
-def get_watch_list():
-    watch_list = set(config["watch_list"])
-    logger.info("watch list is {}".format(watch_list))
-    if len(watch_list) > 0:
-        r = requests.get(API + ','.join(watch_list), headers=config["api_headers"])
-        if r.status_code == 200:
-            data = json.loads(r.text)['quoteResponse']['result']
-            return list(map(lambda quote: {
-                'Symbol': quote['symbol'], 'Qty': 0,
-                'Gain': None,
-                'Day\'s Value': (round(quote[get_market_state_4calc(quote['marketState']).lower() + 'MarketChange'], 2) if get_market_state_4calc(quote['marketState']).lower() + 'MarketChange' in quote else 0),
-                'Entry Type': 'W',
-                'Last': quote[get_market_state_4calc(quote['marketState']).lower() + 'MarketPrice'],
-                'percent_change': quote[get_market_state_4calc(quote['marketState']).lower() + 'MarketChangePercent']}
-                            , data))
-        else:
-            logger.error("failed to retrevie watch list {}", config["watch_list"])
-    return []
+    return {
+        'stock': next(filter(lambda x: x.symbol == name, stocks_cache)),
+        'market-state-4calc': get_market_state_key()
+    }
 
 
 @app.route('/portfolio')
-def get_data():
-    data = get_portfolio_data()
-    data.extend(get_watch_list())
-    global symbols_d
-    symbols_d = list(map(lambda d: {'s': d['Symbol'], 'q': d['Qty'], 'g': d['Gain'],
-                                    'dv': d['Day\'s Value'], 't': d['Entry Type'], 'g_percent': d['percent_change']}, data))
-    return Response(json.dumps(data), mimetype='application/json')
+def get_enriched_portfolio() -> List[Stock]:
+    logger.info("request for portfolio {}".format(request.headers))
+    stocks_cache.clear()
+    portfolio: List[Stock] = get_portfolio_data()
+    watch_list = set(config["watch_list"])
+    logger.info("watch list is {}".format(watch_list))
+    r = requests.get(API + ','.join(set().union(map(lambda s: s.symbol, portfolio), watch_list)),
+                     headers=config["api_headers"])
+    if r.status_code == 200:
+        yahoo_data = json.loads(r.text)['quoteResponse']['result']
+        for stock in portfolio:
+            stock.set_api_data(next(filter(lambda s: s['symbol'] == stock.symbol, yahoo_data)))  # expect only one
+            stocks_cache.append(stock)
+        for watch_stock in watch_list:
+            api_data = next(filter(lambda s: s['symbol'] == watch_stock, yahoo_data))  # expect only one
+            stock = Stock({
+                'Symbol': api_data['symbol'], 'Qty': 0,
+                'Gain': None,
+                'Day\'s Value': round(api_data.get(get_market_state_key() + 'MarketChange', 0), 2),
+                'Entry Type': 'W',
+                'Last': api_data[get_market_state_key() + 'MarketPrice'],
+                'Change': api_data[get_market_state_key() + 'MarketChange']})
+            stock.set_api_data(api_data)
+            stocks_cache.append(stock)
+        return stocks_cache
+    else:
+        logger.error("failed to retrevie data from yahoo {}", r.text)
+        return stocks_cache
 
 
-def get_portfolio_data():
+def get_portfolio_data() -> List[Stock]:
     # execute only if run as a script
-    df = pd.read_html(get_table())[0]
+    df = pd.read_html(get_portfolio_table())[0]
     data = json.loads(
         df[['Symbol', 'Qty', 'Change', 'Last', 'Day\'s Value',
             'Average Cost', 'Gain', 'Profit/ Loss', 'Value',
             'Entry Type', 'Expiration', 'Strike', 'Put/ Call']].to_json(orient='records'))
     total_val = 0
+    stocks: List[Stock] = list()
     for d in data:
-        d['percent_change'] = calc_percent_change(d)
-        total_val += d['Value']
-        d['principle_change'] = 0 if d['Change'] == 0 else (float(d['Change']) / d['Average Cost']) * 100
-    for d in data:
-        d['weight'] = (d['Value'] / total_val) * 100
+        s = Stock(d)
+        stocks.append(s)
+        total_val += s.total_val
+    for s in stocks:
+        s.set_weight(total_val)
     logger.info("portfolio symbols: {}".format([sub['Symbol'] for sub in data]))
-    return data
-
-
-def calc_percent_change(d):
-    if d['Change'] == 0:
-        return 0
-    elif float(d['Last']) - float(d['Change']) == 0:
-        return (float(d['Change']) / (float(d['Last']) - float(d['Change']) + 0.0001)) * 100
-    else:
-        return float(d['Change']) / (float(d['Last']) - float(d['Change'])) * 100
+    return stocks
 
 
 @app.route('/js/<path:path>')

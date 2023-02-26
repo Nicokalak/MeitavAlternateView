@@ -1,6 +1,6 @@
 function totalPercent (data) {
     let daysVal = round(data.filter(isInPortfolio).map(function (row) {
-        return row['Day\'s Value'];
+        return row.day_val;
     }).reduce(function (sum, i) {
         return Number.parseFloat(sum + i);
     }, 0))
@@ -17,12 +17,12 @@ function totalPercent (data) {
 }
 
 function isInPortfolio(row) {
-   return row['Entry Type'].toLowerCase() !== "w";
+   return row.type.toLowerCase() !== "w";
 }
 
 function totalDayPercent (data) {
     let daysVal = round(data.filter(isInPortfolio).map(function (row) {
-        return row['Day\'s Value'];
+        return row.day_val;
     }).reduce(function (sum, i) {
         return Number.parseFloat(sum + i);
     }, 0))
@@ -40,7 +40,7 @@ function totalDayPercent (data) {
 
 function calcAvgCost(data) {
     return round(data.filter(isInPortfolio).map(function (row) {
-        return (-1 * row['Profit/ Loss']) + row['Value'];
+        return (-1 * row.total_change) + row.total_val;
     }).reduce(function (sum, i) {
         return Number.parseFloat(sum + i);
     }, 0))
@@ -48,7 +48,7 @@ function calcAvgCost(data) {
 
 function calcStartPrice(data) {
     return round(data.filter(isInPortfolio).map(function (row) {
-        return (row['Last'] - row['Change'] )* row['Qty'];
+        return (row.last_price - row.change )* row.quantity;
     }).reduce(function (sum, i) {
         return Number.parseFloat(sum + i);
     }, 0))
@@ -56,12 +56,13 @@ function calcStartPrice(data) {
 
 function detailFormatter(index, row) {
     let html = '<div class="container-fluid">' +
-        '<div class="row justify-content-start" id="ticker-' + row.Symbol +'"></div>' +
-        '<div class="row justify-content-start" id="ticker-' + row.Symbol +'-link"></div>' +
+        '<div class="row justify-content-start" id="ticker-' + row.symbol +'"></div>' +
+        '<div class="row justify-content-start" id="ticker-' + row.symbol +'-link"></div>' +
         '</div>'
-    $.get("ticker/" + row.Symbol, function (stock) {
-        let state = stock['market-state-4calc'].toLowerCase();
-        let container = $("#ticker-" + row.Symbol);
+    $.get("ticker/" + row.symbol, function (detailedStock) {
+        let state = detailedStock['market-state-4calc'].toLowerCase();
+        let stock = detailedStock['stock'].api_data;
+        let container = $("#ticker-" + row.symbol);
         container.append('<dl class="row">'
             + getDetailedRow('52w range', getRange(round(stock['fiftyTwoWeekLow']),
                 round(stock['fiftyTwoWeekHigh']), round(stock[state + 'MarketPrice']) ) )
@@ -78,8 +79,8 @@ function detailFormatter(index, row) {
             getDetailedRow('earnings', stock['earningsTimestamp'], earningsDate, false) : '')
             + '</dl>'
         )
-        $("#ticker-" + row.Symbol + '-link').html(
-            '<a title="more info..." class="link-primary fa-lg" target="_blank" href="https://finance.yahoo.com/quote/' + row.Symbol +'"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-arrow-up-right-circle" viewBox="0 0 16 16">\n' +
+        $("#ticker-" + row.symbol + '-link').html(
+            '<a title="more info..." class="link-primary fa-lg" target="_blank" href="https://finance.yahoo.com/quote/' + row.symbol +'"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-arrow-up-right-circle" viewBox="0 0 16 16">\n' +
             '  <path fill-rule="evenodd" d="M1 8a7 7 0 1 0 14 0A7 7 0 0 0 1 8zm15 0A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.854 10.803a.5.5 0 1 1-.708-.707L9.243 6H6.475a.5.5 0 1 1 0-1h3.975a.5.5 0 0 1 .5.5v3.975a.5.5 0 1 1-1 0V6.707l-4.096 4.096z"/>\n' +
             '</svg></a>')
     });
@@ -162,9 +163,9 @@ function bigNum(value) {
 
 function symbolFormatter(value, row) {
     let d = '<div class="d-flex">' + value +'</div>'
-    if (row['Entry Type'] === 'O') {
+    if (row.type === 'O') {
         d += '<span class="badge text-bg-danger"><small>'
-            + row['Put/ Call'] + row['Strike'] + ' ' + row['Expiration'] +
+            + row.p_or_c + row.strike + ' ' + row.expiration +
             '</small></span>'
     }
 
@@ -173,7 +174,7 @@ function symbolFormatter(value, row) {
 
 function gainTotal(data) {
     let totalProfit = round(data.filter(isInPortfolio).map(function (row) {
-        return row['Profit/ Loss'];
+        return row.total_change;
     }).reduce(function (sum, i) {
         return Number.parseFloat(sum + i);
     }, 0))
@@ -225,7 +226,7 @@ function buttons () {
                 this["watchlistToggle"] = !this["watchlistToggle"]
                 let toggle = this["watchlistToggle"]
                 $('#table').bootstrapTable('filterBy', {
-                    "Entry Type":  this["watchlistToggle"] ? ["E", "O"] : ["E", "O", "W"]
+                    "type":  this["watchlistToggle"] ? ["E", "O"] : ["E", "O", "W"]
                 });
                 if (toggle) {
                     $('[name=toggleWatchListBtn] > i').removeClass('bi-toggle-off').addClass('bi-toggle-on');
