@@ -6,14 +6,13 @@ from typing import List
 
 import pandas as pd
 import requests
-from flask import Flask, send_from_directory
+from flask import Flask, send_from_directory, request
 from waitress import serve
 
-from Stock import Stock, StockEncoder
+from Stock import Stock
 from TrendsPersist import TrendPersist
 
 app = Flask(__name__, static_url_path='/static/')
-app.json_encoder = StockEncoder
 stocks_cache: List[Stock] = list()
 API = 'https://query2.finance.yahoo.com/v7/finance/quote?&symbols='
 trends = {
@@ -30,7 +29,7 @@ def load_config():
     return conf
 
 
-def get_table():
+def get_portfolio_table():
     r = requests.get(os.getenv('portfolio_link'),
                      headers={'User-Agent': 'Meitav-Viewer/{}'.format(os.getenv("HOSTNAME"))})
     return r.text
@@ -78,15 +77,16 @@ def trends_for_chart(state_histo, histo_val):
     curr_histo[datetime.now().strftime(time_format)] = histo_val
 
 
-def get_mrkt_state(market_state):
-    return market_state if market_state in ("PRE", "POST", "REGULAR") else "POST"
+def get_market_state_key():
+    market_state = stocks_cache[0].api_data.get('marketState')
+    return market_state.lower() if market_state.lower() in ("pre", "post", "regular") else "post"
 
 
-def calc_trend(market_state):
-    result = {'marketState': market_state, 'trend': 0, 'yahoo_trend': 0}
-    market_state_4calc = get_mrkt_state(market_state)
-    change = market_state_4calc.lower() + 'MarketChange'
-    change_per = market_state_4calc.lower() + 'MarketChangePercent'
+@app.route('/marketState')
+def get_market_state():
+    result = {'marketState': stocks_cache[0].api_data.get('marketState'), 'trend': 0, 'yahoo_trend': 0}
+    change = get_market_state_key() + 'MarketChange'
+    change_per = get_market_state_key() + 'MarketChangePercent'
     add_trend(result, change)
     result['top-gainer'] = max(stocks_cache, key=lambda s: s.api_data.get(change, 0) * s.quantity)
     result['top-gainer%'] = max(stocks_cache, key=lambda s: s.api_data.get(change_per, 0))
@@ -104,14 +104,6 @@ def calc_trend(market_state):
     return result
 
 
-@app.route('/marketState')
-def get_market_state():
-    data = list(map(lambda s: s.api_data, stocks_cache))
-    if len(data) > 0:
-        return calc_trend(data[0]['marketState'])
-    raise RuntimeError()
-
-
 @app.route('/trends')
 def get_trends():
     return trends
@@ -119,20 +111,17 @@ def get_trends():
 
 @app.route('/ticker/<name>')
 def ticker_data(name):
-    ticker = next(filter(lambda x: x.symbol == name, stocks_cache)).api_data
-    ticker['market-state-4calc'] = get_mrkt_state(ticker['marketState'])
-    return ticker
+    return {
+        'stock': next(filter(lambda x: x.symbol == name, stocks_cache)),
+        'market-state-4calc': get_market_state_key()
+    }
 
 
 @app.route('/portfolio')
-def get_data():
-    data: List[Stock] = enrich_portfolio(get_portfolio_data())
-    global stocks_cache
-    stocks_cache = data
-    return data
-
-
-def enrich_portfolio(portfolio: List[Stock]) -> List[Stock]:
+def get_enriched_portfolio() -> List[Stock]:
+    logger.info("request for portfolio {}".format(request.headers))
+    stocks_cache.clear()
+    portfolio: List[Stock] = get_portfolio_data()
     watch_list = set(config["watch_list"])
     logger.info("watch list is {}".format(watch_list))
     r = requests.get(API + ','.join(set().union(map(lambda s: s.symbol, portfolio), watch_list)),
@@ -141,26 +130,27 @@ def enrich_portfolio(portfolio: List[Stock]) -> List[Stock]:
         yahoo_data = json.loads(r.text)['quoteResponse']['result']
         for stock in portfolio:
             stock.set_api_data(next(filter(lambda s: s['symbol'] == stock.symbol, yahoo_data)))  # expect only one
+            stocks_cache.append(stock)
         for watch_stock in watch_list:
             api_data = next(filter(lambda s: s['symbol'] == watch_stock, yahoo_data))  # expect only one
             stock = Stock({
                 'Symbol': api_data['symbol'], 'Qty': 0,
                 'Gain': None,
-                'Day\'s Value': round(api_data.get(get_mrkt_state(api_data['marketState']).lower() + 'MarketChange', 0), 2),
+                'Day\'s Value': round(api_data.get(get_market_state_key() + 'MarketChange', 0), 2),
                 'Entry Type': 'W',
-                'Last': api_data[get_mrkt_state(api_data['marketState']).lower() + 'MarketPrice'],
-                'Change': api_data[get_mrkt_state(api_data['marketState']).lower() + 'MarketChange']})
+                'Last': api_data[get_market_state_key() + 'MarketPrice'],
+                'Change': api_data[get_market_state_key() + 'MarketChange']})
             stock.set_api_data(api_data)
-            portfolio.append(stock)
-        return portfolio
+            stocks_cache.append(stock)
+        return stocks_cache
     else:
         logger.error("failed to retrevie data from yahoo {}", r.text)
-        return portfolio
+        return stocks_cache
 
 
 def get_portfolio_data() -> List[Stock]:
     # execute only if run as a script
-    df = pd.read_html(get_table())[0]
+    df = pd.read_html(get_portfolio_table())[0]
     data = json.loads(
         df[['Symbol', 'Qty', 'Change', 'Last', 'Day\'s Value',
             'Average Cost', 'Gain', 'Profit/ Loss', 'Value',

@@ -59,8 +59,9 @@ function detailFormatter(index, row) {
         '<div class="row justify-content-start" id="ticker-' + row.symbol +'"></div>' +
         '<div class="row justify-content-start" id="ticker-' + row.symbol +'-link"></div>' +
         '</div>'
-    $.get("ticker/" + row.symbol, function (stock) {
-        let state = stock['market-state-4calc'].toLowerCase();
+    $.get("ticker/" + row.symbol, function (detailedStock) {
+        let state = detailedStock['market-state-4calc'].toLowerCase();
+        let stock = detailedStock['stock'].api_data;
         let container = $("#ticker-" + row.symbol);
         container.append('<dl class="row">'
             + getDetailedRow('52w range', getRange(round(stock['fiftyTwoWeekLow']),
