@@ -4,26 +4,23 @@ from json import JSONEncoder
 class Stock(object):
     def __init__(self, d: dict):
         super().__init__()
-        self.symbol = d['Symbol']
-        self.quantity = d['Qty']
-        self.change = d['Change']
-        self.last_price = d['Last']
-        self.day_val = d['Day\'s Value']
-        self.cost = Stock.__init_from_dict('Average Cost', d)
-        self.gain = d['Gain']
-        self.total_change = Stock.__init_from_dict('Profit/ Loss', d)
-        self.total_val = Stock.__init_from_dict('Value', d)
-        self.type = d['Entry Type']
-        self.expiration = Stock.__init_from_dict('Expiration', d)
-        self.strike = Stock.__init_from_dict('Strike', d)
-        self.p_or_c = Stock.__init_from_dict('Put/ Call', d)
-        self.percent_change = self.__calc_percent_change()
-        self.principle_change = 0 if self.change == 0 or self.cost is None else (self.change / self.cost) * 100
-        self.weight = 0
-
-    @staticmethod
-    def __init_from_dict(key, d):
-        return d[key] if key in d else None
+        self.symbol: str = d.get('Symbol')
+        self.quantity: int = d.get('Qty', 0)
+        self.change: float = d.get('Change', 0)
+        self.last_price: float = d.get('Last', 0)
+        self.day_val: float = d['Day\'s Value']
+        self.cost: float = d.get('Average Cost', None)
+        self.gain: float = d.get('Gain')
+        self.total_change: float = d.get('Profit/ Loss', None)
+        self.total_val: float = d.get('Value', None)
+        self.type: str = d['Entry Type']
+        self.expiration: str = d.get('Expiration', None)
+        self.strike: float = d.get('Strike', None)
+        self.p_or_c: str = d.get('Put/ Call', None)
+        self.percent_change: float = self.__calc_percent_change()
+        self.principle_change: float = 0 if self.change == 0 or self.cost is None else (self.change / self.cost) * 100
+        self.weight: float = 0
+        self.api_data: dict = {}
 
     def __calc_percent_change(self):
         if self.change == 0:
@@ -38,6 +35,12 @@ class Stock(object):
 
     def set_weight(self, portfolio_total_val):
         self.weight = (self.total_val / portfolio_total_val) * 100
+
+    def set_api_data(self, api_data):
+        if api_data['symbol'] == self.symbol:
+            self.api_data = api_data
+        else:
+            raise ValueError("unmatch Symbols {} {}".format(self.symbol, api_data['symbol']))
 
 
 class StockEncoder(JSONEncoder):
