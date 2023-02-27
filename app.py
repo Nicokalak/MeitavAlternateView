@@ -97,10 +97,6 @@ def get_market_state():
         'up': len(list(filter(lambda sd: sd.gain is not None and sd.gain > 0, stocks_cache))),
         'down': len(list(filter(lambda sd: sd.gain is not None and sd.gain < 0, stocks_cache)))
     }
-    result['coming_earnings'] = list(filter(lambda v:
-                                            datetime.now() <= datetime.fromtimestamp(v.get('earningsTimestamp', 0))
-                                            <= datetime.now() + timedelta(weeks=1),
-                                            map(lambda s: s.api_data, stocks_cache)))
     return result
 
 

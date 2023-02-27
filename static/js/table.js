@@ -72,7 +72,7 @@ function detailFormatter(index, row) {
                 round(stock['regularMarketDayHigh']), round(stock[state + 'MarketPrice']) ))
             + getDetailedRow('prev close', stock['regularMarketPreviousClose'], round )
             + getDetailedRow('vol', stock['regularMarketVolume'], bigNum )
-            + getDetailedRow('change', stock[state  + 'MarketChange'] * row.Qty, round, true )
+            + getDetailedRow('change', stock[state  + 'MarketChange'] * row.quantity, round, true )
             + getDetailedRow('change (%)', (stock[state + 'MarketChangePercent']), roundPercent, true )
             + (stock['averageAnalystRating'] ? getDetailedRow('rating', (stock['averageAnalystRating']), undefined, false ) : "")
             +  (shouldShowEarning(stock['earningsTimestamp'] * 1000) ?
@@ -168,6 +168,12 @@ function symbolFormatter(value, row) {
             + row.p_or_c + row.strike + ' ' + row.expiration +
             '</small></span>'
     }
+    if (shouldShowEarning(row.api_data['earningsTimestamp'] * 1000)) {
+        d += '<span class="badge text-bg-info"><small>E '
+            + earningsDate(row.api_data['earningsTimestamp']) +
+            '</small></span>'
+    }
+
 
     return d;
 }

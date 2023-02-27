@@ -28,10 +28,6 @@ function trend_stats(trendObj) {
     $("#watchlist-trend").text(round(trendObj['watchlist_trend']) + '%');
     $("#up-down > .text-success").text(round(trendObj['up-down']['up']));
     $("#up-down > .text-danger").text(round(trendObj['up-down']['down']));
-    $("#earnings").html(trendObj['coming_earnings'] ? trendObj['coming_earnings']
-        .sort((a,b) => a['earningsTimestamp'] - b['earningsTimestamp'])
-        .map(e => '<p class="mb-0">' + e.symbol + ' <small>' + earningsDate(e['earningsTimestamp'], false) + '</small></p>')
-        .join("") : "None");
     $("#market-stats").show(200);
     console.log(trendObj);
 }
