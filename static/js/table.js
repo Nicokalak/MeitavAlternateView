@@ -71,12 +71,14 @@ function detailFormatter(index, row) {
             + getDetailedRow('day range', getRange(round(stock['regularMarketDayLow']),
                 round(stock['regularMarketDayHigh']), round(stock[state + 'MarketPrice']) ))
             + getDetailedRow('prev close', stock['regularMarketPreviousClose'], round )
-            + getDetailedRow('vol', stock['regularMarketVolume'], bigNum )
+            + getDetailedRow('volume', stock['regularMarketVolume'], bigNum )
+            + getDetailedRow('volume 10D', stock['averageDailyVolume10Day'], bigNum )
+            + getDetailedRow('volume 3M', stock['averageDailyVolume3Month'], bigNum )
             + getDetailedRow('change', stock[state  + 'MarketChange'] * row.quantity, round, true )
             + getDetailedRow('change (%)', (stock[state + 'MarketChangePercent']), roundPercent, true )
             + (stock['averageAnalystRating'] ? getDetailedRow('rating', (stock['averageAnalystRating']), undefined, false ) : "")
-            +  (shouldShowEarning(stock['earningsTimestamp'] * 1000) ?
-            getDetailedRow('earnings', stock['earningsTimestamp'], earningsDate, false) : '')
+            + getDetailedRow('earnings', stock['earningsTimestamp'], (time) => moment(time * 1000).locale('en-gb').format('l LT'), false)
+            + getDetailedRow('volatility', (stock['regularMarketVolume'] /  stock['averageDailyVolume3Month']) * 100, roundPercent)
             + '</dl>'
         )
         $("#ticker-" + row.symbol + '-link').html(
@@ -105,13 +107,6 @@ function shouldShowEarning(timestmp) {
 function daysCountToEarn(timestmp) {
     let tdiff = new Date(timestmp) - new Date();
     return Math.ceil(tdiff / (1000 * 60 * 60 * 24));
-}
-
-function earningsDate(timestmp, includeWeekday=true) {
-    timestmp = timestmp * 1000
-    const options = { weekday: includeWeekday? 'short' : undefined, year: undefined, month: 'numeric',
-        day: 'numeric', hour: 'numeric', minute: 'numeric' };
-    return new Date(timestmp).toLocaleString("en-uk", options);
 }
 
 function getDetailedRow(key, val, formater, color=false) {
@@ -163,17 +158,26 @@ function bigNum(value) {
 
 function symbolFormatter(value, row) {
     let d = '<div class="d-flex">' + value +'</div>'
+
     if (row.type === 'O') {
-        d += '<span class="badge text-bg-danger"><small>'
+        d += '<span class="badge text-bg-danger d-inline-block"><small>'
             + row.p_or_c + row.strike + ' ' + row.expiration +
             '</small></span>'
     }
+
     if (shouldShowEarning(row.api_data['earningsTimestamp'] * 1000)) {
-        d += '<span class="badge text-bg-info"><small>E '
-            + earningsDate(row.api_data['earningsTimestamp']) +
+        d += '<span class="badge text-bg-info d-inline-block"><small>Earnings '
+            + moment(row.api_data['earningsTimestamp'] * 1000).locale("en-gb").calendar() +
             '</small></span>'
     }
 
+    if (row.api_data['dividendDate'] !== undefined && row.api_data['trailingAnnualDividendRate'] > 0 ) {
+        let divAmount = row.api_data['trailingAnnualDividendRate'] / 4;
+        d += '<span class="badge text-bg-success d-inline-block"><small>D '
+            + moment(row.api_data['dividendDate'] * 1000).locale("en-gb").format('L') + ' '
+            + divAmount + 'x' + row.quantity + '=' + (divAmount * row.quantity) +
+            '$</small></span>'
+    }
 
     return d;
 }

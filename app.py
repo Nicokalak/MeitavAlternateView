@@ -3,7 +3,7 @@ import logging
 import os
 from datetime import datetime, timedelta
 from typing import List
-
+import sys
 import pandas as pd
 import requests
 from flask import Flask, send_from_directory, request
@@ -97,6 +97,9 @@ def get_market_state():
         'up': len(list(filter(lambda sd: sd.gain is not None and sd.gain > 0, stocks_cache))),
         'down': len(list(filter(lambda sd: sd.gain is not None and sd.gain < 0, stocks_cache)))
     }
+    result['volatile'] = max(stocks_cache,
+                             key=lambda s: s.api_data.get('regularMarketVolume', 0) / s.api_data.get(
+                                 'averageDailyVolume3Month', sys.maxsize))
     return result
 
 
