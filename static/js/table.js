@@ -173,9 +173,9 @@ function symbolFormatter(value, row) {
 
     if (row.api_data['dividendDate'] !== undefined && row.api_data['trailingAnnualDividendRate'] > 0 ) {
         let divAmount = row.api_data['trailingAnnualDividendRate'] / 4;
-        d += '<span class="badge text-bg-success d-inline-block"><small>D '
-            + moment(row.api_data['dividendDate'] * 1000).locale("en-gb").format('L') + ' '
-            + divAmount + 'x' + row.quantity + '=' + (divAmount * row.quantity) +
+        d += '<span class="badge text-bg-success d-inline-block"><small>'
+            + moment(row.api_data['dividendDate'] * 1000).format('DD/MM') + ' '
+            + round(divAmount) + 'x' + row.quantity + '=' + round(divAmount * row.quantity) +
             '$</small></span>'
     }
 
