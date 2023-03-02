@@ -219,7 +219,7 @@ function totalPrice(data) {
 function watchListStyle(row, index) {
     if (!isInPortfolio(row)) {
         return {
-            classes: "bg-info bg-opacity-10"
+            classes: "bg-info bg-opacity-25"
         }
     }
     return {
