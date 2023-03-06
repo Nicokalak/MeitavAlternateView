@@ -58,36 +58,36 @@ function init_chart() {
             {
                 label: "PRE Market",
                 data: trendsObj["PRE_histo"],
-                borderColor: '#0d6efd',
-                backgroundColor: '#0d6efd',
-                pointStyle: false,
+                borderColor: 'rgb(111, 105, 172)',
+                backgroundColor: 'rgb(111, 105, 172)',
+                pointStyle: 'rectRounded',
                 tension: 0.3,
                 segment: {
-                    borderColor: ctx => skipped(ctx, 'rgba(0,0,0,0.2)'),
+                    borderColor: ctx => skipped(ctx, 'rgba(0,0,0,0.2)') || up(ctx) || down(ctx),
                     borderDash: ctx => skipped(ctx, [6, 6]),
                 }
             },
             {
                 label: "Regular Market",
                 data: trendsObj["REGULAR_histo"],
-                borderColor: '#20c997',
-                backgroundColor: '#20c997',
-                pointStyle: false,
-                cubicInterpolationMode: 'monotone',
-                tension: 0.5,
+                borderColor: 'rgb(190,190,190)',
+                backgroundColor: 'rgb(190,190,190)',
+                pointStyle: 'rectRounded',
+                tension: 0.3,
                 segment: {
+                    borderColor: ctx => skipped(ctx, 'rgba(0,0,0,0.2)') || up(ctx) || down(ctx),
                     borderDash: ctx => skipped(ctx, [6, 6]),
                 }
             },
             {
                 label: "POST Market",
                 data: trendsObj["POST_histo"],
-                borderColor: '#fd7e14',
-                backgroundColor: '#fd7e14',
-                pointStyle: false,
+                borderColor: 'rgb(72,64,159)',
+                backgroundColor: 'rgb(72,64,159)',
+                pointStyle: 'rectRounded',
                 tension: 0.3,
                 segment: {
-                    borderColor: ctx => skipped(ctx, 'rgba(0,0,0,0.2)'),
+                    borderColor: ctx => skipped(ctx, 'rgba(0,0,0,0.2)') || up(ctx) || down(ctx),
                     borderDash: ctx => skipped(ctx, [6, 6]),
                 }
             }
@@ -97,23 +97,19 @@ function init_chart() {
         type: 'line',
         data: data,
         options: {
-            responsive: true,
             scales: {
                 x: {
+                    display: false,
                     type: 'time',
                     time: {
                         parser: 'YYYYMMDDTHH:mm:ss',
                         minUnit: 'minute'
                     },
-                    ticks: {
-                        // forces step size to be 50 units
-                        stepSize: 30
-                    }
                 },
             },
             plugins: {
                 legend: {
-                    display: true
+                    display: false
                 }
             }
         }
