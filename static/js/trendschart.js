@@ -58,8 +58,8 @@ function init_chart() {
             {
                 label: "PRE Market",
                 data: trendsObj["PRE_histo"],
-                borderColor: 'rgb(111, 105, 172)',
-                backgroundColor: 'rgb(111, 105, 172)',
+                borderColor: '#0d6efd',
+                backgroundColor: '#0d6efd',
                 pointStyle: 'rectRounded',
                 tension: 0.3,
                 segment: {
@@ -70,8 +70,8 @@ function init_chart() {
             {
                 label: "Regular Market",
                 data: trendsObj["REGULAR_histo"],
-                borderColor: 'rgb(190,190,190)',
-                backgroundColor: 'rgb(190,190,190)',
+                borderColor: '#20c997',
+                backgroundColor: '#20c997',
                 pointStyle: 'rectRounded',
                 tension: 0.3,
                 segment: {
@@ -82,8 +82,8 @@ function init_chart() {
             {
                 label: "POST Market",
                 data: trendsObj["POST_histo"],
-                borderColor: 'rgb(72,64,159)',
-                backgroundColor: 'rgb(72,64,159)',
+                borderColor: '#fd7e14',
+                backgroundColor: '#fd7e14',
                 pointStyle: 'rectRounded',
                 tension: 0.3,
                 segment: {
@@ -105,6 +105,10 @@ function init_chart() {
                         parser: 'YYYYMMDDTHH:mm:ss',
                         minUnit: 'minute'
                     },
+                    ticks: {
+                        // forces step size to be 50 units
+                        stepSize: 30
+                    }
                 },
             },
             plugins: {

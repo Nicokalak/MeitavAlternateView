@@ -137,8 +137,8 @@ def get_enriched_portfolio() -> List[Stock]:
                 'Gain': None,
                 'Day\'s Value': round(api_data.get(get_market_state_key() + 'MarketChange', 0), 2),
                 'Entry Type': 'W',
-                'Last': api_data[get_market_state_key() + 'MarketPrice'],
-                'Change': api_data[get_market_state_key() + 'MarketChange']})
+                'Last': api_data.get(get_market_state_key() + 'MarketPrice', 'nan'),
+                'Change': api_data.get(get_market_state_key() + 'MarketChange', 'nan')})
             stock.set_api_data(api_data)
             stocks_cache.append(stock)
         return stocks_cache
