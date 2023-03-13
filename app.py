@@ -97,7 +97,7 @@ def get_market_state():
         'up': len(list(filter(lambda sd: sd.gain is not None and sd.gain > 0, stocks_cache))),
         'down': len(list(filter(lambda sd: sd.gain is not None and sd.gain < 0, stocks_cache)))
     }
-    result['volatile'] = max(stocks_cache,
+    result['trending'] = max(stocks_cache,
                              key=lambda s: s.api_data.get('regularMarketVolume', 0) / s.api_data.get(
                                  'averageDailyVolume3Month', sys.maxsize))
     return result

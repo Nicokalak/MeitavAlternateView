@@ -77,8 +77,8 @@ function detailFormatter(index, row) {
             + getDetailedRow('change', stock[state  + 'MarketChange'] * row.quantity, round, true )
             + getDetailedRow('change (%)', (stock[state + 'MarketChangePercent']), roundPercent, true )
             + (stock['averageAnalystRating'] ? getDetailedRow('rating', (stock['averageAnalystRating']), undefined, false ) : "")
-            + getDetailedRow('earnings', stock['earningsTimestamp'], (time) => moment(time * 1000).locale('en-gb').format('l LT'), false)
-            + getDetailedRow('volatility', (stock['regularMarketVolume'] /  stock['averageDailyVolume3Month']) * 100, roundPercent)
+            + getDetailedRow('earnings', stock['earningsTimestamp'], (time) => (time ? moment(time * 1000).locale('en-gb').format('l LT') : ""), false)
+            + getDetailedRow('trend ratio', (stock['regularMarketVolume'] /  stock['averageDailyVolume3Month']) * 100, roundPercent)
             + '</dl>'
         )
         $("#ticker-" + row.symbol + '-link').html(

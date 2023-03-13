@@ -28,7 +28,7 @@ function trend_stats(trendObj) {
     $("#watchlist-trend").text(round(trendObj['watchlist_trend']) + '%');
     $("#up-down > .text-success").text(round(trendObj['up-down']['up']));
     $("#up-down > .text-danger").text(round(trendObj['up-down']['down']));
-    $("#volatile").text(trendObj['volatile'].symbol);
+    $("#trending").text(trendObj['trending'].symbol);
     $("#market-stats").show(200);
     console.log(trendObj);
 }
