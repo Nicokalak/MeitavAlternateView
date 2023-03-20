@@ -160,23 +160,23 @@ function symbolFormatter(value, row) {
     let d = '<div class="d-flex">' + value +'</div>'
 
     if (row.type === 'O') {
-        d += '<span class="badge text-bg-danger d-inline-block"><small>'
+        d += '<div><span class="badge text-bg-danger d-inline-block">'
             + row.p_or_c + row.strike + ' ' + row.expiration +
-            '</small></span>'
+            '</span></div>'
     }
 
     if (shouldShowEarning(row.api_data['earningsTimestamp'] * 1000)) {
-        d += '<span class="badge text-bg-info d-inline-block"><small>Earnings '
+        d += '<div><span class="badge text-bg-info d-inline-block">Earnings '
             + moment(row.api_data['earningsTimestamp'] * 1000).locale("en-gb").calendar() +
-            '</small></span>'
+            '</span></div>'
     }
 
     if (row.api_data['dividendDate'] !== undefined && row.api_data['trailingAnnualDividendRate'] > 0 ) {
         let divAmount = row.api_data['trailingAnnualDividendRate'] / 4;
-        d += '<span class="badge text-bg-success d-inline-block"><small>'
+        d += '<div><span class="badge text-bg-success">'
             + moment(row.api_data['dividendDate'] * 1000).format('DD/MM') + ' '
             + round(divAmount) + 'x' + row.quantity + '=' + round(divAmount * row.quantity) +
-            '$</small></span>'
+            '$</span></div>'
     }
 
     return d;
