@@ -164,7 +164,7 @@ function symbolFormatter(value, row) {
     }
 
     if (row.type === 'O') {
-        d += getSymbolTag('text-bg-danger',row.p_or_c + row.strike + ' ' + row.expiration)
+        d += getSymbolTag('text-bg-danger', row.p_or_c + row.strike + ' ' + row.expiration)
     }
 
     if (shouldShowEarning(row.api_data['earningsTimestamp'] * 1000)) {
