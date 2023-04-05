@@ -7,7 +7,7 @@ from typing import List
 import sys
 import pandas as pd
 import requests
-from flask import Flask, send_from_directory, request
+from flask import Flask, send_from_directory, request, abort
 from waitress import serve
 
 from Stock import Stock
@@ -33,7 +33,7 @@ def load_config():
 def get_portfolio_table():
     try:
         r = requests.get(os.getenv('portfolio_link'),
-                        headers={'User-Agent': 'Meitav-Viewer/{}'.format(os.getenv("HOSTNAME"))})
+                         headers={'User-Agent': 'Meitav-Viewer/{}'.format(os.getenv("HOSTNAME"))})
         if r.status_code != http.HTTPStatus.OK.value:
             logger.error("failed to get portfolio from Meitav {} {}".format(r.status_code, r.text))
         return r.text
@@ -90,6 +90,9 @@ def get_market_state_key():
 
 @app.route('/marketState')
 def get_market_state():
+    if len(stocks_cache) == 0:
+        abort(http.HTTPStatus.INTERNAL_SERVER_ERROR.value)
+
     result = {'marketState': stocks_cache[0].api_data.get('marketState'), 'trend': 0, 'yahoo_trend': 0}
     change = get_market_state_key() + 'MarketChange'
     change_per = get_market_state_key() + 'MarketChangePercent'
@@ -124,12 +127,13 @@ def ticker_data(name):
 
 @app.route('/portfolio')
 def get_enriched_portfolio() -> List[Stock]:
-    logger.info("request for portfolio from: {} {}".format(request.headers.get("X-Real-Ip"),
-                                                           request.headers.get("User-Agent")))
+    logger.info("request for portfolio from: {} {} {}".format(request.headers.get("X-Real-Ip"),
+                                                              request.headers.get("HTTP_HOST"),
+                                                              request.headers.get("User-Agent")))
     stocks_cache.clear()
     portfolio: List[Stock] = get_portfolio_data()
     watch_list = set(config["watch_list"])
-    logger.info("watch list is {}".format(watch_list))
+    logger.debug("watch list is {}".format(watch_list))
     try:
         r = requests.get(API + ','.join(set().union(map(lambda s: s.symbol, portfolio), watch_list)),
                          headers=config["api_headers"])
@@ -150,9 +154,11 @@ def get_enriched_portfolio() -> List[Stock]:
                 stock.set_api_data(api_data)
                 stocks_cache.append(stock)
         else:
-            logger.error("failed to retrieve data from yahoo {}", r.text)
+            logger.error("failed to retrieve data from yahoo {}".format(r.text))
+            abort(r.status_code, message=r.text)
     except ConnectionError as e:
         logger.error("connection Error while getting API", e)
+        abort(http.HTTPStatus.INTERNAL_SERVER_ERROR.value)
 
     return stocks_cache
 
@@ -172,7 +178,7 @@ def get_portfolio_data() -> List[Stock]:
         total_val += s.total_val
     for s in stocks:
         s.set_weight(total_val)
-    logger.info("portfolio symbols: {}".format([sub['Symbol'] for sub in data]))
+    logger.debug("portfolio symbols: {}".format([sub['Symbol'] for sub in data]))
     return stocks
 
 
@@ -200,7 +206,7 @@ if __name__ == '__main__':
     persist = TrendPersist(trends)
     logging.basicConfig()
     logger = logging.getLogger("waitress")
-    logger.setLevel(logging.INFO)
+    logger.setLevel(os.getenv("APP_LOG_LEVEL", logging.INFO))
     app.logger = logger
     logger.info("starting meitav-view app")
     trends = persist.load()
