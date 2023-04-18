@@ -3,7 +3,7 @@ import json
 import logging
 import os
 from datetime import datetime, timedelta
-from typing import List
+from typing import List, Dict
 import sys
 import pandas as pd
 import requests
@@ -32,10 +32,15 @@ def load_config():
 
 def get_portfolio_table():
     try:
+        attempts = 0
         r = requests.get(os.getenv('portfolio_link'),
-                         headers={'User-Agent': 'Meitav-Viewer/{}'.format(os.getenv("HOSTNAME"))})
-        if r.status_code != http.HTTPStatus.OK.value:
-            logger.error("failed to get portfolio from Meitav {} {}".format(r.status_code, r.text))
+                        headers={'User-Agent': 'Meitav-Viewer/{}'.format(os.getenv("HOSTNAME"))})
+        while attempts < config.get('retry_attempts', 3) and r.status_code != http.HTTPStatus.OK.value:
+            attempts += 1
+            logger.error("failed to get portfolio from Meitav attempt {} stats {} {}"
+                         .format(attempts, r.status_code, r.text))
+            r = requests.get(os.getenv('portfolio_link'),
+                             headers={'User-Agent': 'Meitav-Viewer/{}'.format(os.getenv("HOSTNAME"))})
         return r.text
     except ConnectionError as e:
         logger.error("failed to connect to meitav", e)
@@ -127,35 +132,40 @@ def ticker_data(name):
 
 @app.route('/portfolio')
 def get_enriched_portfolio() -> List[Stock]:
-    logger.info("request for portfolio from: {} {} {}".format(request.headers.get("X-Real-Ip"),
-                                                              request.headers.get("HTTP_HOST"),
-                                                              request.headers.get("User-Agent")))
+    logger.info("request for portfolio from: {} {}".format(request.headers.get("X-Real-Ip"),
+                                                           request.headers.get("User-Agent")))
+    attempts = 0
     stocks_cache.clear()
     portfolio: List[Stock] = get_portfolio_data()
-    watch_list = set(config["watch_list"])
-    logger.debug("watch list is {}".format(watch_list))
+    watch_list = set(config.get("watch_list", list()))
+    logger.info("watch list is {}".format(watch_list))
     try:
         r = requests.get(API + ','.join(set().union(map(lambda s: s.symbol, portfolio), watch_list)),
                          headers=config["api_headers"])
-        if r.status_code == http.HTTPStatus.OK.value:
-            yahoo_data = json.loads(r.text)['quoteResponse']['result']
-            for stock in portfolio:
-                stock.set_api_data(next(filter(lambda s: s['symbol'] == stock.symbol, yahoo_data)))  # expect only one
-                stocks_cache.append(stock)
-            for watch_stock in watch_list:
-                api_data = next(filter(lambda s: s['symbol'] == watch_stock, yahoo_data))  # expect only one
-                stock = Stock({
-                    'Symbol': api_data['symbol'], 'Qty': 0,
-                    'Gain': None,
-                    'Day\'s Value': round(api_data.get(get_market_state_key() + 'MarketChange', 0), 2),
-                    'Entry Type': 'W',
-                    'Last': api_data.get(get_market_state_key() + 'MarketPrice', 'nan'),
-                    'Change': api_data.get(get_market_state_key() + 'MarketChange', 'nan')})
-                stock.set_api_data(api_data)
-                stocks_cache.append(stock)
-        else:
-            logger.error("failed to retrieve data from yahoo {}".format(r.text))
+        while attempts < config.get('retry_attempts', 3) and r.status_code != http.HTTPStatus.OK.value:
+            attempts += 1
+            logger.error("failed to retrieve data from yahoo {} attempts {}", r.text, attempts)
+            r = requests.get(API + ','.join(set().union(map(lambda s: s.symbol, portfolio), watch_list)),
+                             headers=config["api_headers"])
+
+        if r.status_code != http.HTTPStatus.OK.value:
             abort(r.status_code, message=r.text)
+
+        yahoo_data = json.loads(r.text)['quoteResponse']['result']
+        for stock in portfolio:
+            stock.set_api_data(next(filter(lambda s: s['symbol'] == stock.symbol, yahoo_data)))  # expect only one
+            stocks_cache.append(stock)
+        for watch_stock in watch_list:
+            api_data = next(filter(lambda s: s['symbol'] == watch_stock, yahoo_data))  # expect only one
+            stock = Stock({
+                'Symbol': api_data['symbol'], 'Qty': 0,
+                'Gain': None,
+                'Day\'s Value': round(api_data.get(get_market_state_key() + 'MarketChange', 0), 2),
+                'Entry Type': 'W',
+                'Last': api_data.get(get_market_state_key() + 'MarketPrice', 'nan'),
+                'Change': api_data.get(get_market_state_key() + 'MarketChange', 'nan')})
+            stock.set_api_data(api_data)
+            stocks_cache.append(stock)
     except ConnectionError as e:
         logger.error("connection Error while getting API", e)
         abort(http.HTTPStatus.INTERNAL_SERVER_ERROR.value)
@@ -201,7 +211,7 @@ def root():
 
 
 if __name__ == '__main__':
-    config = load_config()
+    config: Dict[str, object] = load_config()
     time_format = config["time_format"]
     persist = TrendPersist(trends)
     logging.basicConfig()
