@@ -138,7 +138,7 @@ def get_enriched_portfolio() -> List[Stock]:
     stocks_cache.clear()
     portfolio: List[Stock] = get_portfolio_data()
     watch_list = set(config.get("watch_list", list()))
-    logger.info("watch list is {}".format(watch_list))
+    logger.debug("watch list is {}".format(watch_list))
     try:
         r = requests.get(API + ','.join(set().union(map(lambda s: s.symbol, portfolio), watch_list)),
                          headers=config["api_headers"])
@@ -211,7 +211,7 @@ def root():
 
 
 if __name__ == '__main__':
-    config: Dict[str, object] = load_config()
+    config: Dict[str, any] = load_config()
     time_format = config["time_format"]
     persist = TrendPersist(trends)
     logging.basicConfig()
