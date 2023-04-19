@@ -15,7 +15,7 @@ from TrendsPersist import TrendPersist
 
 app = Flask(__name__, static_url_path='/static/')
 stocks_cache: List[Stock] = list()
-API = 'https://query2.finance.yahoo.com/v7/finance/quote?&symbols='
+API = 'https://query2.finance.yahoo.com/v7/finance/quote?crumb={}&symbols={}'
 trends = {
     "PRE_histo": {},
     "REGULAR_histo": {},
@@ -134,17 +134,19 @@ def ticker_data(name):
 def get_enriched_portfolio() -> List[Stock]:
     logger.info("request for portfolio from: {} {}".format(request.headers.get("X-Real-Ip"),
                                                            request.headers.get("User-Agent")))
+    config.get("api_headers")["user-agent"] = request.headers.get("User-Agent")
     attempts = 0
     stocks_cache.clear()
     portfolio: List[Stock] = get_portfolio_data()
     watch_list = set(config.get("watch_list", list()))
     logger.debug("watch list is {}".format(watch_list))
     try:
-        r = requests.get(API + ','.join(set().union(map(lambda s: s.symbol, portfolio), watch_list)),
+        r = requests.get(API.format(config.get("yahoo_crumb"),
+                                    ','.join(set().union(map(lambda s: s.symbol, portfolio), watch_list))),
                          headers=config["api_headers"])
         while attempts < config.get('retry_attempts', 3) and r.status_code != http.HTTPStatus.OK.value:
             attempts += 1
-            logger.error("failed to retrieve data from yahoo {} attempts {}", r.text, attempts)
+            logger.error("failed to retrieve data from yahoo {} attempts {}".format(r.text, attempts))
             r = requests.get(API + ','.join(set().union(map(lambda s: s.symbol, portfolio), watch_list)),
                              headers=config["api_headers"])
 
