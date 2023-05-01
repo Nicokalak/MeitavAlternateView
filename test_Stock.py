@@ -29,3 +29,20 @@ class TestStock(TestCase):
         self.assertEqual(20, stock.weight)
         self.assertEqual(api_data, stock.api_data)
 
+    def test_stock_init_badData(self):
+        stock = Stock({
+            'Symbol': 'test2',
+            'Day\'s Value': 5.5,
+            'Entry Type': 'W',
+            'Last': -1,
+            'Change': 0,
+        })
+
+        self.assertEqual('test2', stock.symbol)
+        self.assertEqual(-1, stock.quantity)
+        self.assertEqual(0, stock.gain)
+        self.assertEqual(5.5, stock.day_val)
+        self.assertEqual('W', stock.type)
+        self.assertEqual(0, stock.percent_change)
+
+

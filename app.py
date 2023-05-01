@@ -160,11 +160,10 @@ def get_enriched_portfolio() -> List[Stock]:
         for watch_stock in watch_list:
             api_data = next(filter(lambda s: s['symbol'] == watch_stock, yahoo_data))  # expect only one
             stock = Stock({
-                'Symbol': api_data['symbol'], 'Qty': 0,
-                'Gain': None,
+                'Symbol': api_data['symbol'],
                 'Day\'s Value': round(api_data.get(get_market_state_key() + 'MarketChange', 0), 2),
                 'Entry Type': 'W',
-                'Last': api_data.get(get_market_state_key() + 'MarketPrice', 0),
+                'Last': api_data.get(get_market_state_key() + 'MarketPrice', -1),
                 'Change': api_data.get(get_market_state_key() + 'MarketChange', 0)})
             stock.set_api_data(api_data)
             stocks_cache.append(stock)

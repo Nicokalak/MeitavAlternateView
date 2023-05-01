@@ -24,12 +24,12 @@ class Stock(object):
     def __init__(self, d: dict):
         super().__init__()
         self.symbol = d.get('Symbol')
-        self.quantity = d.get('Qty', 0)
+        self.quantity = d.get('Qty', -1)
         self.change = d.get('Change', 0)
-        self.last_price = d.get('Last', 0)
+        self.last_price = d.get('Last', -1)
         self.day_val = d['Day\'s Value']
         self.cost = d.get('Average Cost', None)
-        self.gain = d.get('Gain')
+        self.gain = d.get('Gain', 0)
         self.total_change = d.get('Profit/ Loss', None)
         self.total_val = d.get('Value', None)
         self.type = d['Entry Type']
