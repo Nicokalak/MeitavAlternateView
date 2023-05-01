@@ -39,6 +39,9 @@ class Stock(object):
         self.percent_change = self.__calc_percent_change()
         self.principle_change = 0 if self.change == 0 or self.cost is None else (self.change / self.cost) * 100
 
+    def __repr__(self):
+        return self.symbol
+
     def __calc_percent_change(self):
         if self.change == 0:
             return 0

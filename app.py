@@ -164,8 +164,8 @@ def get_enriched_portfolio() -> List[Stock]:
                 'Gain': None,
                 'Day\'s Value': round(api_data.get(get_market_state_key() + 'MarketChange', 0), 2),
                 'Entry Type': 'W',
-                'Last': api_data.get(get_market_state_key() + 'MarketPrice', 'nan'),
-                'Change': api_data.get(get_market_state_key() + 'MarketChange', 'nan')})
+                'Last': api_data.get(get_market_state_key() + 'MarketPrice', 0),
+                'Change': api_data.get(get_market_state_key() + 'MarketChange', 0)})
             stock.set_api_data(api_data)
             stocks_cache.append(stock)
     except ConnectionError as e:
