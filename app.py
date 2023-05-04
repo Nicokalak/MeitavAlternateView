@@ -113,7 +113,7 @@ def get_market_state():
     }
     result['trending'] = max(stocks_cache,
                              key=lambda s: s.api_data.get('regularMarketVolume', 0) / s.api_data.get(
-                                 'averageDailyVolume3Month', sys.maxsize))
+                                 'averageDailyVolume10Day', sys.maxsize))
     return result
 
 
