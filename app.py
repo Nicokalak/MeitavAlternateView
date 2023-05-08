@@ -105,7 +105,7 @@ def get_market_state():
     result['top-gainer'] = max(stocks_cache, key=lambda s: s.api_data.get(change, 0) * s.quantity)
     result['top-gainer%'] = max(stocks_cache, key=lambda s: s.api_data.get(change_per, 0))
     result['top-loser'] = min(stocks_cache, key=lambda s: s.api_data.get(change, 0) * s.quantity)
-    result['top-loser%'] = min(stocks_cache, key=lambda s: s.api_data.get(change, 0))
+    result['top-loser%'] = min(stocks_cache, key=lambda s: s.api_data.get(change_per, 0))
     result['top-mover'] = max(stocks_cache, key=lambda s: s.api_data.get('regularMarketVolume', 0))
     result['up-down'] = {
         'up': len(list(filter(lambda sd: sd.gain is not None and sd.gain > 0, stocks_cache))),
