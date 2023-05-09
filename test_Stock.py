@@ -39,7 +39,7 @@ class TestStock(TestCase):
         })
 
         self.assertEqual('test2', stock.symbol)
-        self.assertEqual(-1, stock.quantity)
+        self.assertEqual(0, stock.quantity)
         self.assertEqual(0, stock.gain)
         self.assertEqual(5.5, stock.day_val)
         self.assertEqual('W', stock.type)
