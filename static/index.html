@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-bs-theme="auto">
 <head>
     <!-- Required meta tags -->
     <meta charset="utf-8">
@@ -73,7 +73,7 @@
     </div>
     <div class="row">
         <div class="col-12">
-            <table class="table-sm table-striped" id="table"
+            <table class="table-sm table-striped caption-top" id="table"
                    data-auto-refresh="true"
                    data-auto-refresh-interval="300"
                    data-auto-refresh-status="false"
@@ -110,7 +110,8 @@
                     <th data-visible="false" data-field="weight" data-formatter="roundPercent" data-sortable="true">Weight</th>
                 </tr>
                 </thead>
-                <tbody></tbody>
+                <tbody class="table-group-divider"></tbody>
+                <tfoot class="table-group-divider"></tfoot>
             </table>
         </div>
     </div>
@@ -131,6 +132,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-adapter-moment/1.0.1/chartjs-adapter-moment.min.js" integrity="sha512-hVy4KxCKgnXi2ok7rlnlPma4JHXI1VPQeempoaclV1GwRHrDeaiuS1pI6DVldaj5oh6Opy2XJ2CTljQLPkaMrQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="js/table.js"></script>
 <script src="js/trendschart.js"></script>
+<script src="js/darkmode.js"></script>
 <script>
     init_chart();
     $('#table').bootstrapTable({
@@ -147,7 +149,8 @@
                     ' for <a target="_blank" href="https://finance.yahoo.com/quote/' + name + '">' + name + '</a>');
             }
         },
-        buttonsOrder: ['refresh', 'autoRefresh', 'columns', 'toggleWatchListBtn', 'Export']
+        buttonsOrder: ['refresh', 'autoRefresh', 'columns', 'toggleWatchListBtn', 'Export'],
+        classes: ['table', 'table-sm', 'table-striped', 'caption-top']
     });
     $('.columns-start.btn-group').prepend($('#customSearch').detach());
 </script>

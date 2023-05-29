@@ -127,9 +127,9 @@ function getDetailedRow(key, val, formater, color=false) {
 function cellStyle(value, row) {
     if (isInPortfolio((row))) {
         if (value > 0) {
-            return {classes: 'table-success'};
+            return {classes: 'text-success'};
         } else if (value < 0) {
-            return {classes: 'table-danger'};
+            return {classes: 'text-danger'};
         } else {
             return {classes: ''}
         }
