@@ -1,0 +1,24 @@
+.state-badge {
+    display: inline-block;
+    text-align: center;
+    text-decoration: none;
+    vertical-align: middle;
+    background-color: transparent;
+    border: 1px solid transparent;
+    padding: .375rem .75rem;
+    font-size: 1rem;
+    border-radius: .25rem;
+    transition: color .15s ease-in-out,background-color .15s ease-in-out,border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+}
+.state-badge-danger {
+    color: #dc3545;
+    border-color: #dc3545;
+}
+.state-badge-secondary {
+    color: #6c757d;
+    border-color: #6c757d;
+}
+.state-badge-success {
+    color: #198754;
+    border-color: #198754;;
+}

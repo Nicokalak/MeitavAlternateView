@@ -198,6 +198,11 @@ def send_js(path):
     return send_from_directory('static/js', path)
 
 
+@app.route('/css/<path:path>')
+def send_css(path):
+    return send_from_directory('static/css', path)
+
+
 @app.route('/favicon/<path:icon>')
 def favicon(icon):
     if icon == "site.webmanifest":
