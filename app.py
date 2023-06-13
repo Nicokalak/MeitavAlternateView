@@ -2,6 +2,7 @@ import http
 import json
 import logging
 import os
+import threading
 from datetime import datetime, timedelta
 from typing import List, Dict
 import sys
@@ -21,6 +22,7 @@ trends = {
     "REGULAR_histo": {},
     "POST_histo": {}
 }
+lock = threading.Lock()
 
 
 def load_config():
@@ -132,46 +134,47 @@ def ticker_data(name):
 
 @app.route('/portfolio')
 def get_enriched_portfolio() -> List[Stock]:
-    logger.info("request for portfolio from: {} {}".format(request.headers.get("X-Real-Ip"),
-                                                           request.headers.get("User-Agent")))
-    config.get("api_headers")["user-agent"] = request.headers.get("User-Agent")
-    attempts = 0
-    stocks_cache.clear()
-    portfolio: List[Stock] = get_portfolio_data()
-    watch_list = set(config.get("watch_list", list()))
-    logger.debug("watch list is {}".format(watch_list))
-    try:
-        r = requests.get(API.format(config.get("yahoo_crumb"),
-                                    ','.join(set().union(map(lambda s: s.symbol, portfolio), watch_list))),
-                         headers=config["api_headers"])
-        while attempts < config.get('retry_attempts', 3) and r.status_code != http.HTTPStatus.OK.value:
-            attempts += 1
-            logger.error("failed to retrieve data from yahoo {} attempts {}".format(r.text, attempts))
-            r = requests.get(API + ','.join(set().union(map(lambda s: s.symbol, portfolio), watch_list)),
+    with lock:
+        logger.info("request for portfolio from: {} {}".format(request.headers.get("X-Real-Ip"),
+                                                               request.headers.get("User-Agent")))
+        config.get("api_headers")["user-agent"] = request.headers.get("User-Agent")
+        attempts = 0
+        stocks_cache.clear()
+        portfolio: List[Stock] = get_portfolio_data()
+        watch_list = set(config.get("watch_list", list()))
+        logger.debug("watch list is {}".format(watch_list))
+        try:
+            r = requests.get(API.format(config.get("yahoo_crumb"),
+                                        ','.join(set().union(map(lambda s: s.symbol, portfolio), watch_list))),
                              headers=config["api_headers"])
+            while attempts < config.get('retry_attempts', 3) and r.status_code != http.HTTPStatus.OK.value:
+                attempts += 1
+                logger.error("failed to retrieve data from yahoo {} attempts {}".format(r.text, attempts))
+                r = requests.get(API + ','.join(set().union(map(lambda s: s.symbol, portfolio), watch_list)),
+                                 headers=config["api_headers"])
 
-        if r.status_code != http.HTTPStatus.OK.value:
-            abort(r.status_code, message=r.text)
+            if r.status_code != http.HTTPStatus.OK.value:
+                abort(r.status_code, message=r.text)
 
-        yahoo_data = json.loads(r.text)['quoteResponse']['result']
-        for stock in portfolio:
-            stock.set_api_data(next(filter(lambda s: s['symbol'] == stock.symbol, yahoo_data)))  # expect only one
-            stocks_cache.append(stock)
-        for watch_stock in watch_list:
-            api_data = next(filter(lambda s: s['symbol'] == watch_stock, yahoo_data))  # expect only one
-            stock = Stock({
-                'Symbol': api_data['symbol'],
-                'Day\'s Value': round(api_data.get(get_market_state_key() + 'MarketChange', 0), 2),
-                'Entry Type': 'W',
-                'Last': api_data.get(get_market_state_key() + 'MarketPrice', -1),
-                'Change': api_data.get(get_market_state_key() + 'MarketChange', 0)})
-            stock.set_api_data(api_data)
-            stocks_cache.append(stock)
-    except ConnectionError as e:
-        logger.error("connection Error while getting API", e)
-        abort(http.HTTPStatus.INTERNAL_SERVER_ERROR.value)
+            yahoo_data = json.loads(r.text)['quoteResponse']['result']
+            for stock in portfolio:
+                stock.set_api_data(next(filter(lambda s: s['symbol'] == stock.symbol, yahoo_data)))  # expect only one
+                stocks_cache.append(stock)
+            for watch_stock in watch_list:
+                api_data = next(filter(lambda s: s['symbol'] == watch_stock, yahoo_data))  # expect only one
+                stock = Stock({
+                    'Symbol': api_data['symbol'],
+                    'Day\'s Value': round(api_data.get(get_market_state_key() + 'MarketChange', 0), 2),
+                    'Entry Type': 'W',
+                    'Last': api_data.get(get_market_state_key() + 'MarketPrice', -1),
+                    'Change': api_data.get(get_market_state_key() + 'MarketChange', 0)})
+                stock.set_api_data(api_data)
+                stocks_cache.append(stock)
+        except ConnectionError as e:
+            logger.error("connection Error while getting API", e)
+            abort(http.HTTPStatus.INTERNAL_SERVER_ERROR.value)
 
-    return stocks_cache
+        return stocks_cache
 
 
 def get_portfolio_data() -> List[Stock]:
@@ -223,9 +226,8 @@ if __name__ == '__main__':
     logging.basicConfig()
     logger = logging.getLogger("waitress")
     logger.setLevel(os.getenv("APP_LOG_LEVEL", logging.INFO))
-    app.logger = logger
     logger.info("starting meitav-view app")
     trends = persist.load()
     logger.info("trends were loaded")
 
-    serve(app, listen="*:{}".format(os.getenv("APP_PORT", 8080)), url_prefix=os.getenv("URL_PREFIX", ""))
+    serve(app, listen="*:{}".format(os.getenv("APP_PORT", 8080)), url_prefix=os.getenv("URL_PREFIX", ""), threads=2)
