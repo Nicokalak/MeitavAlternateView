@@ -40,7 +40,7 @@ function totalDayPercent (data) {
 
 function calcAvgCost(data) {
     return round(data.filter(isInPortfolio).map(function (row) {
-        return (-1 * row.total_change) + row.total_val;
+        return row.total_val - row.total_change;
     }).reduce(function (sum, i) {
         return Number.parseFloat(sum + i);
     }, 0))
@@ -48,7 +48,8 @@ function calcAvgCost(data) {
 
 function calcStartPrice(data) {
     return round(data.filter(isInPortfolio).map(function (row) {
-        return (row.last_price - row.change )* row.quantity;
+        let q = row.type.toLowerCase() === "e" ? row.quantity : row.quantity * 100
+        return (row.last_price - row.change) * q;
     }).reduce(function (sum, i) {
         return Number.parseFloat(sum + i);
     }, 0))
@@ -197,20 +198,22 @@ function gainTotal(data) {
         return roundPercent(result);
     }
 }
-
-function totalPrice(data) {
-    let field = this.field;
+function totalPriceNoStyle(data) {
+    return totalPrice(data, this.field, false)
+}
+function totalPrice(data, f, style = true) {
+    let field = f ? f : this.field;
     let result = round(data.filter(isInPortfolio).map(function (row) {
         return row[field];
     }).reduce(function (sum, i) {
         return Number.parseFloat(sum + i);
-    }, 0))
-    if (result > 0) {
+    }, 0));
+    if (style && result > 0) {
         return '<span class="text-success">' + bigNum(result) +'</span>';
-    } else if (result < 0) {
+    } else if (style && result < 0) {
         return '<span class="text-danger">' + bigNum(result) +'</span>';
     } else { // result 0
-        return result;
+        return bigNum(result);
     }
 }
 

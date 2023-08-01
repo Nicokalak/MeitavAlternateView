@@ -9,6 +9,7 @@ class Stock(object):
     last_price: float
     day_val: float
     cost: float
+    total_cost: float
     gain: float
     total_change: float
     total_val: float
@@ -30,14 +31,15 @@ class Stock(object):
         self.day_val = d['Day\'s Value']
         self.cost = d.get('Average Cost', None)
         self.gain = d.get('Gain', 0)
-        self.total_change = d.get('Profit/ Loss', None)
-        self.total_val = d.get('Value', None)
+        self.total_change = d.get('Profit/ Loss', 0)
+        self.total_val = d.get('Value', 0)
         self.type = d['Entry Type']
         self.expiration = d.get('Expiration', None)
         self.strike = d.get('Strike', None)
         self.p_or_c = d.get('Put/ Call', None)
         self.percent_change = self.__calc_percent_change()
         self.principle_change = 0 if self.change == 0 or self.cost is None else (self.change / self.cost) * 100
+        self.total_cost = self.total_val - self.total_change
 
     def __repr__(self):
         return self.symbol
