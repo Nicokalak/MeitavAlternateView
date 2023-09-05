@@ -1,4 +1,5 @@
 import http
+import io
 import json
 import logging
 import os
@@ -179,7 +180,7 @@ def get_enriched_portfolio() -> List[Stock]:
 
 def get_portfolio_data() -> List[Stock]:
     # execute only if run as a script
-    df = pd.read_html(get_portfolio_table())[0]
+    df = pd.read_html(io.StringIO(get_portfolio_table()))[0]
     data = json.loads(
         df[['Symbol', 'Qty', 'Change', 'Last', 'Day\'s Value',
             'Average Cost', 'Gain', 'Profit/ Loss', 'Value',
