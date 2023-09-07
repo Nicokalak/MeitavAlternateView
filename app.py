@@ -159,7 +159,10 @@ def get_enriched_portfolio() -> List[Stock]:
 
             yahoo_data = json.loads(r.text)['quoteResponse']['result']
             for stock in portfolio:
-                stock.set_api_data(next(filter(lambda s: s['symbol'] == stock.symbol, yahoo_data)))  # expect only one
+                try:
+                    stock.set_api_data(next(filter(lambda s: s['symbol'] == stock.symbol, yahoo_data)))  # expect only one
+                except StopIteration:
+                    logger.warning("API data not found for {}".format(stock))
                 stocks_cache.append(stock)
             for watch_stock in watch_list:
                 api_data = next(filter(lambda s: s['symbol'] == watch_stock, yahoo_data))  # expect only one

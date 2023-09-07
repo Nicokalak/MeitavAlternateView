@@ -40,6 +40,7 @@ class Stock(object):
         self.percent_change = self.__calc_percent_change()
         self.principle_change = 0 if self.change == 0 or self.cost is None else (self.change / self.cost) * 100
         self.total_cost = self.total_val - self.total_change
+        self.api_data = {}
 
     def __repr__(self):
         return self.symbol
@@ -56,7 +57,7 @@ class Stock(object):
         self.weight = (self.total_val / portfolio_total_val) * 100
 
     def set_api_data(self, api_data):
-        if api_data['symbol'] == self.symbol:
+        if api_data and api_data['symbol'] == self.symbol:
             self.api_data = api_data
         else:
             raise ValueError("unmatch Symbols {} {}".format(self.symbol, api_data['symbol']))
