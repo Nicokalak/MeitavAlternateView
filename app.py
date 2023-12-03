@@ -227,7 +227,7 @@ if __name__ == '__main__':
     config: Dict[str, any] = load_config()
     time_format = config["time_format"]
     persist = TrendPersist(trends)
-    logging.basicConfig()
+    logging.basicConfig(stream=sys.stdout)
     logger = logging.getLogger("waitress")
     logger.setLevel(os.getenv("APP_LOG_LEVEL", logging.INFO))
     logger.info("starting meitav-view app")
