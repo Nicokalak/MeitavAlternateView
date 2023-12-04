@@ -24,6 +24,7 @@ trends = {
     "POST_histo": {}
 }
 lock = threading.Lock()
+email_header = 'X-Email'
 
 
 def load_config():
@@ -135,6 +136,8 @@ def ticker_data(name):
 
 @app.route('/portfolio')
 def get_enriched_portfolio() -> List[Stock]:
+    if not is_authenticated():
+        abort(http.HTTPStatus.PROXY_AUTHENTICATION_REQUIRED.value, message="Unauthorized")
     with lock:
         logger.info("request for portfolio from: {} {}".format(request.headers.get("X-Real-Ip"),
                                                                request.headers.get("User-Agent")))
@@ -142,7 +145,6 @@ def get_enriched_portfolio() -> List[Stock]:
             f"Request - Method: {request.method}, Path: {request.path}, "
             f"Query Parameters: {request.args}, Data: {request.data}, "
             f"Headers: {request.headers}"
-            f"Headers: {request.cookies}"
         )
         config.get("api_headers")["user-agent"] = request.headers.get("User-Agent")
         attempts = 0
@@ -226,7 +228,18 @@ def favicon(icon):
 
 @app.route('/')
 def root():
-    return app.send_static_file('index.html')
+    if is_authenticated():
+        return app.send_static_file('index.html')
+    else:
+        return app.send_static_file('401.html')
+
+
+def is_authenticated():
+    allowed_users = config.get("allowed_users", None)
+    if allowed_users is None:
+        return True
+    else:
+        return request.headers.get(email_header) in allowed_users
 
 
 if __name__ == '__main__':
