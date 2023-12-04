@@ -138,6 +138,11 @@ def get_enriched_portfolio() -> List[Stock]:
     with lock:
         logger.info("request for portfolio from: {} {}".format(request.headers.get("X-Real-Ip"),
                                                                request.headers.get("User-Agent")))
+        logger.debug(
+            f"Request - Method: {request.method}, Path: {request.path}, "
+            f"Query Parameters: {request.args}, Data: {request.data}, "
+            f"Headers: {request.headers}"
+        )
         config.get("api_headers")["user-agent"] = request.headers.get("User-Agent")
         attempts = 0
         stocks_cache.clear()
