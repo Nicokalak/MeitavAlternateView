@@ -237,9 +237,14 @@ def root():
 def is_authenticated():
     allowed_users = config.get("allowed_users", None)
     if allowed_users is None:
+        logger.debug("allowed users undefined accepts all")
         return True
     else:
-        return request.headers.get(email_header) in allowed_users
+        user = request.headers.get(email_header)
+        is_allowed = user in allowed_users
+        if not is_allowed:
+            logger.warning(f"{user} is not Authorized")
+        return is_allowed
 
 
 if __name__ == '__main__':
