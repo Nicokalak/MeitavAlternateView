@@ -142,6 +142,7 @@ def get_enriched_portfolio() -> List[Stock]:
             f"Request - Method: {request.method}, Path: {request.path}, "
             f"Query Parameters: {request.args}, Data: {request.data}, "
             f"Headers: {request.headers}"
+            f"Headers: {request.cookies}"
         )
         config.get("api_headers")["user-agent"] = request.headers.get("User-Agent")
         attempts = 0
