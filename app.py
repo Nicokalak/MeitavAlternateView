@@ -3,10 +3,12 @@ import io
 import json
 import logging
 import os
+import sys
 import threading
 from datetime import datetime, timedelta
+from functools import wraps
 from typing import List, Dict
-import sys
+
 import pandas as pd
 import requests
 from flask import Flask, send_from_directory, request, abort
@@ -27,6 +29,41 @@ lock = threading.Lock()
 email_header = 'X-Email'
 
 
+def require_authentication(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        # Implement your authentication logic here
+        authenticated = is_authenticated()
+
+        if not authenticated:
+            # Return a 401 Unauthorized response with a JSON message
+            return {'error': 'Unauthorized'}, 401
+
+        # Call the original function if authentication is successful
+        return func(*args, **kwargs)
+
+    return wrapper
+
+
+@app.route('/trends')
+@require_authentication
+def get_trends():
+    return trends
+
+
+def is_authenticated():
+    allowed_users = config.get("allowed_users", None)
+    if allowed_users is None:
+        logger.debug("allowed users undefined accepts all")
+        return True
+    else:
+        user = request.headers.get(email_header)
+        is_allowed = user in allowed_users
+        if not is_allowed:
+            logger.warning(f"{user} is not Authorized")
+        return is_allowed
+
+
 def load_config():
     with open(os.getenv("DEFAULT_CONF", "config.json"), 'r') as config_file:
         conf = json.load(config_file)
@@ -38,7 +75,7 @@ def get_portfolio_table():
     try:
         attempts = 0
         r = requests.get(os.getenv('portfolio_link'),
-                        headers={'User-Agent': 'Meitav-Viewer/{}'.format(os.getenv("HOSTNAME"))})
+                         headers={'User-Agent': 'Meitav-Viewer/{}'.format(os.getenv("HOSTNAME"))})
         while attempts < config.get('retry_attempts', 3) and r.status_code != http.HTTPStatus.OK.value:
             attempts += 1
             logger.error("failed to get portfolio from Meitav attempt {} stats {} {}"
@@ -98,6 +135,7 @@ def get_market_state_key():
 
 
 @app.route('/marketState')
+@require_authentication
 def get_market_state():
     if len(stocks_cache) == 0:
         abort(http.HTTPStatus.INTERNAL_SERVER_ERROR.value)
@@ -121,23 +159,9 @@ def get_market_state():
     return result
 
 
-@app.route('/trends')
-def get_trends():
-    return trends
-
-
-@app.route('/ticker/<name>')
-def ticker_data(name):
-    return {
-        'stock': next(filter(lambda x: x.symbol == name, stocks_cache)),
-        'market-state-4calc': get_market_state_key()
-    }
-
-
 @app.route('/portfolio')
+@require_authentication
 def get_enriched_portfolio() -> List[Stock]:
-    if not is_authenticated():
-        abort(http.HTTPStatus.PROXY_AUTHENTICATION_REQUIRED.value, message="Unauthorized")
     with lock:
         logger.info("request for portfolio from: {} {}".format(request.headers.get("X-Real-Ip"),
                                                                request.headers.get("User-Agent")))
@@ -168,12 +192,12 @@ def get_enriched_portfolio() -> List[Stock]:
             yahoo_data = json.loads(r.text)['quoteResponse']['result']
             for stock in portfolio:
                 try:
-                    stock.set_api_data(next(filter(lambda s: s['symbol'] == stock.symbol, yahoo_data)))  # expect only one
+                    stock.set_api_data(next(filter(lambda s: s['symbol'] == stock.symbol, yahoo_data)))  # expect only 1
                 except StopIteration:
                     logger.warning("API data not found for {}".format(stock))
                 stocks_cache.append(stock)
             for watch_stock in watch_list:
-                api_data = next(filter(lambda s: s['symbol'] == watch_stock, yahoo_data))  # expect only one
+                api_data = next(filter(lambda s: s['symbol'] == watch_stock, yahoo_data))  # expect only 1
                 stock = Stock({
                     'Symbol': api_data['symbol'],
                     'Day\'s Value': round(api_data.get(get_market_state_key() + 'MarketChange', 0), 2),
@@ -187,6 +211,15 @@ def get_enriched_portfolio() -> List[Stock]:
             abort(http.HTTPStatus.INTERNAL_SERVER_ERROR.value)
 
         return stocks_cache
+
+
+@app.route('/ticker/<name>')
+@require_authentication
+def ticker_data(name):
+    return {
+        'stock': next(filter(lambda x: x.symbol == name, stocks_cache)),
+        'market-state-4calc': get_market_state_key()
+    }
 
 
 def get_portfolio_data() -> List[Stock]:
@@ -232,19 +265,6 @@ def root():
         return app.send_static_file('index.html')
     else:
         return app.send_static_file('401.html')
-
-
-def is_authenticated():
-    allowed_users = config.get("allowed_users", None)
-    if allowed_users is None:
-        logger.debug("allowed users undefined accepts all")
-        return True
-    else:
-        user = request.headers.get(email_header)
-        is_allowed = user in allowed_users
-        if not is_allowed:
-            logger.warning(f"{user} is not Authorized")
-        return is_allowed
 
 
 if __name__ == '__main__':
