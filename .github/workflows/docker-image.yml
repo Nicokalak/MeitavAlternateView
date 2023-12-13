@@ -10,7 +10,7 @@ on:
   pull_request:
 
 env:
-  IMAGE_NAME: ${{ secrets.DOCKER_USER }}/meitav_alternate_view
+  IMAGE_NAME: ${{ secrets.DOCKER_USER }}/meitav-alternate-view
 
 jobs:
   build_and_push:
