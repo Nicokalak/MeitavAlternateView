@@ -25,7 +25,6 @@ jobs:
           images: |
             ${{ secrets.DOCKER_USER }}/meitav_alternate_view            # generate Docker tags based on the following events/attributes
             tags: |
-              type=schedule
               type=ref,event=branch
               type=ref,event=pr
               type=semver,pattern={{version}}
