@@ -9,9 +9,6 @@ on:
 
   pull_request:
 
-env:
-  IMAGE_NAME: ${{ secrets.DOCKER_USER }}/meitav_alternate_view
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -26,8 +23,7 @@ jobs:
         with:
           # list of Docker images to use as base name for tags
           images: |
-            ${{ IMAGE_NAME }}
-            # generate Docker tags based on the following events/attributes
+            ${{ secrets.DOCKER_USER }}/meitav_alternate_view            # generate Docker tags based on the following events/attributes
             tags: |
               type=schedule
               type=ref,event=branch
