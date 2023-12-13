@@ -27,7 +27,7 @@ jobs:
           # list of Docker images to use as base name for tags
           images: ${{ env.IMAGE_NAME }}
           flavor: |
-            latest: true
+            latest=true
           tags: |
             type=ref,event=branch
             type=ref,event=pr
