@@ -60,7 +60,7 @@ def is_authenticated():
         user = request.headers.get(email_header)
         is_allowed = user in allowed_users
         if not is_allowed:
-            logger.warning(f"{user} is not Authorized")
+            logger.warning(f"{user} is not Authorized, request {request.url} headers:{request.headers}")
         return is_allowed
 
 
