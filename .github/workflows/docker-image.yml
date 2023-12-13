@@ -9,6 +9,9 @@ on:
 
   pull_request:
 
+env:
+  IMAGE_NAME: ${{ secrets.DOCKER_USER }}/meitav_alternate_view
+
 jobs:
   build_and_push:
     runs-on: ubuntu-latest
@@ -22,8 +25,9 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           # list of Docker images to use as base name for tags
-          images: |
-            ${{ secrets.DOCKER_USER }}/meitav_alternate_view            # generate Docker tags based on the following events/attributes
+          images: ${{ env.IMAGE_NAME }}
+          flavor: |
+            latest: true
           tags: |
             type=ref,event=branch
             type=ref,event=pr
@@ -49,5 +53,5 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: ${{ github.event_name != 'pull_request' }}
           tags: |
-            ${{ steps.meta.outputs.tags }},latest
+            ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
