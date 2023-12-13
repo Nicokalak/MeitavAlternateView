@@ -1,6 +1,6 @@
 import requests
 
-url = 'http://localhost:8080/'
+url = 'http://localhost:8080/health'
 
 try:
     response = requests.get(url)

@@ -267,6 +267,11 @@ def root():
         return app.send_static_file('401.html')
 
 
+@app.route('/health')
+def root():
+    return {"status": "ok"}
+
+
 if __name__ == '__main__':
     config: Dict[str, any] = load_config()
     time_format = config["time_format"]
