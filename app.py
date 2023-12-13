@@ -268,7 +268,7 @@ def root():
 
 
 @app.route('/health')
-def root():
+def health():
     return {"status": "ok"}
 
 
