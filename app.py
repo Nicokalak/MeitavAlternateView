@@ -7,11 +7,11 @@ import sys
 import threading
 from datetime import datetime, timedelta
 from functools import wraps
-from typing import List, Dict
+from typing import List, Dict, Set
 
 import pandas as pd
 import requests
-from flask import Flask, send_from_directory, request, abort
+from flask import Flask, send_from_directory, request, abort, jsonify
 from waitress import serve
 
 from Stock import Stock
@@ -26,6 +26,7 @@ trends = {
     "POST_histo": {}
 }
 lock = threading.Lock()
+config_lock = threading.Lock()
 email_header = 'X-Email'
 
 
@@ -52,8 +53,8 @@ def get_trends():
 
 
 def is_authenticated():
-    allowed_users = config.get("allowed_users", None)
-    if allowed_users is None:
+    allowed_users = config.get("allowed_users", list())
+    if len(allowed_users) == 0:
         logger.debug("allowed users undefined accepts all")
         return True
     else:
@@ -174,7 +175,7 @@ def get_enriched_portfolio() -> List[Stock]:
         attempts = 0
         stocks_cache.clear()
         portfolio: List[Stock] = get_portfolio_data()
-        watch_list = set(config.get("watch_list", list()))
+        watch_list = load_watchlist()
         logger.debug("watch list is {}".format(watch_list))
         try:
             r = requests.get(API.format(config.get("yahoo_crumb"),
@@ -270,6 +271,37 @@ def root():
 @app.route('/health')
 def health():
     return {"status": "ok"}
+
+
+@app.route('/watchList', methods=['GET'])
+def get_strings():
+    return list(load_watchlist())
+
+
+def load_watchlist() -> Set[str]:
+    return set(config.get("watch_list", list()))
+
+
+def save_configurations():
+    with open(os.getenv("DEFAULT_CONF", "config.json"), 'w') as config_file:
+        logger.info("saved new configurations")
+        json.dump(config, config_file)
+
+
+@app.route('/watchList', methods=['POST'])
+def update_watchlist():
+    with config_lock:
+        new_watchlist = request.json
+        if not isinstance(new_watchlist, list):
+            logger.error("invalid request for update_watchlist")
+            return jsonify({"error": "'watchlist' should be a list"}), 400
+
+        # Load the existing watchlist and append the new strings
+        config['watch_list'] = new_watchlist
+        # Save the updated watchlist to file
+        save_configurations()
+
+    return jsonify({"message": "Watchlist updated successfully"}), 200
 
 
 if __name__ == '__main__':
