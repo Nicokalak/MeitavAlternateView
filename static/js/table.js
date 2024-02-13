@@ -248,6 +248,15 @@ function buttons () {
             attributes: {
                 title: 'toggle watch list'
             }
+        },
+        editWatchListBtn: {
+            text: 'edit watchlist',
+            icon: 'bi bi-pencil',
+            attributes: {
+                'title': 'edit watch list',
+                'data-bs-toggle': "modal",
+                'data-bs-target': "#editWatchListModal"
+            }
         }
     }
 }

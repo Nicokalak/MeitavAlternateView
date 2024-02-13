@@ -285,7 +285,7 @@ def load_watchlist() -> Set[str]:
 def save_configurations():
     with open(os.getenv("DEFAULT_CONF", "config.json"), 'w') as config_file:
         logger.info("saved new configurations")
-        json.dump(config, config_file)
+        json.dump(config, config_file, indent=4)
 
 
 @app.route('/watchList', methods=['POST'])
