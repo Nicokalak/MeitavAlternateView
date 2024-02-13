@@ -22,3 +22,6 @@
     color: #198754;
     border-color: #198754;;
 }
+#customSearch {
+    min-width: 6rem;
+}
