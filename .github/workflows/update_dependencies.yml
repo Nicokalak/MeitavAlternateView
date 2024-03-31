@@ -20,16 +20,20 @@ jobs:
         check-latest: true
 
     - name: Update dependencies
+      id: update_deps
       run: |
         pip install -U -r requirements.txt
         diff_output=$(diff -u requirements.txt <(cat requirements.txt | awk -F '~=' '{print $1}' | xargs pip show | awk '/^Name:/{pkg=$2} /^Version:/{print pkg"~="$2}'))
         if [ -n "$diff_output" ]; then
           echo "$diff_output" | patch --quiet -o requirements.txt
+          echo "::set-output name=changes::true"
         else
           echo "No changes in requirements.txt. Skipping patch."
+          echo "::set-output name=changes::false"
         fi
 
     - name: Commit changes
+      if: steps.update_deps.outputs.changes == 'true'
       run: |
         git config --global user.email "actions@github.com"
         git config --global user.name "GitHub Actions"
@@ -37,6 +41,7 @@ jobs:
         git diff --quiet && git diff --staged --quiet || git commit -m "chore: update dependencies"
 
     - name: Create new branch
+      if: steps.update_deps.outputs.changes == 'true'
       run: |
         git checkout -b update-dependencies-${{ github.sha }}
         git add .
@@ -44,6 +49,7 @@ jobs:
         git push origin update-dependencies-${{ github.sha }}
 
     - name: Open Pull Request
+      if: steps.update_deps.outputs.changes == 'true'
       uses: peter-evans/create-pull-request@v6
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
