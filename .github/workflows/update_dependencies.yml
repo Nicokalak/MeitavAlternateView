@@ -22,7 +22,12 @@ jobs:
     - name: Update dependencies
       run: |
         pip install -U -r requirements.txt
-        diff -u requirements.txt <(cat requirements.txt | awk -F '~=' '{print $1}' | xargs pip show | awk '/^Name:/{pkg=$2} /^Version:/{print pkg"~="$2}') | patch -o requirements.txt
+        diff_output=$(diff -u requirements.txt <(cat requirements.txt | awk -F '~=' '{print $1}' | xargs pip show | awk '/^Name:/{pkg=$2} /^Version:/{print pkg"~="$2}'))
+        if [ -n "$diff_output" ]; then
+          echo "$diff_output" | patch --quiet -o requirements.txt
+        else
+          echo "No changes in requirements.txt. Skipping patch."
+        fi
 
     - name: Commit changes
       run: |
