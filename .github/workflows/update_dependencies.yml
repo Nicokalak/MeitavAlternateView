@@ -37,7 +37,7 @@ jobs:
         git diff --quiet && git diff --staged --quiet || git commit -m "chore: update dependencies"
 
     - name: Push changes
-      uses: ad-m/github-push-action@update-dependencies-${{ github.run_id }}
+      uses: ad-m/github-push-action@update-dependencies-${{ github.sha }}
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -47,7 +47,7 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
         commit-message: 'chore: Update dependencies'
         delete-branch: true
-        branch: update-dependencies-${{ github.run_id }}
+        branch: update-dependencies-${{ github.sha }}
         title: 'chore: Update dependencies'
         body: |
           This pull request updates the dependencies in the requirements.txt file.
