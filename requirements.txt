@@ -1,6 +1,0 @@
-requests~=2.31.0
-pandas~=2.2.1
-Flask~=3.0.2
-lxml~=5.2.0
-waitress~=3.0.0
-pyarrow~=15.0.2
