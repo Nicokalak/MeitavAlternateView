@@ -26,10 +26,10 @@ jobs:
         diff_output=$(diff -u requirements.txt <(cat requirements.txt | awk -F '~=' '{print $1}' | xargs pip show | awk '/^Name:/{pkg=$2} /^Version:/{print pkg"~="$2}'))
         if [ -n "$diff_output" ]; then
           echo "$diff_output" | patch --quiet -o requirements.txt
-          echo "::set-output name=changes::true"
+          echo "changes=true" >> $GITHUB_OUTPUT
         else
           echo "No changes in requirements.txt. Skipping patch."
-          echo "::set-output name=changes::false"
+          echo "changes=false" >> $GITHUB_OUTPUT
         fi
 
     - name: Commit changes
