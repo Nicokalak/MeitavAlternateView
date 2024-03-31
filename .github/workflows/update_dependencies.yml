@@ -37,6 +37,18 @@ jobs:
         git diff --quiet && git diff --staged --quiet || git commit -m "chore: update dependencies"
 
     - name: Push changes
-      uses: ad-m/github-push-action@master
+      uses: ad-m/github-push-action@update-dependencies-${{ github.run_id }}
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Open Pull Request
+      uses: peter-evans/create-pull-request@v6
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        commit-message: 'chore: Update dependencies'
+        delete-branch: true
+        branch: update-dependencies-${{ github.run_id }}
+        title: 'chore: Update dependencies'
+        body: |
+          This pull request updates the dependencies in the requirements.txt file.
+          Please review and merge as appropriate.
