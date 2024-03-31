@@ -22,6 +22,7 @@ jobs:
     - name: Update dependencies
       id: update_deps
       run: |
+        set -x
         cat requirements.txt | awk -F '~=' '{print $1}' | xargs -n 1 pip index versions 2>/dev/null | awk '/\(.*\)/{pkg=$1} /LATEST:/{print pkg"~="$2}'
         diff_output=$(diff -u requirements.txt <(cat requirements.txt | awk -F '~=' '{print $1}' | xargs -n 1 pip index versions 2>/dev/null | awk '/\(.*\)/{pkg=$1} /LATEST:/{print pkg"~="$2}'))
         echo $diff_output
