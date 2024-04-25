@@ -3,4 +3,4 @@ pandas~=2.2.2
 Flask~=3.0.3
 lxml~=5.2.1
 waitress~=3.0.0
-pyarrow~=15.0.2
+pyarrow~=16.0.0
