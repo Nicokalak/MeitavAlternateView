@@ -6,9 +6,6 @@ on:
       - master
     tags:
       - v*
-
-  pull_request:
-
 env:
   IMAGE_NAME: ${{ secrets.DOCKER_USER }}/meitav-alternate-view
 
