@@ -52,6 +52,7 @@ jobs:
         commit-message: 'chore: Update dependencies'
         delete-branch: true
         branch: update-dependencies-${{ github.run_id }}
+        base: master
         title: 'chore: Update dependencies'
         body: |
           This pull request updates the dependencies in the requirements.txt file.
