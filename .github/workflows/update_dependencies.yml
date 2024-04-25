@@ -20,6 +20,7 @@ jobs:
     - name: Update dependencies
       id: update_deps
       run: |
+        set -x
         pip install --upgrade pip
         new_req=$(cat requirements.txt | awk -F '~=' '{print $1}' | xargs -n 1 pip index versions 2>/dev/null | awk '/\(.*\)/{pkg=$1} /LATEST:/{print pkg"~="$2}')
         echo $new_req
