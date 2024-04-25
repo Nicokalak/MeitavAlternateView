@@ -21,7 +21,9 @@ jobs:
       id: update_deps
       run: |
         pip install --upgrade pip
-        cat requirements.txt | awk -F '~=' '{print $1}' | xargs -n 1 pip index versions 2>/dev/null | awk '/\(.*\)/{pkg=$1} /LATEST:/{print pkg"~="$2}' > new_req.txt
+        new_req=$(cat requirements.txt | awk -F '~=' '{print $1}' | xargs -n 1 pip index versions 2>/dev/null | awk '/\(.*\)/{pkg=$1} /LATEST:/{print pkg"~="$2}')
+        echo $new_req
+        echo $new_req > new_req.txt 
         if ! diff -u requirements.txt new_req.txt; then
           echo "new changes detected"
           mv new_req.txt requirements.txt
