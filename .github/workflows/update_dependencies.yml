@@ -21,7 +21,7 @@ jobs:
       id: update_deps
       run: |
         set -x
-        new_req=$(cat requirements.txt | awk -F '~=' '{print $1}' | xargs -n 1 pip index versions pyarrow 2>/dev/null | awk -F '[() ]' '/\(.*\)/{print $1"~="$3}')
+        new_req=$(cat requirements.txt | awk -F '~=' '{print $1}' | xargs -n 1 pip index versions 2>/dev/null | awk -F '[() ]' '/\(.*\)/{print $1"~="$3}')
         echo $new_req
         echo $new_req > new_req.txt 
         if ! diff -u requirements.txt new_req.txt; then
