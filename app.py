@@ -130,8 +130,7 @@ def trends_for_chart(state_histo, histo_val):
     curr_histo[datetime.now().strftime(time_format)] = histo_val
 
 
-def get_market_state_key():
-    market_state = stocks_cache[0].api_data.get('marketState')
+def get_market_state_key(market_state: str = 'post'):
     return market_state.lower() if market_state.lower() in ("pre", "post", "regular") else "post"
 
 
@@ -142,8 +141,8 @@ def get_market_state():
         abort(http.HTTPStatus.INTERNAL_SERVER_ERROR.value)
 
     result = {'marketState': stocks_cache[0].api_data.get('marketState'), 'trend': 0, 'yahoo_trend': 0}
-    change = get_market_state_key() + 'MarketChange'
-    change_per = get_market_state_key() + 'MarketChangePercent'
+    change = get_market_state_key(stocks_cache[0].api_data.get('marketState')) + 'MarketChange'
+    change_per = get_market_state_key(stocks_cache[0].api_data.get('marketState')) + 'MarketChangePercent'
     add_trend(result, change)
     result['top-gainer'] = max(stocks_cache, key=lambda s: s.api_data.get(change, 0) * s.quantity)
     result['top-gainer%'] = max(stocks_cache, key=lambda s: s.api_data.get(change_per, 0))
@@ -201,10 +200,10 @@ def get_enriched_portfolio() -> List[Stock]:
                 api_data = next(filter(lambda s: s['symbol'] == watch_stock, yahoo_data))  # expect only 1
                 stock = Stock({
                     'Symbol': api_data['symbol'],
-                    'Day\'s Value': round(api_data.get(get_market_state_key() + 'MarketChange', 0), 2),
+                    'Day\'s Value': round(api_data.get(get_market_state_key(api_data.get('marketState')) + 'MarketChange', 0), 2),
                     'Entry Type': 'W',
-                    'Last': api_data.get(get_market_state_key() + 'MarketPrice', -1),
-                    'Change': api_data.get(get_market_state_key() + 'MarketChange', 0)})
+                    'Last': api_data.get(get_market_state_key(api_data.get('marketState')) + 'MarketPrice', -1),
+                    'Change': api_data.get(get_market_state_key(api_data.get('marketState')) + 'MarketChange', 0)})
                 stock.set_api_data(api_data)
                 stocks_cache.append(stock)
         except ConnectionError as e:
@@ -219,25 +218,28 @@ def get_enriched_portfolio() -> List[Stock]:
 def ticker_data(name):
     return {
         'stock': next(filter(lambda x: x.symbol == name, stocks_cache)),
-        'market-state-4calc': get_market_state_key()
+        'market-state-4calc': get_market_state_key(stocks_cache[0].api_data.get('marketState')),
     }
 
 
 def get_portfolio_data() -> List[Stock]:
-    # execute only if run as a script
-    df = pd.read_html(io.StringIO(get_portfolio_table()))[0]
-    data = json.loads(
-        df[['Symbol', 'Qty', 'Change', 'Last', 'Day\'s Value',
-            'Average Cost', 'Gain', 'Profit/ Loss', 'Value',
-            'Entry Type', 'Expiration', 'Strike', 'Put/ Call']].to_json(orient='records'))
-    total_val = 0
     stocks: List[Stock] = list()
-    for d in data:
-        s = Stock(d)
-        stocks.append(s)
-        total_val += s.total_val
-    for s in stocks:
-        s.set_weight(total_val)
+    try:
+        df = pd.read_html(io.StringIO(get_portfolio_table()))[0]
+        data = json.loads(
+            df[['Symbol', 'Qty', 'Change', 'Last', 'Day\'s Value',
+                'Average Cost', 'Gain', 'Profit/ Loss', 'Value',
+                'Entry Type', 'Expiration', 'Strike', 'Put/ Call']].to_json(orient='records'))
+        total_val = 0
+        for d in data:
+            s = Stock(d)
+            stocks.append(s)
+            total_val += s.total_val
+        for s in stocks:
+            s.set_weight(total_val)
+    except Exception as e:
+        logger.exception("failed to get portfolio data")
+        data = []
     logger.debug("portfolio symbols: {}".format([sub['Symbol'] for sub in data]))
     return stocks
 
