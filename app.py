@@ -197,15 +197,19 @@ def get_enriched_portfolio() -> List[Stock]:
                     logger.warning("API data not found for {}".format(stock))
                 stocks_cache.append(stock)
             for watch_stock in watch_list:
-                api_data = next(filter(lambda s: s['symbol'] == watch_stock, yahoo_data))  # expect only 1
-                stock = Stock({
-                    'Symbol': api_data['symbol'],
-                    'Day\'s Value': round(api_data.get(get_market_state_key(api_data.get('marketState')) + 'MarketChange', 0), 2),
-                    'Entry Type': 'W',
-                    'Last': api_data.get(get_market_state_key(api_data.get('marketState')) + 'MarketPrice', -1),
-                    'Change': api_data.get(get_market_state_key(api_data.get('marketState')) + 'MarketChange', 0)})
-                stock.set_api_data(api_data)
-                stocks_cache.append(stock)
+                api_data = next(filter(lambda s: s['symbol'] == watch_stock, yahoo_data), None)  # expect only 1
+                if api_data:
+                    stock = Stock({
+                        'Symbol': api_data['symbol'],
+                        'Day\'s Value': round(api_data.get(get_market_state_key(api_data.get('marketState')) + 'MarketChange', 0), 2),
+                        'Entry Type': 'W',
+                        'Last': api_data.get(get_market_state_key(api_data.get('marketState')) + 'MarketPrice',
+                                             api_data.get('regularMarketPrice', -1)),
+                        'Change': api_data.get(get_market_state_key(api_data.get('marketState')) + 'MarketChange', 0)})
+                    stock.set_api_data(api_data)
+                    stocks_cache.append(stock)
+                else:
+                    logger.warning("could not find watchlist entry for {}".format(watch_stock))
         except ConnectionError as e:
             logger.error("connection Error while getting API", e)
             abort(http.HTTPStatus.INTERNAL_SERVER_ERROR.value)
