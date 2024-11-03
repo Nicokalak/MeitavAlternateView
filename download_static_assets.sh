@@ -20,6 +20,7 @@ main() {
             dest_folder="static/js"
         elif [[ "$url" == *.css ]]; then
             dest_folder="static/css"
+        elif [[ "$url" == *. ]]
         else
             echo "Skipping unsupported file type for URL: $url"
             continue
