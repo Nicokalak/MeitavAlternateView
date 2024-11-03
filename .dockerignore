@@ -4,3 +4,5 @@ __pycache__
 .github
 venv
 images
+download_static_assets.sh
+static_deps.txt
