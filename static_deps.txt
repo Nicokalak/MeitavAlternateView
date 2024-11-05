@@ -11,3 +11,4 @@ https://unpkg.com/bootstrap-table@1.23.5/dist/bootstrap-table.min.js
 https://unpkg.com/bootstrap-table@1.23.5/dist/extensions/auto-refresh/bootstrap-table-auto-refresh.min.js
 https://unpkg.com/bootstrap-table@1.23.5/dist/extensions/export/bootstrap-table-export.min.js
 https://unpkg.com/tableexport.jquery.plugin/tableExport.min.js
+https://unpkg.com/@popperjs/core@2
