@@ -258,7 +258,7 @@ def send_css(path):
     return send_from_directory('static/css', path)
 
 @app.route('/webfonts/<path:path>')
-def send_css(path):
+def send_webfonts(path):
     return send_from_directory('static/webfonts', path)
 
 
