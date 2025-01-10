@@ -20,7 +20,6 @@ main() {
             dest_folder="static/js"
         elif [[ "$url" == *.css ]]; then
             dest_folder="static/css"
-        elif [[ "$url" == *. ]]
         else
             echo "Skipping unsupported file type for URL: $url"
             continue
@@ -29,15 +28,9 @@ main() {
         # Get the filename from the URL
         file_name=$(basename "$url")
         dest_path="$dest_folder/$file_name"
-        
-        # Check if the file already exists
-        if [[ -f "$dest_path" ]]; then
-            echo "File $dest_path already exists, skipping download."
-            continue
-        fi
 
         # Download the file to the appropriate folder
-        curl -o "$dest_path" "$url"
+        curl -L -o "$dest_path" "$url"
         
         # Check if the download was successful
         if [[ $? -eq 0 ]]; then
