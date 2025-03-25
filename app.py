@@ -230,10 +230,13 @@ def get_portfolio_data() -> List[Stock]:
     stocks: List[Stock] = list()
     try:
         df = pd.read_html(io.StringIO(get_portfolio_table()))[0]
-        data = json.loads(
-            df[['Symbol', 'Qty', 'Change', 'Last', 'Day\'s Value',
-                'Average Cost', 'Gain', 'Profit/ Loss', 'Value',
-                'Entry Type', 'Expiration', 'Strike', 'Put/ Call']].to_json(orient='records'))
+
+        required_columns = ['Symbol', 'Qty', 'Change', 'Last', "Day's Value", 'Average Cost', 'Gain', 'Profit/ Loss',
+                            'Value']
+        optional_columns = ['Entry Type', 'Expiration', 'Strike', 'Put/ Call']
+        existing_columns = required_columns + [col for col in optional_columns if col in df.columns]
+
+        data = json.loads(df[existing_columns].to_json(orient='records'))
         total_val = 0
         for d in data:
             s = Stock(d)

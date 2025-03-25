@@ -33,7 +33,7 @@ class Stock(object):
         self.gain = d.get('Gain', 0)
         self.total_change = d.get('Profit/ Loss', 0)
         self.total_val = d.get('Value', 0)
-        self.type = d['Entry Type']
+        self.type = d.get('Entry Type', "E")
         self.expiration = d.get('Expiration', None)
         self.strike = d.get('Strike', None)
         self.p_or_c = d.get('Put/ Call', None)
