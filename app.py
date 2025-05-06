@@ -187,9 +187,9 @@ def get_enriched_portfolio() -> List[Stock]:
                                  headers=config["api_headers"])
 
             if r.status_code != http.HTTPStatus.OK.value:
-                abort(r.status_code, message=r.text)
-
-            yahoo_data = json.loads(r.text)['quoteResponse']['result']
+                yahoo_data = {}
+            else:
+                yahoo_data = json.loads(r.text)['quoteResponse']['result']
             for stock in portfolio:
                 try:
                     stock.set_api_data(next(filter(lambda s: s['symbol'] == stock.symbol, yahoo_data)))  # expect only 1
@@ -231,8 +231,8 @@ def get_portfolio_data() -> List[Stock]:
     try:
         df = pd.read_html(io.StringIO(get_portfolio_table()))[0]
 
-        required_columns = ['Symbol', 'Qty', 'Change', 'Last', "Day's Value", 'Average Cost', 'Gain', 'Profit/ Loss',
-                            'Value']
+        required_columns = ['Symbol', 'Qty', 'Change', 'Last', "Day's Value", 'Average Cost',
+                            'Gain', 'Profit/ Loss', 'Value']
         optional_columns = ['Entry Type', 'Expiration', 'Strike', 'Put/ Call']
         existing_columns = required_columns + [col for col in optional_columns if col in df.columns]
 
