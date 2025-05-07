@@ -16,10 +16,11 @@ from waitress import serve
 
 from Stock import Stock
 from TrendsPersist import TrendPersist
+from yahoo_requestor import YahooRequestor
 
 app = Flask(__name__, static_url_path='/static/')
 stocks_cache: List[Stock] = list()
-API = 'https://query2.finance.yahoo.com/v7/finance/quote?crumb={}&symbols={}'
+
 trends = {
     "PRE_histo": {},
     "REGULAR_histo": {},
@@ -159,6 +160,13 @@ def get_market_state():
     return result
 
 
+def get_requestor(portfolio, watch_list):
+    global yf
+    if "yf" not in globals():
+        yf = YahooRequestor(symbols=set().union(map(lambda s: s.symbol, portfolio), watch_list))
+    return yf
+
+
 @app.route('/portfolio')
 @require_authentication
 def get_enriched_portfolio() -> List[Stock]:
@@ -170,26 +178,14 @@ def get_enriched_portfolio() -> List[Stock]:
             f"Query Parameters: {request.args}, Data: {request.data}, "
             f"Headers: {request.headers}"
         )
-        config.get("api_headers")["user-agent"] = request.headers.get("User-Agent")
-        attempts = 0
+
         stocks_cache.clear()
         portfolio: List[Stock] = get_portfolio_data()
         watch_list = load_watchlist()
         logger.debug("watch list is {}".format(watch_list))
         try:
-            r = requests.get(API.format(config.get("yahoo_crumb"),
-                                        ','.join(set().union(map(lambda s: s.symbol, portfolio), watch_list))),
-                             headers=config["api_headers"])
-            while attempts < config.get('retry_attempts', 3) and r.status_code != http.HTTPStatus.OK.value:
-                attempts += 1
-                logger.error("failed to retrieve data from yahoo {} attempts {}".format(r.text, attempts))
-                r = requests.get(API + ','.join(set().union(map(lambda s: s.symbol, portfolio), watch_list)),
-                                 headers=config["api_headers"])
-
-            if r.status_code != http.HTTPStatus.OK.value:
-                yahoo_data = {}
-            else:
-                yahoo_data = json.loads(r.text)['quoteResponse']['result']
+            requestor = get_requestor(portfolio, watch_list)
+            yahoo_data = requestor.request()
             for stock in portfolio:
                 try:
                     stock.set_api_data(next(filter(lambda s: s['symbol'] == stock.symbol, yahoo_data)))  # expect only 1
@@ -327,5 +323,6 @@ if __name__ == '__main__':
     logger.info("starting meitav-view app")
     trends = persist.load()
     logger.info("trends were loaded")
+    yr: YahooRequestor = None
 
     serve(app, listen="*:{}".format(os.getenv("APP_PORT", 8080)), url_prefix=os.getenv("URL_PREFIX", ""), threads=2)
