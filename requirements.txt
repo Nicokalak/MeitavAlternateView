@@ -1,6 +1,6 @@
 requests~=2.32.4
-pandas~=2.3.0
+pandas~=2.3.1
 Flask~=3.1.1
-lxml~=5.4.0
+lxml~=6.0.0
 waitress~=3.0.2
-curl_cffi~=0.11.4
+curl_cffi~=0.12.0
