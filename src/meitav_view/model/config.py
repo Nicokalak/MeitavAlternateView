@@ -7,7 +7,7 @@ from typing import Any, Dict
 
 @lru_cache(maxsize=1)
 class Config:
-    DEFAULT_CONFIG_FILE = "../config.json"
+    DEFAULT_CONFIG_FILE = "/app/config.json"
 
     def __init__(self) -> None:
         self.logger = logging.getLogger(__name__)
