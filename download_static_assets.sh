@@ -3,7 +3,7 @@
 # Main function
 main() {
     local file_name="$1"
-    
+    local -r static="src/meitav_view/static"
     # Check if file_name is provided
     if [[ -z "$file_name" ]]; then
         echo "Usage: $0 <file_name>"
@@ -11,15 +11,15 @@ main() {
     fi
     
     # Create directories if they don't exist
-    mkdir -p static/js static/css
+    mkdir -p $static/js $static/css
 
     # Read the file line by line
     while IFS= read -r url; do
         # Check if URL is for JS or CSS based on extension
         if [[ "$url" == *.js ]]; then
-            dest_folder="static/js"
+            dest_folder="$static/js"
         elif [[ "$url" == *.css ]]; then
-            dest_folder="static/css"
+            dest_folder="$static/css"
         else
             echo "Skipping unsupported file type for URL: $url"
             continue
