@@ -1,3 +1,4 @@
 .idea/*
 MeitavView.iml
-/config.json
+config.json
+**/__pycache__
