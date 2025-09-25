@@ -1,5 +1,6 @@
 import logging
 from functools import lru_cache
+from http import HTTPStatus
 from typing import Any, Set
 
 from curl_cffi import Session, requests
@@ -23,7 +24,7 @@ class YahooRequestor:
             "crumb": self._crumb,
         }
         response = self.session.get(url, params=params)
-        if response.status_code == 200:
+        if response.status_code == HTTPStatus.OK:
             data = response.json()
             return data.get("quoteResponse", {}).get("result", [])
         else:

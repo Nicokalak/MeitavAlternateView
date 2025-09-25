@@ -1,12 +1,21 @@
 import json
 import os
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any, Dict
+from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional
+
+from meitav_view.model.config import Config
+from meitav_view.model.stock import Stock
 
 
 class TrendPersist(object):
-    def __init__(self, trends: Dict[str, Any]):
-        self.trends = trends
+    def __init__(self, config: Config, trends: Optional[Dict[str, Any]] = None):
+        self.trends = (
+            trends
+            if trends
+            else {"PRE_histo": {}, "REGULAR_histo": {}, "POST_histo": {}}
+        )
+        self.config = config
         self._exec = ThreadPoolExecutor(max_workers=1)
 
     def save(self) -> None:
@@ -25,3 +34,51 @@ class TrendPersist(object):
             ) as load_file:
                 self.trends = json.load(load_file)
         return self.trends
+
+    def get_trends(self) -> Dict[str, Any]:
+        return self.trends
+
+    def trends_for_chart(self, state_histo_key: str, histo_val: float) -> None:
+        curr_histo = self.trends[state_histo_key]
+
+        to_delete = []
+        for key, state_histo in self.trends.items():
+            for date in state_histo.keys():
+                if (
+                    datetime.now() - datetime.strptime(date, self.config.time_format())
+                ) > timedelta(days=1, seconds=43200):
+                    to_delete.append((key, date))
+        for tup in to_delete:
+            del self.trends[tup[0]][tup[1]]
+
+        curr_histo[datetime.now().strftime(self.config.time_format())] = histo_val
+
+    def add_trend(
+        self, stocks_cache: List[Stock], trends_obj: Dict[str, Any], change_key: str
+    ) -> None:
+        trends_obj["trend"] = 0
+        trends_obj["watchlist_trend"] = 0
+        m_state = trends_obj["marketState"]
+        state_histo = m_state + "_histo"
+        watchlist_sum = 0.0
+        watchlist_count = 0.0
+        if m_state in ("CLOSED", "PREPRE", "POSTPOST"):
+            return
+        for s in stocks_cache:
+            yahoo_symbol_data = s.api_data
+            trends_obj["trend"] += s.day_val if s.type != "W" else 0
+            if s.type == "W":
+                watchlist_sum += s.percent_change
+                watchlist_count += 1
+                trends_obj["watchlist_trend"] = watchlist_sum / watchlist_count
+            if change_key in yahoo_symbol_data:
+                if s.type == "W":
+                    continue
+                if s.type == "E":
+                    trends_obj["yahoo_trend"] += (
+                        yahoo_symbol_data[change_key] * s.quantity
+                    )
+                elif m_state == "REGULAR":
+                    trends_obj["yahoo_trend"] += s.day_val
+        self.trends_for_chart(state_histo, trends_obj["yahoo_trend"])
+        self.save()

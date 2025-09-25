@@ -1,15 +1,11 @@
 import http
-import io
-import json
 import logging
 import os
 import sys
 import threading
-from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Set
+from http import HTTPStatus
+from typing import Any, ClassVar, Dict, List, Set
 
-import pandas as pd
-import requests
 from flask import Flask, Response, abort, jsonify, request, send_from_directory
 from waitress import serve
 
@@ -19,17 +15,16 @@ from meitav_view.utils import auth_utils
 from meitav_view.utils.auth_utils import require_authentication
 from meitav_view.utils.trends_persist import TrendPersist
 from meitav_view.utils.yahoo_requestor import YahooRequestor
+from meitav_view.viewer import MeitavViewer
 
 
 class AppGlobs:
-    stocks_cache: List[Stock] = list()
-    trends: Dict[str, Any] = {"PRE_histo": {}, "REGULAR_histo": {}, "POST_histo": {}}
+    stocks_cache: ClassVar[List[Stock]] = list()
     lock = threading.Lock()
-    config_lock = threading.Lock()
-    time_format: str
     config: Config
     logger: logging.Logger
-    persist: TrendPersist
+    trends: TrendPersist
+    viewer: MeitavViewer
 
 
 app = Flask(__name__, static_url_path="/static/")
@@ -39,79 +34,7 @@ g = AppGlobs()
 @app.route("/trends")
 @require_authentication
 def get_trends() -> Dict[str, Any]:
-    return g.trends
-
-
-def get_portfolio_table() -> Optional[str]:
-    try:
-        attempts = 0
-        r = requests.get(
-            os.getenv("portfolio_link", ""),
-            headers={"User-Agent": "Meitav-Viewer/{}".format(os.getenv("HOSTNAME"))},
-        )
-        while (
-            attempts < g.config.get("retry_attempts", 3)
-            and r.status_code != http.HTTPStatus.OK.value
-        ):
-            attempts += 1
-            g.logger.error(
-                "failed to get portfolio from Meitav attempt {} stats {} {}".format(
-                    attempts, r.status_code, r.text
-                )
-            )
-            r = requests.get(
-                os.getenv("portfolio_link", ""),
-                headers={
-                    "User-Agent": "Meitav-Viewer/{}".format(os.getenv("HOSTNAME"))
-                },
-            )
-        return r.text
-    except ConnectionError as e:
-        g.logger.error("failed to connect to meitav", e)
-        return None
-
-
-def add_trend(trends_obj: Dict[str, Any], change_key: str) -> None:
-    trends_obj["trend"] = 0
-    trends_obj["watchlist_trend"] = 0
-    m_state = trends_obj["marketState"]
-    state_histo = m_state + "_histo"
-    watchlist_sum = 0.0
-    watchlist_count = 0.0
-    if m_state in ("CLOSED", "PREPRE", "POSTPOST"):
-        return
-    for s in g.stocks_cache:
-        yahoo_symbol_data = s.api_data
-        trends_obj["trend"] += s.day_val if s.type != "W" else 0
-        if s.type == "W":
-            watchlist_sum += s.percent_change
-            watchlist_count += 1
-            trends_obj["watchlist_trend"] = watchlist_sum / watchlist_count
-        if change_key in yahoo_symbol_data:
-            if s.type == "W":
-                continue
-            if s.type == "E":
-                trends_obj["yahoo_trend"] += yahoo_symbol_data[change_key] * s.quantity
-            elif m_state == "REGULAR":
-                trends_obj["yahoo_trend"] += s.day_val
-    trends_for_chart(state_histo, trends_obj["yahoo_trend"])
-    g.persist.save()
-
-
-def trends_for_chart(state_histo_key: str, histo_val: float) -> None:
-    curr_histo = g.trends[state_histo_key]
-
-    to_delete = []
-    for key, state_histo in g.trends.items():
-        for date in state_histo.keys():
-            if (datetime.now() - datetime.strptime(date, g.time_format)) > timedelta(
-                days=1, seconds=43200
-            ):
-                to_delete.append((key, date))
-    for tup in to_delete:
-        del g.trends[tup[0]][tup[1]]
-
-    curr_histo[datetime.now().strftime(g.time_format)] = histo_val
+    return g.trends.get_trends()
 
 
 def get_market_state_key(market_state: str = "post") -> str:
@@ -141,7 +64,7 @@ def get_market_state() -> Dict[str, Any]:
         get_market_state_key(g.stocks_cache[0].api_data.get("marketState", ""))
         + "MarketChangePercent"
     )
-    add_trend(result, change)
+    g.trends.add_trend(g.stocks_cache, result, change)
     result["top-gainer"] = max(
         g.stocks_cache, key=lambda s: s.api_data.get(change, 0) * s.quantity
     )
@@ -189,7 +112,7 @@ def get_enriched_portfolio() -> List[Stock]:
         )
 
         g.stocks_cache.clear()
-        portfolio: List[Stock] = get_portfolio_data()
+        portfolio: List[Stock] = g.viewer.get_portfolio_data()
         watch_list = load_watchlist()
         g.logger.debug("watch list is {}".format(watch_list))
         try:
@@ -239,8 +162,8 @@ def get_enriched_portfolio() -> List[Stock]:
                     g.logger.warning(
                         "could not find watchlist entry for {}".format(watch_stock)
                     )
-        except ConnectionError as e:
-            g.logger.error("connection Error while getting API", e)
+        except ConnectionError:
+            g.logger.exception("connection Error while getting API")
             abort(http.HTTPStatus.INTERNAL_SERVER_ERROR.value)
 
         return g.stocks_cache
@@ -255,42 +178,6 @@ def ticker_data(name: str) -> Dict[str, Any]:
             g.stocks_cache[0].api_data.get("marketState", "")
         ),
     }
-
-
-def get_portfolio_data() -> List[Stock]:
-    stocks: List[Stock] = list()
-    try:
-        df = pd.read_html(io.StringIO(get_portfolio_table()))[0]
-
-        required_columns = [
-            "Symbol",
-            "Qty",
-            "Change",
-            "Last",
-            "Day's Value",
-            "Average Cost",
-            "Gain",
-            "Profit/ Loss",
-            "Value",
-        ]
-        optional_columns = ["Entry Type", "Expiration", "Strike", "Put/ Call"]
-        existing_columns = required_columns + [
-            col for col in optional_columns if col in df.columns
-        ]
-
-        data = json.loads(df[existing_columns].to_json(orient="records"))
-        total_val = 0.0
-        for d in data:
-            s = Stock(d)
-            stocks.append(s)
-            total_val += s.total_val
-        for s in stocks:
-            s.set_weight(total_val)
-    except Exception:
-        g.logger.exception("failed to get portfolio data")
-        data = []
-    g.logger.debug("portfolio symbols: {}".format([sub["Symbol"] for sub in data]))
-    return stocks
 
 
 @app.route("/js/<path:path>")
@@ -330,7 +217,7 @@ def health() -> Dict[str, str]:
 
 
 @app.route("/watchList", methods=["GET"])
-def get_strings() -> List[str]:
+def get_watchlist() -> List[str]:
     return list(load_watchlist())
 
 
@@ -340,16 +227,16 @@ def load_watchlist() -> Set[str]:
 
 @app.route("/watchList", methods=["POST"])
 def update_watchlist() -> tuple[Response, int]:
-    with g.config_lock:
-        new_watchlist = request.json
-        if not isinstance(new_watchlist, list):
-            g.logger.error("invalid request for update_watchlist")
-            return jsonify({"error": "'watchlist' should be a list"}), 400
+    new_watchlist = request.json
+    if not isinstance(new_watchlist, list):
+        g.logger.error("invalid request for update_watchlist")
+        return jsonify(
+            {"error": "'watchlist' should be a list"}
+        ), HTTPStatus.BAD_REQUEST
 
-        g.config.set("watch_list", new_watchlist)
-        g.config.save()
+    g.config.set_and_save("watch_list", new_watchlist)
 
-    return jsonify({"message": "Watchlist updated successfully"}), 200
+    return jsonify({"message": "Watchlist updated successfully"}), HTTPStatus.OK
 
 
 def main() -> None:
@@ -357,14 +244,14 @@ def main() -> None:
     g.logger = logging.getLogger("waitress")
     g.logger.setLevel(os.getenv("APP_LOG_LEVEL", logging.INFO))
     g.config = Config()
-    g.time_format = g.config.get("time_format")
-    g.persist = TrendPersist(g.trends)
+    g.trends = TrendPersist(g.config)
+    g.trends.load()
     g.logger.info("starting meitav-view app")
-    g.trends = g.persist.load()
+    g.viewer = MeitavViewer(config=g.config)
 
     serve(
         app,
-        listen="*:{}".format(os.getenv("APP_PORT", 8080)),
+        listen="*:{}".format(os.getenv("APP_PORT", "8080")),
         url_prefix=os.getenv("URL_PREFIX", ""),
         threads=2,
     )
