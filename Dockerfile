@@ -12,17 +12,17 @@ WORKDIR /app
 COPY pyproject.toml poetry.lock* ./
 COPY src src
 
-FROM base AS quality_check
-COPY tests tests
-RUN poetry update
-RUN poetry install
-
-RUN echo "--- Running Quality Checks ---" && \
-    poetry run ruff check src && \
-    poetry run ruff format --check src && \
-    poetry run mypy src && \
-    poetry run pytest tests && \
-    echo "--- Quality Checks Passed! ---"
+#FROM base AS quality_check
+#COPY tests tests
+#RUN poetry update
+#RUN poetry install
+#
+#RUN echo "--- Running Quality Checks ---" && \
+#    poetry run ruff check src && \
+#    poetry run ruff format --check src && \
+#    poetry run mypy src && \
+#    poetry run pytest tests && \
+#    echo "--- Quality Checks Passed! ---"
 
 FROM base AS runtime
 RUN poetry update && poetry install --only main --no-interaction --no-ansi && rm -rf /root/.cache/

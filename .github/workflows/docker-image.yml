@@ -10,18 +10,48 @@ env:
   IMAGE_NAME: ${{ secrets.DOCKER_USER }}/meitav-alternate-view
 
 jobs:
-  build_and_push:
+  quality_check:
+    name: Quality Check
     runs-on: ubuntu-latest
     steps:
-      -
-        name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
-      -
-        name: Docker meta
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Poetry
+        run: pip install poetry
+
+      - name: Install dependencies
+        run: |
+          poetry install --no-interaction --no-root
+
+      - name: Run quality checks
+        run: |
+          echo "--- Running Quality Checks ---"
+          poetry run ruff check src
+          poetry run ruff format --check src
+          poetry run mypy src
+          poetry run pytest
+          echo "--- Quality Checks Passed! ---"
+
+
+  build_and_push:
+    name: Build and Publish Docker Image
+    runs-on: ubuntu-latest
+    needs: quality_check  # Run only if quality checks passed
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
         with:
-          # list of Docker images to use as base name for tags
           images: ${{ env.IMAGE_NAME }}
           flavor: |
             latest=true
@@ -31,17 +61,17 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
-      -
-        name: Login to Docker Hub
+
+      - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USER }}
           password: ${{ secrets.DOCKER_TOKEN }}
-      -
-        name: Set up Docker Buildx
+
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      -
-        name: Build and push
+
+      - name: Build and push
         uses: docker/build-push-action@v5
         with:
           context: .
