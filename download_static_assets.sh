@@ -10,28 +10,12 @@ main() {
         exit 1
     fi
     
-    # Create directories if they don't exist
     mkdir -p $static/js $static/css
 
-    # Read the file line by line
-    while IFS= read -r url; do
-        # Check if URL is for JS or CSS based on extension
-        if [[ "$url" == *.js ]]; then
-            dest_folder="$static/js"
-        elif [[ "$url" == *.css ]]; then
-            dest_folder="$static/css"
-        else
-            echo "Skipping unsupported file type for URL: $url"
-            continue
-        fi
-        
-        # Get the filename from the URL
-        file_name=$(basename "$url")
-        dest_path="$dest_folder/$file_name"
-
-        # Download the file to the appropriate folder
+    while IFS=',' read -r url dest; do
+        dest_path="$static/$dest"
+        echo $dest_path
         curl -L -o "$dest_path" "$url"
-        
         # Check if the download was successful
         if [[ $? -eq 0 ]]; then
             echo "Downloaded $url to $dest_path"

@@ -125,6 +125,7 @@
 <!-- auto refresh ext -->
 <script src="js/bootstrap-table-auto-refresh.min.js"></script>
 <!-- export ext -->
+<script type="text/javascript" src="js/xlsx.full.min.js"></script>
 <script src="js/tableExport.min.js"></script>
 <script src="js/bootstrap-table-export.min.js"></script>
 <script src="js/chart.umd.min.js"></script>
@@ -156,7 +157,8 @@
             }
         },
         buttonsOrder: ['refresh', 'autoRefresh', 'columns', 'toggleWatchListBtn', 'Export'],
-        classes: ['table', 'table-sm', 'table-striped', 'table-hover', 'caption-top']
+        classes: ['table', 'table-sm', 'table-striped', 'table-hover', 'caption-top'],
+        exportTypes: ['json', 'csv', 'txt', 'sql', 'xlsx', 'pdf']
     });
     $('.columns-start.btn-group').prepend($('#customSearch').detach());
 </script>
