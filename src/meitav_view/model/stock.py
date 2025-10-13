@@ -40,9 +40,7 @@ class Stock(object):
         self.p_or_c = d.get("Put/ Call", None)
         self.percent_change = self.__calc_percent_change()
         self.principle_change = (
-            0
-            if self.change == 0 or self.cost is None
-            else (self.change / self.cost) * 100
+            0 if self.change == 0 or self.cost is None else (self.change / self.cost) * 100
         )
         self.total_cost = self.total_val - self.total_change
         self.api_data = {}
@@ -54,14 +52,9 @@ class Stock(object):
         if self.change == 0:
             return 0
         elif float(self.last_price) - float(self.change) == 0:
-            return (
-                float(self.change)
-                / (float(self.last_price) - float(self.change) + 0.0001)
-            ) * 100
+            return (float(self.change) / (float(self.last_price) - float(self.change) + 0.0001)) * 100
         else:
-            return (
-                float(self.change) / (float(self.last_price) - float(self.change)) * 100
-            )
+            return float(self.change) / (float(self.last_price) - float(self.change)) * 100
 
     def set_weight(self, portfolio_total_val: float) -> None:
         self.weight = (self.total_val / portfolio_total_val) * 100
@@ -70,6 +63,4 @@ class Stock(object):
         if api_data and api_data["symbol"] == self.symbol:
             self.api_data = api_data
         else:
-            raise ValueError(
-                "unmatch Symbols {} {}".format(self.symbol, api_data["symbol"])
-            )
+            raise ValueError("unmatch Symbols {} {}".format(self.symbol, api_data["symbol"]))

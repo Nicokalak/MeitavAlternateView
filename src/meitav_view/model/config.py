@@ -21,9 +21,7 @@ class Config:
         return self._settings.get(key, default)
 
     def _load_config(self) -> None:
-        with open(
-            os.getenv("DEFAULT_CONF", self.DEFAULT_CONFIG_FILE), "r"
-        ) as config_file:
+        with open(os.getenv("DEFAULT_CONF", self.DEFAULT_CONFIG_FILE), "r") as config_file:
             self._settings = json.load(config_file)
             config_file.close()
 
@@ -31,9 +29,7 @@ class Config:
         return str(self._settings.get("time_format", self.DEFAULT_TIME_FORMAT))
 
     def save(self) -> None:
-        with open(
-            os.getenv("DEFAULT_CONF", self.DEFAULT_CONFIG_FILE), "w"
-        ) as config_file:
+        with open(os.getenv("DEFAULT_CONF", self.DEFAULT_CONFIG_FILE), "w") as config_file:
             self.logger.info("saved new configurations")
             json.dump(self._settings, config_file, indent=4)
 

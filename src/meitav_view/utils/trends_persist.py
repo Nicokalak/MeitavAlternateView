@@ -10,11 +10,7 @@ from meitav_view.model.stock import Stock
 
 class TrendPersist(object):
     def __init__(self, config: Config, trends: Optional[Dict[str, Any]] = None):
-        self.trends = (
-            trends
-            if trends
-            else {"PRE_histo": {}, "REGULAR_histo": {}, "POST_histo": {}}
-        )
+        self.trends = trends if trends else {"PRE_histo": {}, "REGULAR_histo": {}, "POST_histo": {}}
         self.config = config
         self._exec = ThreadPoolExecutor(max_workers=1)
 
@@ -22,16 +18,12 @@ class TrendPersist(object):
         self._exec.submit(self.__save_to_file)
 
     def __save_to_file(self) -> None:
-        with open(
-            os.environ.get("PERSIST_FILE", "/tmp/meitav_trends.json"), "w"
-        ) as write_file:
+        with open(os.environ.get("PERSIST_FILE", "/tmp/meitav_trends.json"), "w") as write_file:
             json.dump(self.trends, write_file, indent=4)
 
     def load(self) -> Dict[str, Any]:
         if os.path.exists(os.environ.get("PERSIST_FILE", "/tmp/meitav_trends.json")):
-            with open(
-                os.environ.get("PERSIST_FILE", "/tmp/meitav_trends.json"), "r"
-            ) as load_file:
+            with open(os.environ.get("PERSIST_FILE", "/tmp/meitav_trends.json"), "r") as load_file:
                 self.trends = json.load(load_file)
         return self.trends
 
@@ -44,9 +36,9 @@ class TrendPersist(object):
         to_delete = []
         for key, state_histo in self.trends.items():
             for date in state_histo.keys():
-                if (
-                    datetime.now() - datetime.strptime(date, self.config.time_format())
-                ) > timedelta(days=1, seconds=43200):
+                if (datetime.now() - datetime.strptime(date, self.config.time_format())) > timedelta(
+                    days=1, seconds=43200
+                ):
                     to_delete.append((key, date))
         for tup in to_delete:
             del self.trends[tup[0]][tup[1]]
@@ -75,9 +67,7 @@ class TrendPersist(object):
                 if s.type == "W":
                     continue
                 if s.type == "E":
-                    trends_obj["yahoo_trend"] += (
-                        yahoo_symbol_data[change_key] * s.quantity
-                    )
+                    trends_obj["yahoo_trend"] += yahoo_symbol_data[change_key] * s.quantity
                 elif m_state == "REGULAR":
                     trends_obj["yahoo_trend"] += s.day_val
         self.trends_for_chart(state_histo, trends_obj["yahoo_trend"])

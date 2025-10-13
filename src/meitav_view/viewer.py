@@ -23,9 +23,7 @@ class MeitavViewer:
             attempts = 0
             r = requests.get(
                 self.url,
-                headers={
-                    "User-Agent": "Meitav-Viewer/{}".format(os.getenv("HOSTNAME"))
-                },
+                headers={"User-Agent": "Meitav-Viewer/{}".format(os.getenv("HOSTNAME"))},
             )
             while (
                 attempts < self.config.get("retry_attempts", 3)
@@ -39,9 +37,7 @@ class MeitavViewer:
                 )
                 r = requests.get(
                     self.url,
-                    headers={
-                        "User-Agent": "Meitav-Viewer/{}".format(os.getenv("HOSTNAME"))
-                    },
+                    headers={"User-Agent": "Meitav-Viewer/{}".format(os.getenv("HOSTNAME"))},
                 )
             return r.text
         except ConnectionError:
@@ -80,7 +76,5 @@ class MeitavViewer:
         except Exception:
             self.logger.exception("failed to get portfolio data")
             data = []
-        self.logger.debug(
-            "portfolio symbols: {}".format([sub["Symbol"] for sub in data])
-        )
+        self.logger.debug("portfolio symbols: {}".format([sub["Symbol"] for sub in data]))
         return stocks

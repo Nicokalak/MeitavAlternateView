@@ -38,11 +38,7 @@ def get_trends() -> Dict[str, Any]:
 
 
 def get_market_state_key(market_state: str = "post") -> str:
-    return (
-        market_state.lower()
-        if market_state.lower() in ("pre", "post", "regular")
-        else "post"
-    )
+    return market_state.lower() if market_state.lower() in ("pre", "post", "regular") else "post"
 
 
 @app.route("/marketState")
@@ -56,37 +52,20 @@ def get_market_state() -> Dict[str, Any]:
         "trend": 0,
         "yahoo_trend": 0,
     }
-    change = (
-        get_market_state_key(g.stocks_cache[0].api_data.get("marketState", ""))
-        + "MarketChange"
-    )
+    change = get_market_state_key(g.stocks_cache[0].api_data.get("marketState", "")) + "MarketChange"
     change_per = (
         get_market_state_key(g.stocks_cache[0].api_data.get("marketState", ""))
         + "MarketChangePercent"
     )
     g.trends.add_trend(g.stocks_cache, result, change)
-    result["top-gainer"] = max(
-        g.stocks_cache, key=lambda s: s.api_data.get(change, 0) * s.quantity
-    )
-    result["top-gainer%"] = max(
-        g.stocks_cache, key=lambda s: s.api_data.get(change_per, 0)
-    )
-    result["top-loser"] = min(
-        g.stocks_cache, key=lambda s: s.api_data.get(change, 0) * s.quantity
-    )
-    result["top-loser%"] = min(
-        g.stocks_cache, key=lambda s: s.api_data.get(change_per, 0)
-    )
-    result["top-mover"] = max(
-        g.stocks_cache, key=lambda s: s.api_data.get("regularMarketVolume", 0)
-    )
+    result["top-gainer"] = max(g.stocks_cache, key=lambda s: s.api_data.get(change, 0) * s.quantity)
+    result["top-gainer%"] = max(g.stocks_cache, key=lambda s: s.api_data.get(change_per, 0))
+    result["top-loser"] = min(g.stocks_cache, key=lambda s: s.api_data.get(change, 0) * s.quantity)
+    result["top-loser%"] = min(g.stocks_cache, key=lambda s: s.api_data.get(change_per, 0))
+    result["top-mover"] = max(g.stocks_cache, key=lambda s: s.api_data.get("regularMarketVolume", 0))
     result["up-down"] = {
-        "up": len(
-            list(filter(lambda sd: sd.gain is not None and sd.gain > 0, g.stocks_cache))
-        ),
-        "down": len(
-            list(filter(lambda sd: sd.gain is not None and sd.gain < 0, g.stocks_cache))
-        ),
+        "up": len(list(filter(lambda sd: sd.gain is not None and sd.gain > 0, g.stocks_cache))),
+        "down": len(list(filter(lambda sd: sd.gain is not None and sd.gain < 0, g.stocks_cache))),
     }
     result["trending"] = max(
         g.stocks_cache,
@@ -145,13 +124,11 @@ def get_enriched_portfolio() -> List[Stock]:
                             ),
                             "Entry Type": "W",
                             "Last": api_data.get(
-                                get_market_state_key(api_data.get("marketState"))
-                                + "MarketPrice",
+                                get_market_state_key(api_data.get("marketState")) + "MarketPrice",
                                 api_data.get("regularMarketPrice", -1),
                             ),
                             "Change": api_data.get(
-                                get_market_state_key(api_data.get("marketState"))
-                                + "MarketChange",
+                                get_market_state_key(api_data.get("marketState")) + "MarketChange",
                                 0,
                             ),
                         }
@@ -159,9 +136,7 @@ def get_enriched_portfolio() -> List[Stock]:
                     stock.set_api_data(api_data)
                     g.stocks_cache.append(stock)
                 else:
-                    g.logger.warning(
-                        "could not find watchlist entry for {}".format(watch_stock)
-                    )
+                    g.logger.warning("could not find watchlist entry for {}".format(watch_stock))
         except ConnectionError:
             g.logger.exception("connection Error while getting API")
             abort(http.HTTPStatus.INTERNAL_SERVER_ERROR.value)
@@ -174,9 +149,7 @@ def get_enriched_portfolio() -> List[Stock]:
 def ticker_data(name: str) -> Dict[str, Any]:
     return {
         "stock": next(filter(lambda x: x.symbol == name, g.stocks_cache)),
-        "market-state-4calc": get_market_state_key(
-            g.stocks_cache[0].api_data.get("marketState", "")
-        ),
+        "market-state-4calc": get_market_state_key(g.stocks_cache[0].api_data.get("marketState", "")),
     }
 
 
@@ -230,9 +203,7 @@ def update_watchlist() -> tuple[Response, int]:
     new_watchlist = request.json
     if not isinstance(new_watchlist, list):
         g.logger.error("invalid request for update_watchlist")
-        return jsonify(
-            {"error": "'watchlist' should be a list"}
-        ), HTTPStatus.BAD_REQUEST
+        return jsonify({"error": "'watchlist' should be a list"}), HTTPStatus.BAD_REQUEST
 
     g.config.set_and_save("watch_list", new_watchlist)
 
