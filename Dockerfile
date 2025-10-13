@@ -14,6 +14,7 @@ COPY src src
 
 FROM base AS quality_check
 COPY tests tests
+RUN poetry update
 RUN poetry install
 
 RUN echo "--- Running Quality Checks ---" && \
@@ -24,7 +25,7 @@ RUN echo "--- Running Quality Checks ---" && \
     echo "--- Quality Checks Passed! ---"
 
 FROM base AS runtime
-RUN poetry install --only main --no-interaction --no-ansi && rm -rf /root/.cache/
+RUN poetry update && poetry install --only main --no-interaction --no-ansi && rm -rf /root/.cache/
 
 EXPOSE 8080
 
