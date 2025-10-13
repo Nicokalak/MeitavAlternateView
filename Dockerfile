@@ -13,7 +13,7 @@ COPY pyproject.toml poetry.lock* ./
 COPY src src
 
 FROM base AS runtime
-RUN poetry update && poetry install --without=dev --no-interaction --no-ansi && rm -rf /root/.cache/
+RUN poetry install --without dev --only main --no-interaction --no-ansi && rm -rf /root/.cache/
 
 EXPOSE 8080
 
