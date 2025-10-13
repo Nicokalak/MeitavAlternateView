@@ -13,10 +13,22 @@ from meitav_view.model.stock import Stock
 
 
 class MeitavViewer:
+    PORTFOLIO_URL_FILE = "MEITAV_PORTFOLIO_URL_FILE"
+
     def __init__(self, config: Config):
         self.config = config
-        self.url = os.getenv("portfolio_link", "")
+        self.url = self._get_url()
         self.logger = logging.getLogger(MeitavViewer.__name__)
+
+    def _get_url(self) -> str:
+        if self.PORTFOLIO_URL_FILE in os.environ:
+            try:
+                with open(os.environ[self.PORTFOLIO_URL_FILE], "r") as f:
+                    return f.read().strip()
+            except FileNotFoundError:
+                self.logger.error(f"{os.environ[self.PORTFOLIO_URL_FILE]} secret not found")
+
+        return os.getenv("portfolio_link", "")
 
     def get_portfolio_table(self) -> Optional[str]:
         try:
