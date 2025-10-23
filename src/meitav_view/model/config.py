@@ -16,7 +16,10 @@ class Config:
     def __init__(self) -> None:
         self.logger = logging.getLogger(__name__)
         self._settings: dict[str, Any] = {}
-        self._load_config()
+        try:
+            self._load_config()
+        except FileNotFoundError:
+            self.logger.warning("Config file not found, continue with default settings")
 
     def get(self, key: str, default: Any = None) -> Any:
         return self._settings.get(key, default)
