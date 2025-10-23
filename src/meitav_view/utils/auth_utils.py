@@ -1,6 +1,7 @@
 import logging
+from collections.abc import Callable
 from functools import wraps
-from typing import Any, Callable
+from typing import Any
 
 from flask import request
 
@@ -28,15 +29,14 @@ def require_authentication(func: Callable[..., Any]) -> Any:
 
 def is_authenticated() -> bool:
     config = Config()
-    allowed_users = config.get("allowed_users", list())
+    allowed_users = config.get("allowed_users", [])
     if len(allowed_users) == 0:
         logger.debug("allowed users undefined accepts all")
         return True
-    else:
-        user = request.headers.get(email_header)
-        is_allowed = user in allowed_users
-        if not is_allowed:
-            logger.warning(
-                f"{user} is not Authorized, request {request.url} headers:{request.headers}"
-            )
-        return is_allowed
+    user = request.headers.get(email_header)
+    is_allowed = user in allowed_users
+    if not is_allowed:
+        logger.warning(
+            f"{user} is not Authorized, request {request.url} headers:{request.headers}",
+        )
+    return is_allowed

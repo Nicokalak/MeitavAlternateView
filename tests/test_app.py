@@ -1,3 +1,4 @@
+import http
 import unittest
 
 from meitav_view.app import app
@@ -9,4 +10,4 @@ class TestFlaskApp(unittest.TestCase):
 
     def test_app_loads(self):
         response = self.app.get("/health")
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, http.HTTPStatus.OK)

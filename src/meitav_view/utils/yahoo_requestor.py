@@ -1,7 +1,7 @@
 import logging
 from functools import lru_cache
 from http import HTTPStatus
-from typing import Any, Set
+from typing import Any
 
 from curl_cffi import Session, requests
 
@@ -17,7 +17,7 @@ class YahooRequestor:
         r1 = self.session.get("https://query2.finance.yahoo.com/v1/test/getcrumb")
         self._crumb = r1.text
 
-    def request(self, symbols: Set[str]) -> Any:
+    def request(self, symbols: set[str]) -> Any:
         url = "https://query2.finance.yahoo.com/v7/finance/quote"
         params = {
             "symbols": ",".join(symbols),
@@ -27,6 +27,5 @@ class YahooRequestor:
         if response.status_code == HTTPStatus.OK:
             data = response.json()
             return data.get("quoteResponse", {}).get("result", [])
-        else:
-            logger.error(response)
-            return []
+        logger.error(response)
+        return []

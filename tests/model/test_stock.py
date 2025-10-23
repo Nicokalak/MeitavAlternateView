@@ -15,7 +15,7 @@ class TestStock(TestCase):
                 "Last": 110,
                 "Change": 10,
                 "Value": 2000,
-            }
+            },
         )
         api_data = {"symbol": "test1", "t": True}
         stock.set_weight(10000)
@@ -39,7 +39,7 @@ class TestStock(TestCase):
                 "Entry Type": "W",
                 "Last": -1,
                 "Change": 0,
-            }
+            },
         )
 
         self.assertEqual("test2", stock.symbol)

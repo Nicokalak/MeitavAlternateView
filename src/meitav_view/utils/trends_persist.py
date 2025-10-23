@@ -2,14 +2,16 @@ import json
 import os
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from meitav_view.model.config import Config
 from meitav_view.model.stock import Stock
 
 
-class TrendPersist(object):
-    def __init__(self, config: Config, trends: Optional[Dict[str, Any]] = None):
+class TrendPersist:
+    _DEFAULT_PERSIST_FILE = "meitav_trends.json"
+
+    def __init__(self, config: Config, trends: dict[str, Any] | None = None):
         self.trends = trends if trends else {"PRE_histo": {}, "REGULAR_histo": {}, "POST_histo": {}}
         self.config = config
         self._exec = ThreadPoolExecutor(max_workers=1)
@@ -18,16 +20,16 @@ class TrendPersist(object):
         self._exec.submit(self.__save_to_file)
 
     def __save_to_file(self) -> None:
-        with open(os.environ.get("PERSIST_FILE", "/tmp/meitav_trends.json"), "w") as write_file:
+        with open(os.environ.get("PERSIST_FILE", self._DEFAULT_PERSIST_FILE), "w") as write_file:
             json.dump(self.trends, write_file, indent=4)
 
-    def load(self) -> Dict[str, Any]:
-        if os.path.exists(os.environ.get("PERSIST_FILE", "/tmp/meitav_trends.json")):
-            with open(os.environ.get("PERSIST_FILE", "/tmp/meitav_trends.json"), "r") as load_file:
+    def load(self) -> "TrendPersist":
+        if os.path.exists(os.environ.get("PERSIST_FILE", self._DEFAULT_PERSIST_FILE)):
+            with open(os.environ.get("PERSIST_FILE", self._DEFAULT_PERSIST_FILE)) as load_file:
                 self.trends = json.load(load_file)
-        return self.trends
+        return self
 
-    def get_trends(self) -> Dict[str, Any]:
+    def get_trends(self) -> dict[str, Any]:
         return self.trends
 
     def trends_for_chart(self, state_histo_key: str, histo_val: float) -> None:
@@ -37,7 +39,8 @@ class TrendPersist(object):
         for key, state_histo in self.trends.items():
             for date in state_histo.keys():
                 if (datetime.now() - datetime.strptime(date, self.config.time_format())) > timedelta(
-                    days=1, seconds=43200
+                    days=1,
+                    seconds=43200,
                 ):
                     to_delete.append((key, date))
         for tup in to_delete:
@@ -46,7 +49,10 @@ class TrendPersist(object):
         curr_histo[datetime.now().strftime(self.config.time_format())] = histo_val
 
     def add_trend(
-        self, stocks_cache: List[Stock], trends_obj: Dict[str, Any], change_key: str
+        self,
+        stocks_cache: list[Stock],
+        trends_obj: dict[str, Any],
+        change_key: str,
     ) -> None:
         trends_obj["trend"] = 0
         trends_obj["watchlist_trend"] = 0

@@ -17,11 +17,21 @@ You will need to generate excel web query for your portfolio.
 
 3. run as docker container
 
-````  docker run -d -v <path_to_conf>:/app/config.json -e TZ='Asia/Jerusalem' -e portfolio_link='<your link>' -p 8080:8080 nicolak/meitav-alternate-view:latest ````
+```shell
+  docker run -d -v <path_to_conf>:/app/config.json -e TZ='Asia/Jerusalem' -e portfolio_link='<your link>' -p 8080:8080 nicolak/meitav-alternate-view:latest 
+  ```
 
 4. open the app in browser http://localhost:8080/
 
+## quality checks
+run with poetry
+```shell
 
+poetry run ruff check src --fix
+poetry run ruff format src
+poetry run mypy src
+poetry run pytest
+```
 
 ## License
 Distributed under the ISC License.
