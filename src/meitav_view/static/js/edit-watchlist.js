@@ -1,7 +1,7 @@
 function getItem(item= "") {
     return "<li class='list-group-item border-0'>" +
         "<div class='input-group input-group-sm'>" +
-        "<input type='text' class='form-control form-control-sm' value='" + item + "'>" +
+        "<input type='text' class='form-control form-control-sm' id='watchlist-" + item +"' value='" + item + "'>" +
         "<button class='btn btn-danger delete-item' type='button'><i class='fas fa-times'></i>" +
         "</button></div></li>";
 }
