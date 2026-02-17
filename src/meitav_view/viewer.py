@@ -186,8 +186,9 @@ class MeitavViewer:
         }
         result["trending"] = max(
             self._stocks,
-            key=lambda s: s.api_data.get("regularMarketVolume", 0)
-            / s.api_data.get("averageDailyVolume10Day", sys.maxsize),
+            key=lambda s: (
+                s.api_data.get("regularMarketVolume", 0) / s.api_data.get("averageDailyVolume10Day", sys.maxsize)
+            ),
         )
 
         return result
