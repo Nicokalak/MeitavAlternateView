@@ -4,4 +4,3 @@ config.json
 run.sh
 **/__pycache__
 venv
-node_modules

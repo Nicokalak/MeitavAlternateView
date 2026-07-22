@@ -15,7 +15,7 @@
     <link rel="stylesheet" href="css/bootstrap-table.min.css">
     <link rel="stylesheet" href="css/main.css" />
 <body>
-<input type="search" id="customSearch" class="form-control" placeholder="Search (Regex)">
+<input type="search" id="customSearch" class="form-control">
 <div class="container-fluid">
     <div class="row">
         <div class="col-md-6">
@@ -64,7 +64,7 @@
                    data-detail-formatter="detailFormatter"
                    data-show-export="true"
                    data-buttons-align="start"
-                   data-custom-search="customSearch"
+                   data-regex-search="true"
                    data-search-selector="#customSearch"
                    data-sort-order="desc"
                    data-row-style="watchListStyle"
@@ -137,38 +137,7 @@
 <script src="js/darkmode.js"></script>
 <script>
     init_chart();
-
-    function customSearch(data, text) {
-        if (!text || text.trim() === '') {
-            return data;
-        }
-        let regex;
-        try {
-            regex = new RegExp(text, 'i');
-        } catch (e) {
-            try {
-                regex = new RegExp(text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
-            } catch (err) {
-                return data;
-            }
-        }
-        return data.filter(function (row) {
-            return Object.keys(row).some(function (key) {
-                if (key.startsWith('_')) return false;
-                let val = row[key];
-                if (val === null || val === undefined) return false;
-                if (typeof val === 'object') {
-                    return Object.values(val).some(function (nestedVal) {
-                        return nestedVal !== null && nestedVal !== undefined && typeof nestedVal !== 'object' && regex.test(nestedVal.toString());
-                    });
-                }
-                return regex.test(val.toString());
-            });
-        });
-    }
-
     $('#table').bootstrapTable({
-        customSearch: customSearch,
         onLoadSuccess: function () {
             $.get("marketState", function (trendObj) {
                 trend_stats(trendObj)
@@ -190,9 +159,6 @@
         buttonsOrder: ['refresh', 'autoRefresh', 'columns', 'toggleWatchListBtn', 'Export'],
         classes: ['table', 'table-sm', 'table-striped', 'table-hover', 'caption-top'],
         exportTypes: ['json', 'csv', 'txt', 'sql', 'xlsx', 'pdf']
-    });
-    $('#customSearch').on('keyup drop blur input', function () {
-        $('#table').bootstrapTable('search', $(this).val());
     });
     $('.columns-start.btn-group').prepend($('#customSearch').detach());
 </script>
