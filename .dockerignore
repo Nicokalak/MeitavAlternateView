@@ -3,6 +3,8 @@
 __pycache__
 .github
 venv
+.venv
+node_modules
 images
 download_static_assets.sh
 static_deps.txt
