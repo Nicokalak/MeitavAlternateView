@@ -45,7 +45,7 @@ uv run meitav_view
 
 4. Open the app in browser http://localhost:8080/
 
-## quality checks
+## Quality checks
 run with uv
 ```shell
 
