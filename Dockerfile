@@ -1,5 +1,5 @@
 # Stage 1: Build Frontend Static Assets
-FROM node:20-slim AS frontend-builder
+FROM node:26-slim AS frontend-builder
 WORKDIR /app/ui
 
 # Install UI dependencies into ui/node_modules
@@ -63,6 +63,6 @@ USER appuser
 EXPOSE 8080
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
-  CMD python -m meitav_view.healthcheck || exit 1
+    CMD python -m meitav_view.healthcheck || exit 1
 
 CMD ["meitav_view"]
