@@ -5,4 +5,13 @@ run.sh
 **/__pycache__
 venv
 .venv
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+data/
 node_modules
+ui/node_modules
+ui/dist
+src/meitav_view/static/*
+!src/meitav_view/static/.gitkeep
+plans/

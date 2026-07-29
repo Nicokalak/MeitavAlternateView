@@ -4,7 +4,12 @@ __pycache__
 .github
 venv
 .venv
+.pytest_cache
+.mypy_cache
+.ruff_cache
+data
+plans
 node_modules
 images
-download_static_assets.sh
-static_deps.txt
+ui/node_modules
+ui/dist

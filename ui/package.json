@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "sync-assets": "node scripts/sync-assets.js",
-    "postinstall": "node scripts/sync-assets.js"
+    "update-sri": "node ../scripts/update-sri.js",
+    "build": "./build.sh"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^7.3.1",
