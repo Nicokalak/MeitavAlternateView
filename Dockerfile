@@ -15,8 +15,13 @@ FROM python:3.12-slim AS python-builder
 # Copy uv binary directly from official image
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
+# Version injected at build time (e.g. from `git describe --tags`) so
+# hatch-vcs doesn't need a .git directory inside the Docker build context.
+ARG APP_VERSION=0.0.0.dev0
+
 ENV UV_COMPILE_BYTECODE=1 \
-    UV_LINK_MODE=copy
+    UV_LINK_MODE=copy \
+    SETUPTOOLS_SCM_PRETEND_VERSION=${APP_VERSION}
 
 WORKDIR /app
 
