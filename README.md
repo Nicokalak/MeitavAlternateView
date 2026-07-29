@@ -23,14 +23,36 @@ You will need to generate excel web query for your portfolio.
 
 4. open the app in browser http://localhost:8080/
 
+## Running locally (without Docker)
+
+1. Install dependencies:
+```shell
+uv sync
+```
+
+2. Set required environment variables:
+```shell
+export portfolio_link='<your link>'
+export TZ='Asia/Jerusalem'
+# optional: path to your config file
+export config_path='<path_to_conf>/config.json'
+```
+
+3. Run the app:
+```shell
+uv run meitav_view
+```
+
+4. Open the app in browser http://localhost:8080/
+
 ## quality checks
-run with poetry
+run with uv
 ```shell
 
-poetry run ruff check src --fix
-poetry run ruff format src
-poetry run mypy src
-poetry run pytest
+uv run ruff check src --fix
+uv run ruff format src
+uv run mypy src
+uv run pytest
 ```
 
 ## License
