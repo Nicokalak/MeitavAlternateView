@@ -1,5 +1,5 @@
 # Stage 1: Build Frontend Static Assets
-FROM node:26-slim AS frontend-builder
+FROM node:24-slim AS frontend-builder
 WORKDIR /app/ui
 
 # Install UI dependencies into ui/node_modules
@@ -15,13 +15,13 @@ FROM python:3.12-slim AS python-builder
 # Copy uv binary directly from official image
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-# Version injected at build time (e.g. from `git describe --tags`) so
-# hatch-vcs doesn't need a .git directory inside the Docker build context.
+# Version injected at build time so hatch-vcs doesn't need a .git directory
 ARG APP_VERSION=0.0.0.dev0
 
 ENV UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy \
-    SETUPTOOLS_SCM_PRETEND_VERSION=${APP_VERSION}
+    SETUPTOOLS_SCM_PRETEND_VERSION=${APP_VERSION} \
+    HATCH_BUILD_VERSION=${APP_VERSION}
 
 WORKDIR /app
 
@@ -32,10 +32,10 @@ COPY pyproject.toml uv.lock ./
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev --no-install-project
 
-# Copy application source and install project package into /app/.venv
+# Copy application source and install project package firmly into /app/.venv
 COPY src ./src
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev
+    uv sync --frozen --no-dev --no-editable
 
 # Stage 3: Slim Production Runtime
 FROM python:3.12-slim AS runtime
@@ -49,14 +49,12 @@ WORKDIR /app
 RUN useradd -m -u 1000 appuser && \
     mkdir -p /app/data && chown -R appuser:appuser /app
 
-# Copy pre-built Python virtual environment (includes installed meitav-view package)
+# Copy pre-built Python virtual environment (contains your built meitav-view package)
 COPY --from=python-builder --chown=appuser:appuser /app/.venv /app/.venv
 
-# Copy Python application source
-COPY --chown=appuser:appuser src ./src
-
-# Copy compiled frontend static assets
-COPY --from=frontend-builder --chown=appuser:appuser /app/ui/dist ./src/meitav_view/static
+# Copy compiled frontend static assets directly into the virtual environment's site-packages 
+# or wherever your backend expects it. (Adjust this path if your app reads from /app/src instead)
+COPY --from=frontend-builder --chown=appuser:appuser /app/ui/dist /app/.venv/lib/python3.12/site-packages/meitav_view/static
 
 USER appuser
 
