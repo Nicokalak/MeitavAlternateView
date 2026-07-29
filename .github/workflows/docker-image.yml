@@ -23,6 +23,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          # Fetch full history so git describe --tags works correctly
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -60,14 +63,50 @@ jobs:
           echo "--- Quality Checks Passed! ---"
 
 
+  build_package:
+    name: Build Python Package
+    runs-on: ubuntu-latest
+    needs: quality_check
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          # Full history required for git describe --tags (used by hatch-vcs)
+          fetch-depth: 0
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Show resolved version
+        run: |
+          echo "Git describe: $(git describe --tags)"
+          uv run python -c "import importlib.metadata; print('Package version:', importlib.metadata.version('meitav-view'))"
+
+      - name: Build wheel & sdist
+        run: uv build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-dist
+          path: dist/
+          retention-days: 7
+
+
   build_and_push:
     name: Build and Publish Docker Image
     runs-on: ubuntu-latest
     needs: quality_check
+    # Only run on push to master or tag push — skip for pull requests
+    if: github.event_name == 'push'
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Docker meta
         id: meta
@@ -78,7 +117,6 @@ jobs:
             latest=true
           tags: |
             type=ref,event=branch
-            type=ref,event=pr
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
@@ -90,7 +128,6 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Login to Docker Hub
-        if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USER }}
@@ -102,7 +139,7 @@ jobs:
           context: .
           file: ./Dockerfile
           platforms: linux/amd64,linux/arm64
-          push: ${{ github.event_name != 'pull_request' }}
+          push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha

@@ -1,6 +1,6 @@
 [project]
 name = "meitav-view"
-version = "2.0.0"
+dynamic = ["version"]
 description = ""
 authors = [{name = "Nicola Kalak", email ="nicolas12345@gmail.com"}]
 requires-python = ">=3.12"
@@ -21,8 +21,12 @@ meitav_view = "meitav_view.app:main"
 
 
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "vcs"
+
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/meitav_view"]
