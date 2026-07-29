@@ -502,7 +502,6 @@ wheels = [
 
 [[package]]
 name = "meitav-view"
-version = "2.0.0"
 source = { editable = "." }
 dependencies = [
     { name = "curl-cffi" },

@@ -1,4 +1,6 @@
+import argparse
 import http
+import importlib.metadata
 import logging
 import os
 import sys
@@ -117,14 +119,74 @@ def update_watchlist() -> tuple[Response, int]:
     return jsonify({"message": "Watchlist updated successfully"}), HTTPStatus.OK
 
 
+def get_version() -> str:
+    """Safely retrieves the distribution version."""
+    try:
+        return importlib.metadata.version("meitav-view")
+    except importlib.metadata.PackageNotFoundError:
+        return "0.0.0.dev0"
+
+
+def setup_logging(level_name: str) -> None:
+    """Configures system-wide structured logging."""
+    # Convert string config to logging integer level (fallback to INFO)
+    level = getattr(logging, level_name.upper(), logging.INFO)
+    
+    logging.basicConfig(
+        stream=sys.stdout,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        level=level,
+    )
+
+
 def main() -> None:
-    logging.basicConfig(stream=sys.stdout)
-    logger.setLevel(os.getenv("APP_LOG_LEVEL", logging.INFO))
-    logger.info("starting meitav-view app")
+    # 1. Define CLI arguments with environment variable fallbacks
+    parser = argparse.ArgumentParser(
+        description="Production server entry point for the meitav-view application."
+    )
+    
+    parser.add_argument(
+        "-v", "--version",
+        action="version",
+        version=f"%(prog)s {get_version()}",
+        help="Show the application version and exit."
+    )
+    
+    parser.add_argument(
+        "-p", "--port",
+        type=int,
+        default=int(os.getenv("APP_PORT", "8080")),
+        help="Port to bind the server to (default: 8080 or $APP_PORT)."
+    )
+    
+    parser.add_argument(
+        "--prefix",
+        type=str,
+        default=os.getenv("URL_PREFIX", ""),
+        help="URL prefix for the application routes (default: $URL_PREFIX)."
+    )
+    
+    parser.add_argument(
+        "--log-level",
+        type=str,
+        default=os.getenv("APP_LOG_LEVEL", "INFO"),
+        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+        help="Set execution logging severity (default: INFO or $APP_LOG_LEVEL)."
+    )
+
+    # 2. Parse arguments (handles --version and --help immediately)
+    args = parser.parse_args()
+
+    # 3. Configure logging infrastructure
+    setup_logging(args.log_level)
+
+    logger.info("Starting meitav-view app version %s", get_version())
+
+    # 4. Spin up the application server
     serve(
         app,
-        listen="*:{}".format(os.getenv("APP_PORT", "8080")),
-        url_prefix=os.getenv("URL_PREFIX", ""),
+        listen=f"*:{args.port}",
+        url_prefix=args.prefix,
         threads=2,
     )
 

@@ -19,7 +19,7 @@ class Config:
         try:
             self._load_config()
         except FileNotFoundError:
-            self.logger.warning("Config file not found, continue with default settings")
+            pass
 
     def get(self, key: str, default: Any = None) -> Any:
         return self._settings.get(key, default)
