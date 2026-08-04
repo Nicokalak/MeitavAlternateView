@@ -9,6 +9,7 @@ cp -r node_modules/bootstrap-icons/font/fonts/* dist/css/fonts/
 cp node_modules/@fortawesome/fontawesome-free/css/all.min.css dist/css/
 cp -r node_modules/@fortawesome/fontawesome-free/webfonts/* dist/webfonts/
 cp node_modules/bootstrap-table/dist/bootstrap-table.min.css dist/css/
+cp node_modules/bootstrap-table/dist/extensions/sticky-header/bootstrap-table-sticky-header.min.css dist/css/
 
 # JS
 cp node_modules/jquery/dist/jquery.min.js dist/js/
@@ -18,6 +19,7 @@ cp node_modules/bootstrap-table/dist/bootstrap-table.min.js dist/js/
 cp node_modules/bootstrap-table/dist/extensions/auto-refresh/bootstrap-table-auto-refresh.min.js dist/js/
 cp node_modules/bootstrap-table/dist/extensions/export/bootstrap-table-export.min.js dist/js/
 cp node_modules/tableexport.jquery.plugin/tableExport.min.js dist/js/
+cp node_modules/bootstrap-table/dist/extensions/sticky-header/bootstrap-table-sticky-header.min.js dist/js/
 cp node_modules/xlsx/dist/xlsx.full.min.js dist/js/
 cp node_modules/chart.js/dist/chart.umd.min.js dist/js/
 cp node_modules/moment/min/moment-with-locales.min.js dist/js/
