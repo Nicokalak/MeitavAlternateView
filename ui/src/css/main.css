@@ -25,3 +25,30 @@
 #customSearch {
     min-width: 6rem;
 }
+
+/* Sticky toolbar position and background */
+.fixed-table-toolbar {
+    position: sticky;
+    top: var(--toolbar-sticky-top, 0px);
+    z-index: 1020;
+    background-color: var(--bs-body-bg);
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+}
+
+/* Ensure sticky table header has body background to hide scrolling content */
+.bootstrap-table .fixed-table-container .sticky-header-container,
+#table thead,
+#table thead th,
+.fix-sticky table thead th {
+    background-color: var(--bs-body-bg) !important;
+}
+
+/* Fix table loading overlay z-index and alignment so it is not hidden under sticky header */
+.bootstrap-table .fixed-table-container .fixed-table-body .fixed-table-loading {
+    z-index: 1015;
+    padding-top: 3rem;
+}
+
+
+
