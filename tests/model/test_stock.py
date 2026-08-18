@@ -4,7 +4,7 @@ from meitav_view.model.stock import Stock
 
 
 class TestStock(TestCase):
-    def test_stock_init(self):
+    def test_stock_init(self) -> None:
         stock = Stock(
             {
                 "Symbol": "test1",
@@ -31,7 +31,7 @@ class TestStock(TestCase):
         self.assertEqual(20, stock.weight)
         self.assertEqual(api_data, stock.api_data)
 
-    def test_stock_init_bad_data(self):
+    def test_stock_init_bad_data(self) -> None:
         stock = Stock(
             {
                 "Symbol": "test2",
