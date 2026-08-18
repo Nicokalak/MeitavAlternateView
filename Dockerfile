@@ -10,7 +10,7 @@ COPY ./ui ./
 RUN npm run build
 
 # Stage 2: Install Python Dependencies & Project with uv
-FROM python:3.12-slim AS python-builder
+FROM python:3-slim AS python-builder
 
 # Pin uv to a stable minor version to ensure build repeatability
 COPY --from=ghcr.io/astral-sh/uv:0.12 /uv /uvx /bin/
@@ -41,7 +41,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev --no-editable
 
 # Stage 3: Slim Production Runtime
-FROM python:3.12-slim AS runtime
+FROM python:3-slim AS runtime
 
 ENV PYTHONUNBUFFERED=1 \
     PATH="/app/.venv/bin:$PATH"
