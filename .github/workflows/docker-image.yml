@@ -6,9 +6,21 @@ on:
       - master
     tags:
       - 'v*'
+    paths-ignore:
+      - '**.md'
+      - 'plans/**'
+      - '.gitignore'
   pull_request:
     branches:
       - master
+    paths-ignore:
+      - '**.md'
+      - 'plans/**'
+      - '.gitignore'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   IMAGE_NAME: ${{ secrets.DOCKER_USER }}/meitav-alternate-view
@@ -17,20 +29,14 @@ permissions:
   contents: read
 
 jobs:
-  quality_check:
-    name: Quality Check & Linting
+  python_checks:
+    name: Python Quality & Tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
         with:
-          # Fetch full history so git describe --tags works correctly
-          fetch-depth: 0
-
-      - name: Set up Python
-        uses: actions/setup-python@v7
-        with:
-          python-version: "3.12"
+          fetch-depth: 1
 
       - name: Set up uv
         uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
@@ -38,12 +44,33 @@ jobs:
           enable-cache: true
 
       - name: Install Python dependencies
-        run: uv sync --all-groups
+        run: uv sync --frozen --all-groups
+
+      - name: Run Ruff Lint
+        run: uv run ruff check src --output-format=github
+
+      - name: Run Ruff Format Check
+        run: uv run ruff format --check src
+
+      - name: Run Mypy Type Check
+        run: uv run mypy src
+
+      - name: Run Pytest
+        run: uv run pytest
+
+  ui_check:
+    name: UI Build & Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
 
       - name: Set up Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: "20"
+          node-version: "24"
           cache: "npm"
           cache-dependency-path: "ui/package-lock.json"
 
@@ -53,58 +80,19 @@ jobs:
           npm ci
           npm run build
 
-      - name: Run Python quality checks
-        run: |
-          echo "--- Running Quality Checks ---"
-          uv run ruff check src
-          uv run ruff format --check src
-          uv run mypy src
-          uv run pytest
-          echo "--- Quality Checks Passed! ---"
-
-
-  build_package:
-    name: Build Python Package
-    runs-on: ubuntu-latest
-    needs: quality_check
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v7
-        with:
-          # Full history required for git describe --tags (used by hatch-vcs)
-          fetch-depth: 0
-
-      - name: Set up uv
-        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
-        with:
-          enable-cache: true
-
-      - name: Show resolved version
-        run: |
-          echo "Git describe: $(git describe --tags)"
-          uv run python -c "import importlib.metadata; print('Package version:', importlib.metadata.version('meitav-view'))"
-
-      - name: Build wheel & sdist
-        run: uv build
-
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: python-dist
-          path: dist/
-          retention-days: 7
-
-
   build_and_push:
     name: Build and Publish Docker Image
     runs-on: ubuntu-latest
-    needs: quality_check
+    needs:
+      - python_checks
+      - ui_check
     # Runs on all triggers; push is skipped on PRs (build-only validation)
 
     steps:
       - name: Checkout
         uses: actions/checkout@v7
         with:
+          # Full history required for git describe --tags
           fetch-depth: 0
 
       - name: Docker meta
@@ -113,22 +101,22 @@ jobs:
         with:
           images: ${{ env.IMAGE_NAME }}
           flavor: |
-            latest=auto
+            latest=true
           tags: |
             type=ref,event=branch
-            type=ref,event=pr
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
 
       - name: Set up QEMU (for multi-arch build)
+        if: github.event_name == 'push'
         uses: docker/setup-qemu-action@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
       - name: Login to Docker Hub
-        if: github.event_name != 'pull_request'
+        if: github.event_name == 'push'
         uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKER_USER }}
@@ -139,14 +127,35 @@ jobs:
         run: echo "value=$(git describe --tags --always)" >> $GITHUB_OUTPUT
 
       - name: Build and push
+        id: docker_build
         uses: docker/build-push-action@v7
         with:
           context: .
           file: ./Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: ${{ github.event_name != 'pull_request' }}
+          platforms: ${{ github.event_name == 'push' && 'linux/amd64,linux/arm64' || 'linux/amd64' }}
+          push: ${{ github.event_name == 'push' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: APP_VERSION=${{ steps.version.outputs.value }}
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-to: ${{ github.ref == 'refs/heads/master' && 'type=gha,mode=max' || '' }}
+
+      - name: Generate Run Summary
+        if: always()
+        run: |
+          echo "## 🐳 Docker Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "| :--- | :--- |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Event** | \`${{ github.event_name }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Ref** | \`${{ github.ref }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **App Version** | \`${{ steps.version.outputs.value }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Platforms** | \`${{ github.event_name == 'push' && 'linux/amd64,linux/arm64' || 'linux/amd64' }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Pushed to Registry** | \`${{ github.event_name == 'push' }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -n "${{ steps.meta.outputs.tags }}" ]; then
+            echo "### Generated Tags" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "${{ steps.meta.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
