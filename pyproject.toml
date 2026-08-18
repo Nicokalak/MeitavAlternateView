@@ -36,6 +36,7 @@ test = [
     "pytest (>=8.4.2,<9.0.0)",
     "pytest-github-actions-annotate-failures>=0.4.2",
     "pytest-md-report>=0.8.0",
+    "httpx2>=2.12.0",
 ]
 lint = [
     "ruff (>=0.13.1)",
