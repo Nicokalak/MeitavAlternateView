@@ -113,9 +113,10 @@ jobs:
         with:
           images: ${{ env.IMAGE_NAME }}
           flavor: |
-            latest=true
+            latest=auto
           tags: |
             type=ref,event=branch
+            type=ref,event=pr
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
@@ -127,7 +128,7 @@ jobs:
         uses: docker/setup-buildx-action@v4
 
       - name: Login to Docker Hub
-        if: github.event_name == 'push'
+        if: github.event_name != 'pull_request'
         uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKER_USER }}
@@ -143,7 +144,7 @@ jobs:
           context: .
           file: ./Dockerfile
           platforms: linux/amd64,linux/arm64
-          push: ${{ github.event_name == 'push' }}
+          push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: APP_VERSION=${{ steps.version.outputs.value }}

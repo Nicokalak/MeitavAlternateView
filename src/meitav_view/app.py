@@ -1,122 +1,25 @@
 import argparse
-import http
 import importlib.metadata
 import logging
 import os
 import sys
-from http import HTTPStatus
+from pathlib import Path
 from typing import Any
 
-from flask import Flask, Response, abort, jsonify, request, send_from_directory
-from waitress import serve
+import uvicorn
+from fastapi import Depends, FastAPI, Header, HTTPException, Request, status
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from meitav_view.model.stock import Stock
 from meitav_view.utils import auth_utils
 from meitav_view.utils.auth_utils import require_authentication
 from meitav_view.viewer import MeitavViewer
 
-logger: logging.Logger = logging.getLogger("waitress")
+logger: logging.Logger = logging.getLogger("uvicorn")
 viewer: MeitavViewer = MeitavViewer()
 
-
-app = Flask(__name__, static_url_path="/static/")
-
-
-@app.route("/trends")
-@require_authentication
-def get_trends() -> dict[str, Any]:
-    return viewer.get_trends()
-
-
-@app.route("/marketState")
-@require_authentication
-def get_market_state() -> dict[str, Any]:
-    try:
-        return viewer.get_market_state()
-    except RuntimeError:
-        abort(http.HTTPStatus.INTERNAL_SERVER_ERROR.value)
-
-
-@app.route("/portfolio")
-@require_authentication
-def get_enriched_portfolio() -> list[Stock]:
-    logger.info(
-        "request for portfolio from: {} {}".format(
-            request.headers.get("X-Real-Ip"),
-            request.headers.get("User-Agent"),
-        ),
-    )
-    logger.debug(
-        f"Request - Method: {request.method}, Path: {request.path}, "
-        f"Query Parameters: {request.args}, Data: {request.data.decode()}, "
-        f"Headers: {request.headers}",
-    )
-
-    try:
-        return viewer.enrich_portfolio()
-    except ConnectionError:
-        logger.exception("Connection error while getting enriched portfolio")
-        abort(http.HTTPStatus.INTERNAL_SERVER_ERROR.value)
-
-
-@app.route("/ticker/<name>")
-@require_authentication
-def ticker_data(name: str) -> dict[str, Any]:
-    return {
-        "stock": viewer.find_stock(name),
-        "market-state-4calc": viewer.get_current_market_state_key(),
-    }
-
-
-@app.route("/js/<path:path>")
-def send_js(path: str) -> Response:
-    return send_from_directory("static/js", path)
-
-
-@app.route("/css/<path:path>")
-def send_css(path: str) -> Response:
-    return send_from_directory("static/css", path)
-
-
-@app.route("/webfonts/<path:path>")
-def send_webfonts(path: str) -> Response:
-    return send_from_directory("static/webfonts", path)
-
-
-@app.route("/favicon/<path:icon>")
-def favicon(icon: str) -> Response:
-    if icon == "site.webmanifest":
-        return send_from_directory("static/favicon", icon)
-    return send_from_directory("static/favicon", icon, mimetype="image/x-icon")
-
-
-@app.route("/")
-def root() -> Response:
-    if auth_utils.is_authenticated():
-        return app.send_static_file("index.html")
-    return app.send_static_file("401.html")
-
-
-@app.route("/health")
-def health() -> dict[str, str]:
-    return {"status": "ok"}
-
-
-@app.route("/watchList", methods=["GET"])
-def get_watchlist() -> list[str]:
-    return list(viewer.watchlist)
-
-
-@app.route("/watchList", methods=["POST"])
-def update_watchlist() -> tuple[Response, int]:
-    new_watchlist = request.json
-    if not isinstance(new_watchlist, list):
-        logger.error("invalid request for update_watchlist")
-        return jsonify({"error": "'watchlist' should be a list"}), HTTPStatus.BAD_REQUEST
-
-    viewer.config.set_and_save("watch_list", new_watchlist)
-
-    return jsonify({"message": "Watchlist updated successfully"}), HTTPStatus.OK
+STATIC_DIR = Path(__file__).resolve().parent / "static"
 
 
 def get_version() -> str:
@@ -127,11 +30,101 @@ def get_version() -> str:
         return "0.0.0.dev0"
 
 
+app = FastAPI(title="Meitav View", version=get_version())
+
+if STATIC_DIR.exists():
+    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+    if (STATIC_DIR / "js").exists():
+        app.mount("/js", StaticFiles(directory=STATIC_DIR / "js"), name="js")
+    if (STATIC_DIR / "css").exists():
+        app.mount("/css", StaticFiles(directory=STATIC_DIR / "css"), name="css")
+    if (STATIC_DIR / "webfonts").exists():
+        app.mount("/webfonts", StaticFiles(directory=STATIC_DIR / "webfonts"), name="webfonts")
+    if (STATIC_DIR / "favicon").exists():
+        app.mount("/favicon", StaticFiles(directory=STATIC_DIR / "favicon"), name="favicon")
+
+
+@app.get("/trends")
+def get_trends(_auth: str | None = Depends(require_authentication)) -> dict[str, Any]:
+    return viewer.get_trends()
+
+
+@app.get("/marketState")
+def get_market_state(_auth: str | None = Depends(require_authentication)) -> dict[str, Any]:
+    try:
+        return viewer.get_market_state()
+    except RuntimeError as err:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Internal Server Error",
+        ) from err
+
+
+@app.get("/portfolio")
+def get_enriched_portfolio(
+    request: Request,
+    _auth: str | None = Depends(require_authentication),
+) -> list[Stock]:
+    logger.info(
+        "request for portfolio from: %s %s",
+        request.headers.get("x-real-ip"),
+        request.headers.get("user-agent"),
+    )
+    logger.debug(
+        "Request - Method: %s, Path: %s, Query Parameters: %s, Headers: %s",
+        request.method,
+        request.url.path,
+        request.query_params,
+        request.headers,
+    )
+
+    try:
+        return viewer.enrich_portfolio()
+    except ConnectionError as err:
+        logger.exception("Connection error while getting enriched portfolio")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Connection error",
+        ) from err
+
+
+@app.get("/ticker/{name}")
+def ticker_data(name: str, _auth: str | None = Depends(require_authentication)) -> dict[str, Any]:
+    return {
+        "stock": viewer.find_stock(name),
+        "market-state-4calc": viewer.get_current_market_state_key(),
+    }
+
+
+@app.get("/", response_class=FileResponse)
+def root(
+    request: Request,
+    x_email: str | None = Header(default=None, alias="X-Email"),
+) -> FileResponse:
+    if auth_utils.is_authenticated(x_email=x_email, request=request):
+        return FileResponse(STATIC_DIR / "index.html")
+    return FileResponse(STATIC_DIR / "401.html")
+
+
+@app.get("/health")
+def health() -> dict[str, str]:
+    return {"status": "ok"}
+
+
+@app.get("/watchList")
+def get_watchlist() -> list[str]:
+    return list(viewer.watchlist)
+
+
+@app.post("/watchList")
+def update_watchlist(new_watchlist: list[str]) -> dict[str, str]:
+    viewer.config.set_and_save("watch_list", new_watchlist)
+    return {"message": "Watchlist updated successfully"}
+
+
 def setup_logging(level_name: str) -> None:
     """Configures system-wide structured logging."""
-    # Convert string config to logging integer level (fallback to INFO)
     level = getattr(logging, level_name.upper(), logging.INFO)
-
     logging.basicConfig(
         stream=sys.stdout,
         format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
@@ -183,11 +176,13 @@ def main() -> None:
     logger.info("Starting meitav-view app version %s", get_version())
 
     # 4. Spin up the application server
-    serve(
-        app,
-        listen=f"*:{args.port}",
-        url_prefix=args.prefix,
-        threads=2,
+    uvicorn.run(
+        "meitav_view.app:app",
+        host="0.0.0.0",  # noqa: S104
+        port=args.port,
+        root_path=args.prefix,
+        log_level=args.log_level.lower(),
+        workers=2,
     )
 
 
