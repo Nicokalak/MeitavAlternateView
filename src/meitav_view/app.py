@@ -4,7 +4,8 @@ import logging
 import os
 import sys
 from pathlib import Path
-from typing import Awaitable, Callable, Any
+from typing import Any, Awaitable, Callable
+
 import uvicorn
 from fastapi import Depends, FastAPI, Header, HTTPException, Request, Response, status
 from fastapi.responses import FileResponse
