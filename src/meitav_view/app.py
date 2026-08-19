@@ -4,8 +4,7 @@ import logging
 import os
 import sys
 from pathlib import Path
-from typing import Any
-
+from typing import Awaitable, Callable, Any
 import uvicorn
 from fastapi import Depends, FastAPI, Header, HTTPException, Request, Response, status
 from fastapi.responses import FileResponse
@@ -36,7 +35,7 @@ _URL_PREFIX: str = os.getenv("URL_PREFIX", "")
 
 
 @app.middleware("http")
-async def strip_url_prefix(request: Request, call_next: Any) -> Response:
+async def strip_url_prefix(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
     """Strip URL_PREFIX from the request path so routes stay prefix-agnostic."""
     if _URL_PREFIX and request.url.path.startswith(_URL_PREFIX):
         request.scope["path"] = request.url.path[len(_URL_PREFIX) :] or "/"
