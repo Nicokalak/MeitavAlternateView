@@ -27,8 +27,9 @@ COPY pyproject.toml uv.lock ./
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev --no-install-project
 
-# Copy application source
+# Copy application source and compiled frontend static assets
 COPY src ./src
+COPY --from=frontend-builder /app/ui/dist ./src/meitav_view/static
 
 # Sanitize git tag version strings (e.g., v1.1.2-12-g7d88f12) into a PEP 440-compliant 
 # format (e.g., 1.1.2.dev12+g7d88f12) right before running the final sync.
@@ -54,9 +55,6 @@ RUN useradd -m -u 1000 appuser && \
 
 # Copy pre-built Python virtual environment (contains your built, non-editable meitav-view package)
 COPY --from=python-builder --chown=appuser:appuser /app/.venv /app/.venv
-
-# Copy compiled frontend static assets directly into the built package's destination directory
-COPY --from=frontend-builder --chown=appuser:appuser /app/ui/dist /app/.venv/lib/python3.12/site-packages/meitav_view/static
 
 USER appuser
 

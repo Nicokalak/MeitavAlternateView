@@ -101,9 +101,17 @@ def root(
     request: Request,
     x_email: str | None = Header(default=None, alias="X-Email"),
 ) -> FileResponse:
-    if auth_utils.is_authenticated(x_email=x_email, request=request):
-        return FileResponse(STATIC_DIR / "index.html")
-    return FileResponse(STATIC_DIR / "401.html")
+    target_file = (
+        STATIC_DIR / "index.html"
+        if auth_utils.is_authenticated(x_email=x_email, request=request)
+        else STATIC_DIR / "401.html"
+    )
+    if not target_file.exists():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"File '{target_file.name}' not found",
+        )
+    return FileResponse(target_file)
 
 
 @app.get("/health")
