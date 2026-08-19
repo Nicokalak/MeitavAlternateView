@@ -50,7 +50,7 @@ ENV PYTHONUNBUFFERED=1 \
 WORKDIR /app
 
 # Create non-root system user for security
-RUN useradd -m -u 1000 appuser && \
+RUN apt update && apt upgrade -y && useradd -m -u 1000 appuser && \
     mkdir -p /app/data && chown -R appuser:appuser /app
 
 # Copy pre-built Python virtual environment (contains your built, non-editable meitav-view package)
