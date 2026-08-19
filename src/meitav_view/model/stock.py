@@ -26,7 +26,7 @@ class Stock:
     def __init__(self, d: dict[str, Any]):
         super().__init__()
         self.symbol = str(d.get("Symbol"))
-        self.quantity = d.get("Qty", 0)
+        self.quantity = int(d.get("Qty", 0))
         self.change = d.get("Change", 0)
         self.last_price = d.get("Last", -1)
         self.day_val = d["Day's Value"]

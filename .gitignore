@@ -15,4 +15,4 @@ ui/dist
 src/meitav_view/static/*
 !src/meitav_view/static/.gitkeep
 plans/
-agents.md.local
+AGENTS.local.md

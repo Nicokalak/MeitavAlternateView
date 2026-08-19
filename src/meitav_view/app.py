@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 import uvicorn
-from fastapi import Depends, FastAPI, Header, HTTPException, Request, status
+from fastapi import Depends, FastAPI, Header, HTTPException, Request, Response, status
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -31,6 +31,17 @@ def get_version() -> str:
 
 
 app = FastAPI(title="Meitav View", version=get_version())
+
+_URL_PREFIX: str = os.getenv("URL_PREFIX", "")
+
+
+@app.middleware("http")
+async def strip_url_prefix(request: Request, call_next: Any) -> Response:
+    """Strip URL_PREFIX from the request path so routes stay prefix-agnostic."""
+    if _URL_PREFIX and request.url.path.startswith(_URL_PREFIX):
+        request.scope["path"] = request.url.path[len(_URL_PREFIX):] or "/"
+    return await call_next(request)
+
 
 if STATIC_DIR.exists():
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
@@ -160,12 +171,6 @@ def main() -> None:
         help="Port to bind the server to (default: 8080 or $APP_PORT).",
     )
 
-    parser.add_argument(
-        "--prefix",
-        type=str,
-        default=os.getenv("URL_PREFIX", ""),
-        help="URL prefix for the application routes (default: $URL_PREFIX).",
-    )
 
     parser.add_argument(
         "--log-level",
@@ -188,7 +193,6 @@ def main() -> None:
         "meitav_view.app:app",
         host="0.0.0.0",  # noqa: S104
         port=args.port,
-        root_path=args.prefix,
         log_level=args.log_level.lower(),
         workers=2,
     )

@@ -1,8 +1,9 @@
+import os
 import sys
 
 import requests
 
-url = "http://localhost:8080/health"
+url = f"http://localhost:{os.getenv('APP_PORT', '8080')}/health"
 
 try:
     response = requests.get(url, timeout=5)
