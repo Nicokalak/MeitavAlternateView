@@ -39,7 +39,7 @@ _URL_PREFIX: str = os.getenv("URL_PREFIX", "")
 async def strip_url_prefix(request: Request, call_next: Any) -> Response:
     """Strip URL_PREFIX from the request path so routes stay prefix-agnostic."""
     if _URL_PREFIX and request.url.path.startswith(_URL_PREFIX):
-        request.scope["path"] = request.url.path[len(_URL_PREFIX):] or "/"
+        request.scope["path"] = request.url.path[len(_URL_PREFIX) :] or "/"
     return await call_next(request)
 
 
@@ -170,7 +170,6 @@ def main() -> None:
         default=int(os.getenv("APP_PORT", "8080")),
         help="Port to bind the server to (default: 8080 or $APP_PORT).",
     )
-
 
     parser.add_argument(
         "--log-level",
