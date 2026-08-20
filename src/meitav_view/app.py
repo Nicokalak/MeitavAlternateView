@@ -65,6 +65,7 @@ def get_market_state(_auth: str | None = Depends(require_authentication)) -> dic
     try:
         return viewer.get_market_state()
     except RuntimeError as err:
+        logger.exception("Error getting market state.")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal Server Error",
