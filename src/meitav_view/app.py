@@ -193,6 +193,7 @@ def main() -> None:
         "meitav_view.app:app",
         host="0.0.0.0",  # noqa: S104
         port=args.port,
+        proxy_headers=True,
         log_level=args.log_level.lower(),
         workers=2,
     )
