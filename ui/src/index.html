@@ -22,35 +22,69 @@
     <div class="container-fluid">
         <!-- Sticky Market Status Header -->
         <div id="market-status-container" class="sticky-top bg-body py-2 z-3">
-            <h2 class="m-0" id="market_status"></h2>
+            <h2 class="m-0 placeholder-glow" id="market_status"><span class="placeholder col-3 rounded"></span></h2>
         </div>
         <!-- Non-sticky top section: Market stats and Trends chart (scrolls away) -->
         <div class="row pt-2">
-            <div class="col-md-6">
-                <dl id="market-stats" class="row mb-0" style="display: none">
-                    <dt class="col-lg-2 col-3">gainer:</dt>
-                    <dd class="col-lg-4 col-3"><span class="text-success" id="top-gainer"></span></dd>
-                    <dt class="col-lg-2 col-3">gainer (%):</dt>
-                    <dd class="col-lg-4 col-3"><span class="text-success" id="top-gainer-percent"></span></dd>
-                    <dt class="col-lg-2 col-3">mover:</dt>
-                    <dd class="col-lg-4 col-3"><span id="top-mover"></span></dd>
-                    <dt class="col-lg-2 col-3">loser:</dt>
-                    <dd class="col-lg-4 col-3"><span class="text-danger" id="top-loser"></span></dd>
-                    <dt class="col-lg-2 col-3">loser (%):</dt>
-                    <dd class="col-lg-4 col-3"><span class="text-danger" id="top-loser-percent"></span></dd>
-                    <dt class="col-lg-2 col-3">watchlist:</dt>
-                    <dd class="col-lg-4 col-3"><span class="text-info" id="watchlist-trend"></span></dd>
-                    <dt class="col-lg-2 col-3 text-truncate">Trending:</dt>
-                    <dd class="col-lg-4 col-3" id="trending"></dd>
-                    <dt class="col-lg-2 col-3 text-truncate">+/- :</dt>
-                    <dd class="col-lg-4 col-3" id="up-down"><span class="text-success"></span> / <span
-                            class="text-danger"></span></dd>
-                </dl>
-            </div>
-            <div class="col-lg-6 col-md-6">
-                <div>
-                    <canvas id="trends" height="75vh"></canvas>
+            <div class="col-12">
+                <div id="market-stats" class="d-flex flex-wrap gap-2">
+                    <!-- gainer/% -->
+                    <div class="card flex-fill placeholder-glow" style="min-width:130px">
+                        <div class="card-body p-2 text-center">
+                            <span class="fw-semibold text-success" id="top-gainer"><span
+                                    class="placeholder col-5 rounded"></span></span>
+                            <span class="text-body-secondary"> / </span>
+                            <span class="fw-semibold text-success" id="top-gainer-percent"><span
+                                    class="placeholder col-5 rounded"></span></span>
+                        </div>
+                        <div class="card-footer py-1 text-center text-body-secondary small">Gainer / %</div>
+                    </div>
+                    <!-- loser/% -->
+                    <div class="card flex-fill placeholder-glow" style="min-width:130px">
+                        <div class="card-body p-2 text-center">
+                            <span class="fw-semibold text-danger" id="top-loser"><span
+                                    class="placeholder col-5 rounded"></span></span>
+                            <span class="text-body-secondary"> / </span>
+                            <span class="fw-semibold text-danger" id="top-loser-percent"><span
+                                    class="placeholder col-5 rounded"></span></span>
+                        </div>
+                        <div class="card-footer py-1 text-center text-body-secondary small">Loser / %</div>
+                    </div>
+                    <!-- mover/trending -->
+                    <div class="card flex-fill placeholder-glow" style="min-width:130px">
+                        <div class="card-body p-2 text-center">
+                            <span class="fw-semibold" id="top-mover"><span
+                                    class="placeholder col-4 rounded"></span></span>
+                            <span class="text-body-secondary"> / </span>
+                            <span class="fw-semibold" id="trending"><span
+                                    class="placeholder col-4 rounded"></span></span>
+                        </div>
+                        <div class="card-footer py-1 text-center text-body-secondary small">Mover / Trending</div>
+                    </div>
+                    <!-- watchlist -->
+                    <div class="card flex-fill placeholder-glow" style="min-width:90px">
+                        <div class="card-body p-2 text-center">
+                            <span class="fw-semibold text-info" id="watchlist-trend"><span
+                                    class="placeholder col-6 rounded"></span></span>
+                        </div>
+                        <div class="card-footer py-1 text-center text-body-secondary small">Watchlist</div>
+                    </div>
+                    <!-- +/- -->
+                    <div class="card flex-fill placeholder-glow" style="min-width:90px">
+                        <div class="card-body p-2 text-center" id="up-down">
+                            <span class="fw-semibold text-success"><span
+                                    class="placeholder col-3 rounded"></span></span>
+                            <span class="text-body-secondary"> / </span>
+                            <span class="fw-semibold text-danger"><span class="placeholder col-3 rounded"></span></span>
+                        </div>
+                        <div class="card-footer py-1 text-center text-body-secondary small">+/-</div>
+                    </div>
                 </div>
+            </div>
+        </div>
+        <div class="row mt-4">
+            <div class="col-12">
+                <canvas id="trends"></canvas>
             </div>
         </div>
 

@@ -152,8 +152,7 @@ def setup_logging(level_name: str) -> None:
     )
 
 
-def main() -> None:
-    # 1. Define CLI arguments with environment variable fallbacks
+def _build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Production server entry point for the meitav-view application.")
 
     parser.add_argument(
@@ -162,6 +161,14 @@ def main() -> None:
         action="version",
         version=f"%(prog)s {get_version()}",
         help="Show the application version and exit.",
+    )
+
+    parser.add_argument(
+        "-b",
+        "--bind",
+        type=str,
+        default=os.getenv("APP_HOST", "127.0.0.1"),
+        help="Host to bind the server to (default: 127.0.0.1 or $APP_HOST).",
     )
 
     parser.add_argument(
@@ -180,18 +187,20 @@ def main() -> None:
         help="Set execution logging severity (default: INFO or $APP_LOG_LEVEL).",
     )
 
-    # 2. Parse arguments (handles --version and --help immediately)
+    return parser
+
+
+def main() -> None:
+    parser = _build_arg_parser()
     args = parser.parse_args()
 
-    # 3. Configure logging infrastructure
     setup_logging(args.log_level)
 
     logger.info("Starting meitav-view app version %s", get_version())
-
-    # 4. Spin up the application server
+    viewer.enrich_portfolio()
     uvicorn.run(
         "meitav_view.app:app",
-        host="0.0.0.0",  # noqa: S104
+        host=args.bind,
         port=args.port,
         proxy_headers=True,
         log_level=args.log_level.lower(),

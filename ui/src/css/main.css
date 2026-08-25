@@ -8,20 +8,25 @@
     padding: .375rem .75rem;
     font-size: 1rem;
     border-radius: .25rem;
-    transition: color .15s ease-in-out,background-color .15s ease-in-out,border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+    transition: color .15s ease-in-out, background-color .15s ease-in-out, border-color .15s ease-in-out, box-shadow .15s ease-in-out;
 }
+
 .state-badge-danger {
     color: #dc3545;
     border-color: #dc3545;
 }
+
 .state-badge-secondary {
     color: #6c757d;
     border-color: #6c757d;
 }
+
 .state-badge-success {
     color: #198754;
-    border-color: #198754;;
+    border-color: #198754;
+    ;
 }
+
 #customSearch {
     min-width: 6rem;
 }
@@ -50,5 +55,17 @@
     padding-top: 3rem;
 }
 
+/* Responsive height for trends chart (dvh = dynamic viewport, adjusts as mobile browser chrome collapses) */
+#trends {
+    height: 24vh;
+    /* fallback for older browsers */
+    height: 24dvh;
+}
 
-
+@media (min-width: 768px) {
+    #trends {
+        height: 10vh;
+        /* fallback for older browsers */
+        height: 10dvh;
+    }
+}
