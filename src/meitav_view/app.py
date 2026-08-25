@@ -154,7 +154,7 @@ def setup_logging(level_name: str) -> None:
 
 def _build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Production server entry point for the meitav-view application.")
-    
+
     parser.add_argument(
         "-v",
         "--version",
@@ -162,7 +162,7 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         version=f"%(prog)s {get_version()}",
         help="Show the application version and exit.",
     )
-    
+
     parser.add_argument(
         "-b",
         "--bind",
@@ -178,7 +178,7 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         default=int(os.getenv("APP_PORT", "8080")),
         help="Port to bind the server to (default: 8080 or $APP_PORT).",
     )
-    
+
     parser.add_argument(
         "--log-level",
         type=str,
@@ -186,7 +186,7 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
         help="Set execution logging severity (default: INFO or $APP_LOG_LEVEL).",
     )
-    
+
     return parser
 
 
