@@ -12,6 +12,7 @@ data/
 node_modules
 ui/node_modules
 ui/dist
+dist/
 src/meitav_view/static/*
 !src/meitav_view/static/.gitkeep
 plans/

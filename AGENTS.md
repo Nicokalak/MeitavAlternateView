@@ -66,8 +66,7 @@ This builds and copies compiled static assets into `src/meitav_view/static/`.
 src/meitav_view/
   - app.py
   - viewer.py
-  - blueprints/
-  - db/
+  - healthcheck.py
   - model/
   - static/
   - utils/
