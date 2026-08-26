@@ -5,26 +5,26 @@ repos:
         name: Run Ruff Lint
         entry: uv run ruff check src --output-format=github
         language: system
-        types: [python]
+        always_run: true
         pass_filenames: false
 
       - id: ruff-format
         name: Run Ruff Format Check
         entry: uv run ruff format --check src
         language: system
-        types: [python]
+        always_run: true
         pass_filenames: false
 
       - id: mypy
         name: Run Mypy Type Check
         entry: uv run mypy src
         language: system
-        types: [python]
+        always_run: true
         pass_filenames: false
 
       - id: pytest
         name: Run Pytest
         entry: uv run pytest
         language: system
-        types: [python]
+        always_run: true
         pass_filenames: false

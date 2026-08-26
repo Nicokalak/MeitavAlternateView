@@ -178,9 +178,7 @@ class MeitavViewer:
             "yahoo_trend": 0,
         }
         change = MeitavViewer._get_market_state_key(market_state or "") + "MarketChange"
-        change_per = (
-            MeitavViewer._get_market_state_key(market_state or "") + "MarketChangePercent"
-        )
+        change_per = MeitavViewer._get_market_state_key(market_state or "") + "MarketChangePercent"
         self.trends_persist.add_trend(stocks, result, change)
         result["top-gainer"] = max(stocks, key=lambda s: s.api_data.get(change, 0) * s.quantity)
         result["top-gainer%"] = max(stocks, key=lambda s: s.api_data.get(change_per, 0))
