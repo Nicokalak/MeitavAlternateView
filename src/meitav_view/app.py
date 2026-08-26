@@ -3,6 +3,8 @@ import importlib.metadata
 import logging
 import os
 import sys
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, Awaitable, Callable
 
@@ -30,7 +32,16 @@ def get_version() -> str:
         return "0.0.0.dev0"
 
 
-app = FastAPI(title="Meitav View", version=get_version())
+@asynccontextmanager
+async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
+    try:
+        viewer.enrich_portfolio()
+    except Exception:
+        logger.exception("Failed initial portfolio enrichment during startup")
+    yield
+
+
+app = FastAPI(title="Meitav View", version=get_version(), lifespan=lifespan)
 
 _URL_PREFIX: str = os.getenv("URL_PREFIX", "")
 
@@ -180,6 +191,14 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
+        "-w",
+        "--workers",
+        type=int,
+        default=int(os.getenv("APP_WORKERS", "1")),
+        help="Number of worker processes (default: 1 or $APP_WORKERS).",
+    )
+
+    parser.add_argument(
         "--log-level",
         type=str,
         default=os.getenv("APP_LOG_LEVEL", "INFO"),
@@ -197,14 +216,13 @@ def main() -> None:
     setup_logging(args.log_level)
 
     logger.info("Starting meitav-view app version %s", get_version())
-    viewer.enrich_portfolio()
     uvicorn.run(
         "meitav_view.app:app",
         host=args.bind,
         port=args.port,
         proxy_headers=True,
         log_level=args.log_level.lower(),
-        workers=2,
+        workers=args.workers,
     )
 
 

@@ -154,38 +154,48 @@ class MeitavViewer:
         return market_state.lower() if market_state.lower() in ("pre", "post", "regular") else "post"
 
     def get_current_market_state_key(self) -> str:
-        return self._get_market_state_key(
-            next(self._stocks.__iter__()).api_data.get("marketState", ""),
+        stocks = self._stocks
+        if not stocks:
+            return "post"
+        market_state = next(
+            (s.api_data.get("marketState", "") for s in stocks if s.api_data and s.api_data.get("marketState")),
+            "",
         )
+        return self._get_market_state_key(market_state)
 
     def get_market_state(self) -> dict[str, Any]:
-        if len(self._stocks) == 0:
+        stocks = self._stocks
+        if len(stocks) == 0:
             raise RuntimeError("no stocks found")
 
+        market_state = next(
+            (s.api_data.get("marketState") for s in stocks if s.api_data and s.api_data.get("marketState")),
+            None,
+        )
         result = {
-            "marketState": self._stocks[0].api_data.get("marketState"),
+            "marketState": market_state,
             "trend": 0,
             "yahoo_trend": 0,
         }
-        change = MeitavViewer._get_market_state_key(self._stocks[0].api_data.get("marketState", "")) + "MarketChange"
+        change = MeitavViewer._get_market_state_key(market_state or "") + "MarketChange"
         change_per = (
-            MeitavViewer._get_market_state_key(self._stocks[0].api_data.get("marketState", "")) + "MarketChangePercent"
+            MeitavViewer._get_market_state_key(market_state or "") + "MarketChangePercent"
         )
-        self.trends_persist.add_trend(self._stocks, result, change)
-        result["top-gainer"] = max(self._stocks, key=lambda s: s.api_data.get(change, 0) * s.quantity)
-        result["top-gainer%"] = max(self._stocks, key=lambda s: s.api_data.get(change_per, 0))
-        result["top-loser"] = min(self._stocks, key=lambda s: s.api_data.get(change, 0) * s.quantity)
-        result["top-loser%"] = min(self._stocks, key=lambda s: s.api_data.get(change_per, 0))
+        self.trends_persist.add_trend(stocks, result, change)
+        result["top-gainer"] = max(stocks, key=lambda s: s.api_data.get(change, 0) * s.quantity)
+        result["top-gainer%"] = max(stocks, key=lambda s: s.api_data.get(change_per, 0))
+        result["top-loser"] = min(stocks, key=lambda s: s.api_data.get(change, 0) * s.quantity)
+        result["top-loser%"] = min(stocks, key=lambda s: s.api_data.get(change_per, 0))
         result["top-mover"] = max(
-            self._stocks,
+            stocks,
             key=lambda s: s.api_data.get("regularMarketVolume", 0),
         )
         result["up-down"] = {
-            "up": len(list(filter(lambda sd: sd.gain is not None and sd.gain > 0, self._stocks))),
-            "down": len(list(filter(lambda sd: sd.gain is not None and sd.gain < 0, self._stocks))),
+            "up": len(list(filter(lambda sd: sd.gain is not None and sd.gain > 0, stocks))),
+            "down": len(list(filter(lambda sd: sd.gain is not None and sd.gain < 0, stocks))),
         }
         result["trending"] = max(
-            self._stocks,
+            stocks,
             key=lambda s: (
                 s.api_data.get("regularMarketVolume", 0) / s.api_data.get("averageDailyVolume10Day", sys.maxsize)
             ),
@@ -194,4 +204,5 @@ class MeitavViewer:
         return result
 
     def find_stock(self, name: str) -> Stock | None:
-        return next(filter(lambda x: x.symbol == name, self._stocks))
+        stocks = self._stocks
+        return next((x for x in stocks if x.symbol == name), None)
