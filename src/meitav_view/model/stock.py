@@ -39,7 +39,7 @@ class Stock:
         self.strike = d.get("Strike")
         self.p_or_c = d.get("Put/ Call")
         self.percent_change = self.__calc_percent_change()
-        self.principle_change = 0 if self.change == 0 or self.cost is None else (self.change / self.cost) * 100
+        self.principle_change = 0 if self.change == 0 or not self.cost else (self.change / self.cost) * 100
         self.total_cost = self.total_val - self.total_change
         self.api_data = {}
 
