@@ -14,6 +14,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from meitav_view.model.stock import Stock
+from meitav_view.model.watchlist import WatchlistItem
 from meitav_view.utils import auth_utils
 from meitav_view.utils.auth_utils import require_authentication
 from meitav_view.viewer import MeitavViewer
@@ -143,13 +144,15 @@ def health() -> dict[str, str]:
 
 
 @app.get("/watchList")
-def get_watchlist() -> list[str]:
-    return list(viewer.watchlist)
+def get_watchlist() -> list[WatchlistItem]:
+    return viewer.get_watchlist_items()
 
 
 @app.post("/watchList")
-def update_watchlist(new_watchlist: list[str]) -> dict[str, str]:
-    viewer.config.set_and_save("watch_list", new_watchlist)
+def update_watchlist(new_watchlist: list[WatchlistItem | str]) -> dict[str, str]:
+    items = [WatchlistItem.from_entry(item) for item in new_watchlist]
+    valid_items = [item for item in items if item.symbol]
+    viewer.save_watchlist(valid_items)
     return {"message": "Watchlist updated successfully"}
 
 

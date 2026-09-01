@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, patch
 from fastapi.testclient import TestClient
 
 from meitav_view.app import app
+from meitav_view.model.watchlist import WatchlistItem
 
 
 class MeitavViewTestCase(unittest.TestCase):
@@ -17,19 +18,49 @@ class MeitavViewTestCase(unittest.TestCase):
 
     @patch("meitav_view.app.viewer")
     def test_watchlist_get_endpoint(self, mock_viewer: MagicMock) -> None:
-        mock_viewer.watchlist = {"AAPL", "MSFT"}
+        mock_viewer.get_watchlist_items.return_value = [
+            WatchlistItem(symbol="AAPL", quantity=10, cost=150.0),
+            WatchlistItem(symbol="MSFT", quantity=0, cost=0.0),
+        ]
         response = self.client.get("/watchList")
         self.assertEqual(response.status_code, 200)
-        self.assertIsInstance(response.json(), list)
-        self.assertCountEqual(response.json(), ["AAPL", "MSFT"])
+        self.assertEqual(
+            response.json(),
+            [
+                {"symbol": "AAPL", "quantity": 10, "cost": 150.0},
+                {"symbol": "MSFT", "quantity": 0, "cost": 0.0},
+            ],
+        )
 
     @patch("meitav_view.app.viewer")
-    def test_watchlist_post_valid_data(self, mock_viewer: MagicMock) -> None:
+    def test_watchlist_post_valid_string_list(self, mock_viewer: MagicMock) -> None:
         payload = ["AAPL", "MSFT"]
         response = self.client.post("/watchList", json=payload)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), {"message": "Watchlist updated successfully"})
-        mock_viewer.config.set_and_save.assert_called_once_with("watch_list", payload)
+        mock_viewer.save_watchlist.assert_called_once_with(
+            [
+                WatchlistItem(symbol="AAPL", quantity=0, cost=0.0),
+                WatchlistItem(symbol="MSFT", quantity=0, cost=0.0),
+            ]
+        )
+
+    @patch("meitav_view.app.viewer")
+    def test_watchlist_post_valid_object_list(self, mock_viewer: MagicMock) -> None:
+
+        payload = [
+            {"symbol": "AAPL", "quantity": 10, "cost": 150.5},
+            {"symbol": "NVDA", "qty": 5, "cost": 120.0},
+        ]
+        response = self.client.post("/watchList", json=payload)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"message": "Watchlist updated successfully"})
+        mock_viewer.save_watchlist.assert_called_once_with(
+            [
+                WatchlistItem(symbol="AAPL", quantity=10, cost=150.5),
+                WatchlistItem(symbol="NVDA", quantity=5, cost=120.0),
+            ]
+        )
 
     def test_watchlist_post_invalid_data(self) -> None:
         payload = {"invalid": "data"}

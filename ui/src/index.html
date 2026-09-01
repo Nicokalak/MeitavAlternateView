@@ -136,22 +136,44 @@
     <!-- Modal -->
     <div class="modal fade" id="editWatchListModal" tabindex="-1" role="dialog" aria-labelledby="editModalLabel"
         aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="editModalLabel">Edit Watch List</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
-                    </button>
+        <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable" role="document">
+            <div class="modal-content shadow">
+                <div class="modal-header py-2 px-3 bg-body-tertiary">
+                    <h5 class="modal-title fs-6 fw-bold" id="editModalLabel">
+                        <i class="fas fa-list-check me-2 text-primary"></i>Edit Watch List
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body">
-                    <ul id="listItems" class="list-group"></ul>
-                    <button type="button" class="btn btn-success mt-2" id="addItemBtn"><i
-                            class="fas fa-plus"></i></button>
+                <div class="modal-body p-3">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="small text-body-secondary">
+                            <i class="fas fa-info-circle me-1"></i>Use <i class="fas fa-sliders-h mx-1 text-primary"></i> to set Qty &amp; Cost per stock
+                        </span>
+                        <button type="button" class="btn btn-success btn-sm px-3" id="addItemBtn">
+                            <i class="fas fa-plus me-1"></i>Add Symbol
+                        </button>
+                    </div>
+                    <ul id="listItems" class="list-group list-group-flush mb-0"></ul>
+                    <div id="watchlistEmptyState" class="text-center py-4 text-body-secondary" style="display: none;">
+                        <i class="fas fa-layer-group fa-2x mb-2 opacity-50"></i>
+                        <p class="mb-0 small">No symbols in watchlist. Click "Add Symbol" to add one.</p>
+                    </div>
                 </div>
-                <div class="modal-footer">
-                    <span id="successMessage" class="text-success ml-3" style="display: none;"></span>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" id="saveChanges">Save changes</button>
+                <div class="modal-footer py-2 px-3 bg-body-tertiary d-flex justify-content-between align-items-center">
+                    <div>
+                        <span id="successMessage" class="badge text-bg-success py-2 px-3 small" style="display: none;">
+                            <i class="fas fa-check-circle me-1"></i>Saved successfully
+                        </span>
+                        <span id="errorMessage" class="badge text-bg-danger py-2 px-3 small" style="display: none;">
+                            <i class="fas fa-exclamation-circle me-1"></i>Failed to save
+                        </span>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary btn-sm px-3" id="saveChanges">
+                            <i class="fas fa-save me-1"></i>Save changes
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

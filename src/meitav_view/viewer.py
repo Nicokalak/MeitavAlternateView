@@ -11,6 +11,7 @@ import requests
 
 from meitav_view.model.config import Config
 from meitav_view.model.stock import Stock
+from meitav_view.model.watchlist import WatchlistItem
 from meitav_view.utils.trends_persist import TrendPersist
 from meitav_view.utils.yahoo_requestor import YahooRequestor
 
@@ -94,7 +95,21 @@ class MeitavViewer:
 
     @property
     def watchlist(self) -> set[str]:
-        return set(self.config.get("watch_list", []))
+        return {item.symbol for item in self.get_watchlist_items()}
+
+    def get_watchlist_items(self) -> list[WatchlistItem]:
+        raw_list = self.config.get("watch_list", [])
+        items: list[WatchlistItem] = []
+        for entry in raw_list:
+            try:
+                items.append(WatchlistItem.from_entry(entry))
+            except Exception:
+                self.logger.warning(f"Failed to parse watchlist entry: {entry}")
+        return items
+
+    def save_watchlist(self, items: list[WatchlistItem]) -> None:
+        serialized = [item.model_dump(by_alias=False) for item in items]
+        self.config.set_and_save("watch_list", serialized)
 
     def get_trends(self) -> dict[str, Any]:
         return self.trends_persist.get_trends()
@@ -102,9 +117,10 @@ class MeitavViewer:
     def enrich_portfolio(self) -> list[Stock]:
         """Enrich the portfolio with the api data"""
         portfolio: list[Stock] = self.get_portfolio_data()
-        self.logger.debug(f"watch list is {self.watchlist}")
+        watchlist_items = self.get_watchlist_items()
+        self.logger.debug(f"watch list is {[item.symbol for item in watchlist_items]}")
         yahoo_data = self.yahoo_requestor.request(
-            set().union((s.symbol for s in portfolio), self.watchlist),
+            set().union((s.symbol for s in portfolio), (item.symbol for item in watchlist_items)),
         )
         for stock in portfolio:
             try:
@@ -114,37 +130,50 @@ class MeitavViewer:
             except StopIteration:
                 self.logger.warning(f"API data not found for {stock}")
 
-        for watch_stock in self.watchlist:
+        for watch_item in watchlist_items:
             api_data = next(
-                filter(lambda s: s["symbol"] == watch_stock, yahoo_data),
+                filter(lambda s: s["symbol"] == watch_item.symbol, yahoo_data),
                 None,
             )  # expect only 1
             if api_data:
-                stock = Stock(
-                    {
-                        "Symbol": api_data["symbol"],
-                        "Day's Value": round(
-                            api_data.get(
-                                self._get_market_state_key(api_data.get("marketState")) + "MarketChange",
-                                0,
-                            ),
-                            2,
-                        ),
-                        "Entry Type": "W",
-                        "Last": api_data.get(
-                            self._get_market_state_key(api_data.get("marketState")) + "MarketPrice",
-                            api_data.get("regularMarketPrice", -1),
-                        ),
-                        "Change": api_data.get(
-                            self._get_market_state_key(api_data.get("marketState")) + "MarketChange",
-                            0,
-                        ),
-                    },
+                market_key = self._get_market_state_key(api_data.get("marketState"))
+                last_price = float(
+                    api_data.get(
+                        market_key + "MarketPrice",
+                        api_data.get("regularMarketPrice", -1),
+                    )
                 )
+                market_change = float(
+                    api_data.get(
+                        market_key + "MarketChange",
+                        0,
+                    )
+                )
+                qty = watch_item.quantity
+                cost = watch_item.cost
+
+                day_val = round(market_change * qty, 2) if qty > 0 else round(market_change, 2)
+                total_val = round(last_price * qty, 2) if qty > 0 and last_price > 0 else 0.0
+                total_change = round((last_price - cost) * qty, 2) if qty > 0 and cost > 0 and last_price > 0 else 0.0
+                gain = round(((last_price - cost) / cost) * 100, 2) if cost > 0 and last_price > 0 else 0.0
+
+                stock_dict = {
+                    "Symbol": api_data["symbol"],
+                    "Day's Value": day_val,
+                    "Entry Type": "W",
+                    "Last": last_price,
+                    "Change": market_change,
+                    "Qty": qty,
+                    "Average Cost": cost if cost > 0 else None,
+                    "Value": total_val,
+                    "Profit/ Loss": total_change,
+                    "Gain": gain,
+                }
+                stock = Stock(stock_dict)
                 stock.set_api_data(api_data)
                 portfolio.append(stock)
             else:
-                self.logger.warning(f"could not find watchlist entry for {watch_stock}")
+                self.logger.warning(f"could not find watchlist entry for {watch_item.symbol}")
 
         self._stocks = portfolio
         return self._stocks
