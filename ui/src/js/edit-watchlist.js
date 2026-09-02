@@ -1,44 +1,37 @@
 function getItem(item = {}) {
-    let symbol = "";
-    let qty = "";
-    let cost = "";
-
-    if (typeof item === "string") {
-        symbol = item;
-    } else if (item && typeof item === "object") {
-        symbol = item.symbol || "";
-        qty = item.quantity !== undefined ? item.quantity : (item.qty !== undefined ? item.qty : "");
-        cost = item.cost !== undefined ? item.cost : "";
-    }
-
-    const hasValues = (parseFloat(cost) > 0) || (parseInt(qty, 10) > 0);
-    const toggleBtnClass = hasValues ? "btn-outline-primary" : "btn-outline-secondary";
-    const toggleBtnTitle = hasValues ? "Qty & Cost configured (click to toggle)" : "Toggle Qty & Cost";
+    const symbol = item.symbol || "";
+    const qty = item.qty !== undefined && item.qty !== null ? item.qty : "";
+    const cost = item.cost !== undefined && item.cost !== null ? item.cost : "";
+    const hasExtra = (qty !== "" && qty > 0) || (cost !== "" && cost > 0);
+    const toggleBtnClass = hasExtra ? "btn-outline-primary" : "btn-outline-secondary";
+    const toggleBtnTitle = hasExtra ? "Hide Qty & Cost" : "Set Qty & Cost";
 
     return (
         "<li class='list-group-item border rounded p-2 mb-2 bg-body-tertiary watchlist-item-row shadow-sm'>" +
-        "<div class='d-flex flex-wrap flex-md-nowrap align-items-center gap-2'>" +
-        "<div class='watchlist-symbol-col'>" +
+        "<div class='d-flex align-items-center gap-2'>" +
+        "<div class='flex-grow-1'>" +
         "<div class='input-group input-group-sm'>" +
         "<span class='input-group-text px-2'><i class='fas fa-tag text-muted'></i></span>" +
         "<input type='text' class='form-control form-control-sm text-uppercase fw-semibold watchlist-symbol' placeholder='Symbol' value='" + symbol + "' autocomplete='off' autocapitalize='characters'>" +
         "</div>" +
         "</div>" +
-        "<div class='watchlist-actions-col d-flex gap-1 flex-shrink-0 ms-auto'>" +
+        "<div class='d-flex gap-1 flex-shrink-0'>" +
         "<button class='btn btn-sm " + toggleBtnClass + " toggle-item-details' type='button' title='" + toggleBtnTitle + "' aria-expanded='false'>" +
         "<i class='fas fa-sliders-h'></i>" +
         "</button>" +
-        "<button class='btn btn-outline-danger btn-sm delete-item' type='button' title='Delete symbol'>" +
+        "<button class='btn btn-sm btn-outline-danger remove-item' type='button' title='Remove'>" +
         "<i class='fas fa-trash-alt'></i>" +
         "</button>" +
         "</div>" +
-        "<div class='watchlist-extra-field-qty watchlist-extra-fields d-none'>" +
+        "</div>" +
+        "<div class='d-flex gap-2 mt-2 watchlist-extra-fields d-none'>" +
+        "<div class='flex-fill'>" +
         "<div class='input-group input-group-sm'>" +
         "<span class='input-group-text px-2'>Qty</span>" +
         "<input type='number' min='0' step='1' class='form-control form-control-sm px-2 watchlist-qty' placeholder='0' value='" + qty + "'>" +
         "</div>" +
         "</div>" +
-        "<div class='watchlist-extra-field-cost watchlist-extra-fields d-none'>" +
+        "<div class='flex-fill'>" +
         "<div class='input-group input-group-sm'>" +
         "<span class='input-group-text px-2'>Cost</span>" +
         "<input type='number' min='0' step='any' class='form-control form-control-sm px-2 watchlist-cost' placeholder='0.00' value='" + cost + "'>" +

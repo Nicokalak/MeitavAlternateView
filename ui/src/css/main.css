@@ -71,6 +71,21 @@
 }
 
 /* Watchlist modal responsive styles */
+.watchlist-extra-fields {
+    width: 100%;
+}
+
+@media (min-width: 768px) {
+    .watchlist-item-row .d-flex.align-items-center.gap-2 {
+        flex-wrap: nowrap;
+    }
+
+    .watchlist-extra-fields {
+        display: flex !important;
+        /* or handle via existing toggle logic */
+    }
+}
+
 .watchlist-symbol-col {
     flex: 1 1 auto;
     min-width: 100px;
