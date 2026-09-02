@@ -17,32 +17,32 @@ function getItem(item = {}) {
 
     return (
         "<li class='list-group-item border rounded p-2 mb-2 bg-body-tertiary watchlist-item-row shadow-sm'>" +
-        "<div class='row g-1 g-sm-2 align-items-center flex-nowrap'>" +
-        "<div class='col watchlist-symbol-col'>" +
+        "<div class='d-flex flex-wrap flex-md-nowrap align-items-center gap-2'>" +
+        "<div class='watchlist-symbol-col'>" +
         "<div class='input-group input-group-sm'>" +
         "<span class='input-group-text px-2'><i class='fas fa-tag text-muted'></i></span>" +
         "<input type='text' class='form-control form-control-sm text-uppercase fw-semibold watchlist-symbol' placeholder='Symbol' value='" + symbol + "' autocomplete='off' autocapitalize='characters'>" +
         "</div>" +
         "</div>" +
-        "<div class='col-auto watchlist-extra-fields d-none' style='width: 105px; max-width: 25%;'>" +
-        "<div class='input-group input-group-sm'>" +
-        "<span class='input-group-text px-1 small'>Qty</span>" +
-        "<input type='number' min='0' step='1' class='form-control form-control-sm px-1 watchlist-qty' placeholder='0' value='" + qty + "'>" +
-        "</div>" +
-        "</div>" +
-        "<div class='col-auto watchlist-extra-fields d-none' style='width: 115px; max-width: 28%;'>" +
-        "<div class='input-group input-group-sm'>" +
-        "<span class='input-group-text px-1 small'>Cost</span>" +
-        "<input type='number' min='0' step='any' class='form-control form-control-sm px-1 watchlist-cost' placeholder='0.00' value='" + cost + "'>" +
-        "</div>" +
-        "</div>" +
-        "<div class='col-auto d-flex gap-1 flex-shrink-0'>" +
+        "<div class='watchlist-actions-col d-flex gap-1 flex-shrink-0 ms-auto'>" +
         "<button class='btn btn-sm " + toggleBtnClass + " toggle-item-details' type='button' title='" + toggleBtnTitle + "' aria-expanded='false'>" +
         "<i class='fas fa-sliders-h'></i>" +
         "</button>" +
         "<button class='btn btn-outline-danger btn-sm delete-item' type='button' title='Delete symbol'>" +
         "<i class='fas fa-trash-alt'></i>" +
         "</button>" +
+        "</div>" +
+        "<div class='watchlist-extra-field-qty watchlist-extra-fields d-none'>" +
+        "<div class='input-group input-group-sm'>" +
+        "<span class='input-group-text px-2'>Qty</span>" +
+        "<input type='number' min='0' step='1' class='form-control form-control-sm px-2 watchlist-qty' placeholder='0' value='" + qty + "'>" +
+        "</div>" +
+        "</div>" +
+        "<div class='watchlist-extra-field-cost watchlist-extra-fields d-none'>" +
+        "<div class='input-group input-group-sm'>" +
+        "<span class='input-group-text px-2'>Cost</span>" +
+        "<input type='number' min='0' step='any' class='form-control form-control-sm px-2 watchlist-cost' placeholder='0.00' value='" + cost + "'>" +
+        "</div>" +
         "</div>" +
         "</div>" +
         "</li>"
@@ -82,20 +82,21 @@ $(document).ready(function () {
     $(document).on("click", ".toggle-item-details", function () {
         const row = $(this).closest(".watchlist-item-row");
         const extraFields = row.find(".watchlist-extra-fields");
+        const toggleBtn = $(this);
         const isHidden = extraFields.hasClass("d-none");
 
         if (isHidden) {
             extraFields.removeClass("d-none");
-            $(this).removeClass("btn-outline-secondary btn-outline-primary").addClass("btn-primary");
-            $(this).attr("aria-expanded", "true");
+            toggleBtn.removeClass("btn-outline-secondary btn-outline-primary").addClass("btn-primary");
+            toggleBtn.attr("aria-expanded", "true");
         } else {
             extraFields.addClass("d-none");
             const qtyVal = parseInt(row.find(".watchlist-qty").val().trim(), 10);
             const costVal = parseFloat(row.find(".watchlist-cost").val().trim());
             const hasValues = (!isNaN(qtyVal) && qtyVal > 0) || (!isNaN(costVal) && costVal > 0);
 
-            $(this).removeClass("btn-primary").addClass(hasValues ? "btn-outline-primary" : "btn-outline-secondary");
-            $(this).attr("aria-expanded", "false");
+            toggleBtn.removeClass("btn-primary").addClass(hasValues ? "btn-outline-primary" : "btn-outline-secondary");
+            toggleBtn.attr("aria-expanded", "false");
         }
     });
 

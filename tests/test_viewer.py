@@ -70,6 +70,41 @@ class TestMeitavViewer(unittest.TestCase):
         self.assertEqual(result["up-down"]["up"], 1)
         self.assertEqual(result["up-down"]["down"], 0)
 
+    def test_get_market_state_ignores_watchlist_for_dollar_gainers_losers(self) -> None:
+        portfolio_stock = MagicMock(spec=Stock)
+        portfolio_stock.symbol = "AAPL"
+        portfolio_stock.type = "E"
+        portfolio_stock.quantity = 10
+        portfolio_stock.gain = 2.0
+        portfolio_stock.api_data = {
+            "marketState": "REGULAR",
+            "regularMarketChange": 5.0,  # 5.0 * 10 = $50
+            "regularMarketChangePercent": 2.0,
+            "regularMarketVolume": 1000,
+            "averageDailyVolume10Day": 500,
+        }
+
+        watchlist_stock = MagicMock(spec=Stock)
+        watchlist_stock.symbol = "NVDA"
+        watchlist_stock.type = "W"
+        watchlist_stock.quantity = 100
+        watchlist_stock.gain = 10.0
+        watchlist_stock.api_data = {
+            "marketState": "REGULAR",
+            "regularMarketChange": 10.0,  # 10.0 * 100 = $1000 (higher than AAPL)
+            "regularMarketChangePercent": 15.0,  # 15% (higher than AAPL)
+            "regularMarketVolume": 5000,
+            "averageDailyVolume10Day": 2000,
+        }
+
+        self.viewer._stocks = [portfolio_stock, watchlist_stock]
+        result = self.viewer.get_market_state()
+
+        # Top gainer ($) must be the portfolio stock AAPL (ignoring watchlist NVDA)
+        self.assertEqual(result["top-gainer"], portfolio_stock)
+        # Top gainer (%) keeps % including watchlist
+        self.assertEqual(result["top-gainer%"], watchlist_stock)
+
     def test_get_watchlist_items_mixed_formats(self) -> None:
         self.viewer.config.get.return_value = [
             "AAPL",

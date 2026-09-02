@@ -69,3 +69,68 @@
         height: 10dvh;
     }
 }
+
+/* Watchlist modal responsive styles */
+.watchlist-symbol-col {
+    flex: 1 1 auto;
+    min-width: 100px;
+    order: 1;
+}
+
+.watchlist-actions-col {
+    order: 2;
+}
+
+.watchlist-extra-field-qty,
+.watchlist-extra-field-cost {
+    flex: 0 0 calc(50% - 0.25rem);
+    max-width: calc(50% - 0.25rem);
+}
+
+.watchlist-extra-field-qty {
+    order: 3;
+}
+
+.watchlist-extra-field-cost {
+    order: 4;
+}
+
+@media (min-width: 768px) {
+    .watchlist-symbol-col {
+        flex: 1 1 auto;
+        min-width: 90px;
+        order: 1;
+    }
+
+    .watchlist-extra-field-qty {
+        flex: 0 0 100px;
+        max-width: 100px;
+        order: 2;
+    }
+
+    .watchlist-extra-field-cost {
+        flex: 0 0 110px;
+        max-width: 110px;
+        order: 3;
+    }
+
+    .watchlist-actions-col {
+        order: 4;
+    }
+}
+
+@media (min-width: 992px) {
+    .watchlist-symbol-col {
+        min-width: 130px;
+    }
+
+    .watchlist-extra-field-qty {
+        flex: 0 0 120px;
+        max-width: 120px;
+    }
+
+    .watchlist-extra-field-cost {
+        flex: 0 0 135px;
+        max-width: 135px;
+    }
+}

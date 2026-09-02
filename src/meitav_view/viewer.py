@@ -209,9 +209,10 @@ class MeitavViewer:
         change = MeitavViewer._get_market_state_key(market_state or "") + "MarketChange"
         change_per = MeitavViewer._get_market_state_key(market_state or "") + "MarketChangePercent"
         self.trends_persist.add_trend(stocks, result, change)
-        result["top-gainer"] = max(stocks, key=lambda s: s.api_data.get(change, 0) * s.quantity)
+        non_watchlist_stocks = [s for s in stocks if getattr(s, "type", None) != "W"] or stocks
+        result["top-gainer"] = max(non_watchlist_stocks, key=lambda s: s.api_data.get(change, 0) * s.quantity)
         result["top-gainer%"] = max(stocks, key=lambda s: s.api_data.get(change_per, 0))
-        result["top-loser"] = min(stocks, key=lambda s: s.api_data.get(change, 0) * s.quantity)
+        result["top-loser"] = min(non_watchlist_stocks, key=lambda s: s.api_data.get(change, 0) * s.quantity)
         result["top-loser%"] = min(stocks, key=lambda s: s.api_data.get(change_per, 0))
         result["top-mover"] = max(
             stocks,
