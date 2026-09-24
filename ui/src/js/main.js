@@ -30,19 +30,6 @@ window.XLSX = XLSX;
 window.moment = moment;
 window.Chart = Chart;
 
-// ─── 4. jQuery 4 compatibility shims ──────────────────────────────────────────
-// jQuery 4 removed several legacy utility methods that third-party plugins
-// (tableExport.jquery.plugin v1.33.0) still call. Re-attach them so plugins
-// work without modification.
-if (!$.trim) {
-  $.trim = (s) => (s == null ? '' : String(s).trim());
-}
-if (!$.isNumeric) {
-  $.isNumeric = (n) => {
-    const t = typeof n;
-    return (t === 'number' || t === 'string') && !isNaN(n - parseFloat(n));
-  };
-}
 
 // ─── 4. jQuery plugins — dynamic imports so window.jQuery is already set ──────
 await import('bootstrap-table');
