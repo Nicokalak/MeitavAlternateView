@@ -124,3 +124,9 @@ function init_chart() {
     update_trends();
 
 }
+
+// Expose functions consumed by other modules and by bootstrap-table data-* attribute callbacks.
+window.init_chart = init_chart;
+window.update_trends = update_trends;
+window.trend_stats = trend_stats;
+

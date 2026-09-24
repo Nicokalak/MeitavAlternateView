@@ -261,4 +261,25 @@ function buttons () {
     }
 }
 
-
+// Expose all functions used by bootstrap-table data-formatter / data-footer-formatter
+// HTML attributes and by cross-module calls. Each ES module has its own scope, so
+// functions must be explicitly attached to window to be accessible globally.
+window.totalPercent = totalPercent;
+window.totalDayPercent = totalDayPercent;
+window.calcAvgCost = calcAvgCost;
+window.calcStartPrice = calcStartPrice;
+window.detailFormatter = detailFormatter;
+window.getRange = getRange;
+window.shouldShowEarning = shouldShowEarning;
+window.daysCountToEarn = daysCountToEarn;
+window.getDetailedRow = getDetailedRow;
+window.cellStyle = cellStyle;
+window.round = round;
+window.roundPercent = roundPercent;
+window.bigNum = bigNum;
+window.symbolFormatter = symbolFormatter;
+window.gainTotal = gainTotal;
+window.totalPriceNoStyle = totalPriceNoStyle;
+window.totalPrice = totalPrice;
+window.watchListStyle = watchListStyle;
+window.buttons = buttons;

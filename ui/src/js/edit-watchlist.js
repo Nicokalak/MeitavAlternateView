@@ -19,7 +19,7 @@ function getItem(item = {}) {
         "<button class='btn btn-sm " + toggleBtnClass + " toggle-item-details' type='button' title='" + toggleBtnTitle + "' aria-expanded='false'>" +
         "<i class='fas fa-sliders-h'></i>" +
         "</button>" +
-        "<button class='btn btn-sm btn-outline-danger remove-item' type='button' title='Remove'>" +
+        "<button class='btn btn-sm btn-outline-danger remove-item delete-item' type='button' title='Remove'>" +
         "<i class='fas fa-trash-alt'></i>" +
         "</button>" +
         "</div>" +
@@ -84,8 +84,10 @@ $(document).ready(function () {
             toggleBtn.attr("aria-expanded", "true");
         } else {
             extraFields.addClass("d-none");
-            const qtyVal = parseInt(row.find(".watchlist-qty").val().trim(), 10);
-            const costVal = parseFloat(row.find(".watchlist-cost").val().trim());
+            const qtyRaw = String(row.find(".watchlist-qty").val() ?? "").trim();
+            const costRaw = String(row.find(".watchlist-cost").val() ?? "").trim();
+            const qtyVal = parseInt(qtyRaw, 10);
+            const costVal = parseFloat(costRaw);
             const hasValues = (!isNaN(qtyVal) && qtyVal > 0) || (!isNaN(costVal) && costVal > 0);
 
             toggleBtn.removeClass("btn-primary").addClass(hasValues ? "btn-outline-primary" : "btn-outline-secondary");
@@ -101,7 +103,7 @@ $(document).ready(function () {
     });
 
     // Delete item button click event
-    $(document).on("click", ".delete-item", function () {
+    $(document).on("click", ".delete-item, .remove-item", function () {
         $(this).closest(".watchlist-item-row").remove();
         checkEmptyState();
     });
@@ -111,10 +113,10 @@ $(document).ready(function () {
         let updatedList = [];
 
         $("#listItems .watchlist-item-row").each(function () {
-            let symbol = $(this).find(".watchlist-symbol").val().trim().toUpperCase();
+            let symbol = String($(this).find(".watchlist-symbol").val() ?? "").trim().toUpperCase();
             if (!symbol) return;
-            let qtyVal = $(this).find(".watchlist-qty").val().trim();
-            let costVal = $(this).find(".watchlist-cost").val().trim();
+            let qtyVal = String($(this).find(".watchlist-qty").val() ?? "").trim();
+            let costVal = String($(this).find(".watchlist-cost").val() ?? "").trim();
 
             let quantity = qtyVal === "" ? 0 : parseInt(qtyVal, 10);
             let cost = costVal === "" ? 0.0 : parseFloat(costVal);

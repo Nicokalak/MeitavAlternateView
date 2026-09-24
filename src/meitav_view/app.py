@@ -57,6 +57,8 @@ async def strip_url_prefix(request: Request, call_next: Callable[[Request], Awai
 
 if STATIC_DIR.exists():
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+    if (STATIC_DIR / "assets").exists():
+        app.mount("/assets", StaticFiles(directory=STATIC_DIR / "assets"), name="assets")
     if (STATIC_DIR / "js").exists():
         app.mount("/js", StaticFiles(directory=STATIC_DIR / "js"), name="js")
     if (STATIC_DIR / "css").exists():
