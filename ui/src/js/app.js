@@ -36,7 +36,12 @@ $(function () {
         },
         buttonsOrder: ['refresh', 'autoRefresh', 'columns', 'toggleWatchListBtn', 'Export'],
         classes: ['table', 'table-sm', 'table-striped', 'table-hover', 'caption-top'],
-        exportTypes: ['json', 'csv', 'txt', 'sql', 'xlsx', 'pdf']
+        exportTypes: ['json', 'csv', 'txt', 'sql', 'xlsx', 'pdf'],
+        exportOptions: {
+            fileName: function () {
+                return 'portfolio-' + new Date().toISOString().slice(0, 16);
+            }
+        }
     });
     $('.columns-start.btn-group').prepend($('#customSearch').detach());
 
