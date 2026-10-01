@@ -1,3 +1,30 @@
+// ─── Date Formatting Helpers (replaces moment.js) ────────────────────────────
+const _dateFmtShort = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
+const _dateFmtDayMonth = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: '2-digit' });
+const _relTimeFmt = new Intl.RelativeTimeFormat('en-GB', { numeric: 'auto' });
+
+function formatShortDateTime(unixMs) {
+    return _dateFmtShort.format(new Date(unixMs));
+}
+
+function formatDayMonth(unixMs) {
+    return _dateFmtDayMonth.format(new Date(unixMs));
+}
+
+function formatCalendar(unixMs) {
+    const target = new Date(unixMs);
+    const now = new Date();
+    const diffMs = target - now;
+    const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+    const timeStr = target.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
+
+    if (diffDays === 0) return 'Today at ' + timeStr;
+    if (diffDays === 1) return 'Tomorrow at ' + timeStr;
+    if (diffDays === -1) return 'Yesterday at ' + timeStr;
+    if (diffDays > 1 && diffDays < 7) return _relTimeFmt.format(diffDays, 'day') + ' at ' + timeStr;
+    return formatShortDateTime(unixMs);
+}
+
 function totalPercent (data) {
     let daysVal = round(data.filter(isInPortfolio).map(function (row) {
         return row.day_val;
@@ -78,7 +105,7 @@ function detailFormatter(index, row) {
             + getDetailedRow('change', stock[state  + 'MarketChange'] * row.quantity, round, true )
             + getDetailedRow('change (%)', (stock[state + 'MarketChangePercent']), roundPercent, true )
             + (stock['averageAnalystRating'] ? getDetailedRow('rating', (stock['averageAnalystRating']), undefined, false ) : "")
-            + getDetailedRow('earnings', stock['earningsTimestamp'], (time) => (time ? moment(time * 1000).locale('en-gb').format('l LT') : ""), false)
+            + getDetailedRow('earnings', stock['earningsTimestamp'], (time) => (time ? formatShortDateTime(time * 1000) : ""), false)
             + getDetailedRow('trend ratio', (stock['regularMarketVolume'] /  stock['averageDailyVolume3Month']) * 100, roundPercent)
             + '</dl>'
         )
@@ -169,12 +196,12 @@ function symbolFormatter(value, row) {
     }
 
     if (shouldShowEarning(row.api_data['earningsTimestamp'] * 1000)) {
-        d += getSymbolTag("text-bg-info", moment(row.api_data['earningsTimestamp'] * 1000).locale("en-gb").calendar());
+        d += getSymbolTag("text-bg-info", formatCalendar(row.api_data['earningsTimestamp'] * 1000));
     }
 
     if (row.api_data['dividendDate'] !== undefined && row.api_data['trailingAnnualDividendRate'] > 0 ) {
         let divAmount = row.api_data['trailingAnnualDividendRate'] / 4;
-        d += getSymbolTag("text-bg-success", moment(row.api_data['dividendDate'] * 1000).format('DD/MM') + ' '
+        d += getSymbolTag("text-bg-success", formatDayMonth(row.api_data['dividendDate'] * 1000) + ' '
             + round(divAmount) + 'x' + row.quantity + '=' + round(divAmount * row.quantity) + '$')
     }
 

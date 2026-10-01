@@ -96,7 +96,7 @@ $(document).ready(function () {
     });
 
     // Add item button click event
-    $("#addItemBtn").click(function () {
+    $("#addItemBtn").on("click", function () {
         $("#listItems").append(getItem());
         checkEmptyState();
         $("#listItems .watchlist-item-row:last-child .watchlist-symbol").focus();
@@ -109,7 +109,7 @@ $(document).ready(function () {
     });
 
     // Save changes button click event
-    $("#saveChanges").click(function () {
+    $("#saveChanges").on("click", function () {
         let updatedList = [];
 
         $("#listItems .watchlist-item-row").each(function () {

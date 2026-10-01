@@ -8,14 +8,11 @@ import '../css/main.css';
 
 // ─── 2. Core Libraries & Global Assignment ───────────────────────────────────
 import $ from 'jquery';
-import 'jquery-migrate';
 import * as Popper from '@popperjs/core';
 import * as bootstrap from 'bootstrap';
 import * as XLSX from 'xlsx';
-import moment from 'moment';
-import 'moment/dist/locale/en-gb';
 import { Chart, registerables } from 'chart.js';
-import 'chartjs-adapter-moment';
+import 'chartjs-adapter-date-fns';
 
 Chart.register(...registerables);
 
@@ -24,7 +21,6 @@ window.$ = window.jQuery = $;
 window.Popper = Popper;
 window.bootstrap = bootstrap;
 window.XLSX = XLSX;
-window.moment = moment;
 window.Chart = Chart;
 
 // ─── 3. Load Core Bootstrap Table First, Then Extensions ──────────────────────
