@@ -1,6 +1,5 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
-import inject from '@rollup/plugin-inject';
 
 export default defineConfig({
   root: 'src',
@@ -8,13 +7,6 @@ export default defineConfig({
   define: {
     global: 'window',
   },
-  plugins: [
-    inject({
-      jQuery: 'jquery',
-      $: 'jquery',
-      include: ['**/*.js'],
-    }),
-  ],
   build: {
     outDir: resolve(import.meta.dirname, 'dist'),
     emptyOutDir: true,
