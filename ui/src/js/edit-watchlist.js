@@ -12,7 +12,7 @@ function getItem(item = {}) {
         "<div class='flex-grow-1'>" +
         "<div class='input-group input-group-sm'>" +
         "<span class='input-group-text px-2'><i class='fas fa-tag text-muted'></i></span>" +
-        "<input type='text' class='form-control form-control-sm text-uppercase fw-semibold watchlist-symbol' placeholder='Symbol' value='" + symbol + "' autocomplete='off' autocapitalize='characters'>" +
+        "<input type='text' class='form-control form-control-sm text-uppercase fw-semibold watchlist-symbol' name='watchlist-" + symbol + "' placeholder='Symbol' value='" + symbol + "' autocomplete='off' autocapitalize='characters'>" +
         "</div>" +
         "</div>" +
         "<div class='d-flex gap-1 flex-shrink-0'>" +
@@ -28,13 +28,13 @@ function getItem(item = {}) {
         "<div class='flex-fill'>" +
         "<div class='input-group input-group-sm'>" +
         "<span class='input-group-text px-2'>Qty</span>" +
-        "<input type='number' min='0' step='1' class='form-control form-control-sm px-2 watchlist-qty' placeholder='0' value='" + qty + "'>" +
+        "<input type='number' name='watchlist-qty-" + symbol + "' min='0' step='1' class='form-control form-control-sm px-2 watchlist-qty' placeholder='0' value='" + qty + "'>" +
         "</div>" +
         "</div>" +
         "<div class='flex-fill'>" +
         "<div class='input-group input-group-sm'>" +
         "<span class='input-group-text px-2'>Cost</span>" +
-        "<input type='number' min='0' step='any' class='form-control form-control-sm px-2 watchlist-cost' placeholder='0.00' value='" + cost + "'>" +
+        "<input type='number' name='watchlist-qty-" + symbol + " min='0' step='any' class='form-control form-control-sm px-2 watchlist-cost' placeholder='0.00' value='" + cost + "'>" +
         "</div>" +
         "</div>" +
         "</div>" +
