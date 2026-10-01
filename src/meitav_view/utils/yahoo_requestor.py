@@ -1,5 +1,5 @@
 import logging
-from functools import lru_cache
+from functools import cached_property, lru_cache
 from http import HTTPStatus
 from typing import Any
 
@@ -14,14 +14,19 @@ class YahooRequestor:
 
     def __init__(self) -> None:
         self.session: Session[Any] = requests.Session(impersonate="chrome")
-        r1 = self.session.get("https://query2.finance.yahoo.com/v1/test/getcrumb")
-        self._crumb = r1.text
+        # Crumb is no longer fetched here on startup
+
+    @cached_property
+    def crumb(self) -> str:
+        """Fetches the crumb lazily on first access and caches the result."""
+        response = self.session.get("https://query2.finance.yahoo.com/v1/test/getcrumb")
+        return response.text
 
     def request(self, symbols: set[str]) -> Any:
         url = "https://query2.finance.yahoo.com/v7/finance/quote"
         params = {
             "symbols": ",".join(symbols),
-            "crumb": self._crumb,
+            "crumb": self.crumb,
         }
         response = self.session.get(url, params=params)
         if response.status_code == HTTPStatus.OK:
