@@ -20,7 +20,7 @@ class YahooRequestor:
     def crumb(self) -> str:
         """Fetches the crumb lazily on first access and caches the result."""
         response = self.session.get("https://query2.finance.yahoo.com/v1/test/getcrumb")
-        return response.text
+        return str(response.text)
 
     def request(self, symbols: set[str]) -> Any:
         url = "https://query2.finance.yahoo.com/v7/finance/quote"
