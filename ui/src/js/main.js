@@ -8,6 +8,7 @@ import '../css/main.css';
 
 // ─── 2. Core Libraries & Global Assignment ───────────────────────────────────
 import $ from 'jquery';
+import 'jquery-migrate';
 import * as Popper from '@popperjs/core';
 import * as bootstrap from 'bootstrap';
 import * as XLSX from 'xlsx';
