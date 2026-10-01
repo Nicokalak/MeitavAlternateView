@@ -104,7 +104,7 @@ function init_chart() {
                     display: false,
                     type: 'time',
                     time: {
-                        parser: 'YYYYMMDDTHH:mm:ss',
+                        parser: "yyyyMMdd'T'HH:mm:ss",
                         minUnit: 'minute'
                     },
                     ticks: {
