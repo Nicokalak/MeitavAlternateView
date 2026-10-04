@@ -156,6 +156,10 @@ class MeitavViewTestCase(unittest.TestCase):
         js_response = self.client.get("/js/app.js")
         self.assertEqual(js_response.status_code, 200)
 
+        icon_response = self.client.get("/assets/android-chrome-144x144.png")
+        self.assertEqual(icon_response.status_code, 200)
+        self.assertEqual(icon_response.headers.get("content-type"), "image/png")
+
 
 if __name__ == "__main__":
     unittest.main()
