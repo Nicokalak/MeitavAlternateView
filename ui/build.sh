@@ -7,9 +7,10 @@ cd "$(dirname "$0")"
 ./node_modules/.bin/vite build
 
 # Ensure backwards-compatibility folders for test and legacy mounts if needed
-mkdir -p dist/js dist/css
+mkdir -p dist/js dist/css dist/assets/favicon
 cp -r src/css/* dist/css/ 2>/dev/null || true
 cp -r src/js/* dist/js/ 2>/dev/null || true
+cp -r src/favicon/* dist/assets/favicon/ 2>/dev/null || true
 
 # Always copy compiled assets to backend static folder
 STATIC_TARGET="../src/meitav_view/static"
