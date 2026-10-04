@@ -113,6 +113,11 @@ function detailFormatter(index, row) {
             '<a title="more info..." class="link-primary fa-lg" target="_blank" href="https://finance.yahoo.com/quote/' + row.symbol +'"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-arrow-up-right-circle" viewBox="0 0 16 16">\n' +
             '  <path fill-rule="evenodd" d="M1 8a7 7 0 1 0 14 0A7 7 0 0 0 1 8zm15 0A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.854 10.803a.5.5 0 1 1-.708-.707L9.243 6H6.475a.5.5 0 1 1 0-1h3.975a.5.5 0 0 1 .5.5v3.975a.5.5 0 1 1-1 0V6.707l-4.096 4.096z"/>\n' +
             '</svg></a>')
+    }).fail(function (jqXHR) {
+        console.error('Failed to load ticker detail for', row.symbol, ':', jqXHR.status, jqXHR.statusText);
+        $("#ticker-" + row.symbol).html(
+            '<span class="text-danger small">Failed to load details (' + jqXHR.status + ')</span>'
+        );
     });
     return html;
 }
@@ -153,23 +158,12 @@ function getDetailedRow(key, val, formater, color=false) {
 }
 
 function cellStyle(value, row) {
-    if (isInPortfolio((row))) {
-        if (value > 0) {
-            return {classes: 'text-success'};
-        } else if (value < 0) {
-            return {classes: 'text-danger'};
-        } else {
-            return {classes: ''}
-        }
-    } else {
-        if (value > 0) {
-            return {classes: 'text-success'};
-        } else if (value < 0) {
-            return {classes: 'text-danger'};
-        } else {
-            return {classes: ''}
-        }
+    if (value > 0) {
+        return {classes: 'text-success'};
+    } else if (value < 0) {
+        return {classes: 'text-danger'};
     }
+    return {classes: ''};
 }
 
 function round(value) {

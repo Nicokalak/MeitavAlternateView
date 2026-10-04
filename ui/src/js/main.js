@@ -36,7 +36,10 @@ await Promise.all([
 await Promise.all([
     import('./darkmode.js'),
     import('./table.js'),
-    import('./trendschart.js'),
     import('./edit-watchlist.js'),
-    import('./app.js'),
 ]);
+
+// trendschart.js must be fully evaluated (window.init_chart assigned) before
+// app.js runs, because app.js's $(document).ready calls init_chart() immediately.
+await import('./trendschart.js');
+await import('./app.js');

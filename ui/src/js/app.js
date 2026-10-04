@@ -21,6 +21,8 @@ $(function () {
             }).done(function () {
                 update_trends();
                 updateStickyOffsets();
+            }).fail(function (jqXHR) {
+                console.error('Failed to load market state:', jqXHR.status, jqXHR.statusText);
             });
         },
         onLoadError: function (status) {

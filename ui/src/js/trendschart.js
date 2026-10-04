@@ -39,6 +39,7 @@ const trendsObj = {
 }
 let chart;
 function update_trends() {
+    if (!chart) return;
     $.get("trends", function (trends) {
         for (let trendsKey in trends) {
             for (let t in trends[trendsKey]) {
@@ -46,6 +47,8 @@ function update_trends() {
             }
         }
         chart.update();
+    }).fail(function (jqXHR) {
+        console.error('Failed to load trends:', jqXHR.status, jqXHR.statusText);
     });
 }
 
@@ -121,8 +124,6 @@ function init_chart() {
         }
     };
     chart = new Chart($('#trends'), config);
-    update_trends();
-
 }
 
 // Expose functions consumed by other modules and by bootstrap-table data-* attribute callbacks.
