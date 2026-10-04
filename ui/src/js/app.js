@@ -34,14 +34,9 @@ $(function () {
                     ' for <a target="_blank" href="https://finance.yahoo.com/quote/' + name + '">' + name + '</a>');
             }
         },
-        buttonsOrder: ['refresh', 'autoRefresh', 'columns', 'toggleWatchListBtn', 'Export'],
+        buttonsOrder: ['refresh', 'autoRefresh', 'columns', 'toggleWatchListBtn'],
         classes: ['table', 'table-sm', 'table-striped', 'table-hover', 'caption-top'],
-        exportTypes: ['json', 'csv', 'txt', 'sql', 'xlsx', 'pdf'],
-        exportOptions: {
-            fileName: function () {
-                return 'portfolio-' + new Date().toISOString().slice(0, 16);
-            }
-        }
+
     });
     $('.columns-start.btn-group').prepend($('#customSearch').detach());
 

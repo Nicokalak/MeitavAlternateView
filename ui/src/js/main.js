@@ -8,10 +8,9 @@ import '../css/main.css';
 
 // ─── 2. Core Libraries & Global Assignment ───────────────────────────────────
 import $ from 'jquery';
-import 'jquery-migrate';
 import * as Popper from '@popperjs/core';
 import * as bootstrap from 'bootstrap';
-import * as XLSX from 'xlsx';
+
 import { Chart, registerables } from 'chart.js';
 import 'chartjs-adapter-date-fns';
 
@@ -21,7 +20,7 @@ Chart.register(...registerables);
 window.$ = window.jQuery = $;
 window.Popper = Popper;
 window.bootstrap = bootstrap;
-window.XLSX = XLSX;
+
 window.Chart = Chart;
 
 // ─── 3. Load Core Bootstrap Table First, Then Extensions ──────────────────────
@@ -31,8 +30,6 @@ await import('bootstrap-table');
 // Now that core is guaranteed to be loaded, load extensions concurrently
 await Promise.all([
     import('bootstrap-table/dist/extensions/auto-refresh/bootstrap-table-auto-refresh.min.js'),
-    import('tableexport.jquery.plugin/tableExport.min.js'),
-    import('bootstrap-table/dist/extensions/export/bootstrap-table-export.min.js'),
     import('bootstrap-table/dist/extensions/sticky-header/bootstrap-table-sticky-header.min.js'),
 ]);
 

@@ -17,10 +17,7 @@
     "chart.js": "^4.4.8",
     "chartjs-adapter-date-fns": "^3.0.0",
     "date-fns": "^4.1.0",
-    "jquery": "^4.0.0",
-    "jquery-migrate": "^4.0.0",
-    "tableexport.jquery.plugin": "^1.33.0",
-    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
+    "jquery": "^4.0.0"
   },
   "allowScripts": {
     "core-js@3.50.0": true
