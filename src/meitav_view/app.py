@@ -42,17 +42,7 @@ async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
     yield
 
 
-app = FastAPI(title="Meitav View", version=get_version(), lifespan=lifespan)
-
-_URL_PREFIX: str = os.getenv("URL_PREFIX", "")
-
-
-@app.middleware("http")
-async def strip_url_prefix(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
-    """Strip URL_PREFIX from the request path so routes stay prefix-agnostic."""
-    if _URL_PREFIX and request.url.path.startswith(_URL_PREFIX):
-        request.scope["path"] = request.url.path[len(_URL_PREFIX) :] or "/"
-    return await call_next(request)
+app = FastAPI(title="Meitav View", version=get_version(), lifespan=lifespan, root_path=os.getenv("URL_PREFIX", ""))
 
 
 if STATIC_DIR.exists():
