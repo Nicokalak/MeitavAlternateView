@@ -12,11 +12,11 @@ function updateStickyOffsets() {
     $('.sticky-header-container').css('top', totalOffset + 'px');
 }
 
-$(function () {
+function initBootstrapTable() {
     init_chart();
     $('#table').bootstrapTable({
         onLoadSuccess: function () {
-            $.get("marketState", function (trendObj) {
+            $.get('marketState', function (trendObj) {
                 trend_stats(trendObj);
             }).done(function () {
                 update_trends();
@@ -38,7 +38,6 @@ $(function () {
         },
         buttonsOrder: ['refresh', 'autoRefresh', 'columns', 'toggleWatchListBtn'],
         classes: ['table', 'table-sm', 'table-striped', 'table-hover', 'caption-top'],
-
     });
     $('.columns-start.btn-group').prepend($('#customSearch').detach());
 
@@ -48,4 +47,8 @@ $(function () {
     }
     $(window).on('resize scroll', updateStickyOffsets);
     updateStickyOffsets();
-});
+}
+
+// Wait for PortfolioTable.vue to render the <table> element before initialising.
+// Falls back to DOMContentLoaded in case the event fires before this module loads.
+document.addEventListener('portfolio-table-mounted', initBootstrapTable, { once: true });

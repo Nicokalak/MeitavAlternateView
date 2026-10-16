@@ -6,7 +6,7 @@ import 'bootstrap-icons/font/bootstrap-icons.css';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 import '../css/main.css';
 
-// ─── 2. Core Libraries & Global Assignment ───────────────────────────────────
+// ─── 2. Core Libraries & Global Assignment ────────────────────────────────────
 import $ from 'jquery';
 import * as Popper from '@popperjs/core';
 import * as bootstrap from 'bootstrap';
@@ -20,26 +20,27 @@ Chart.register(...registerables);
 window.$ = window.jQuery = $;
 window.Popper = Popper;
 window.bootstrap = bootstrap;
-
 window.Chart = Chart;
 
 // ─── 3. Load Core Bootstrap Table First, Then Extensions ──────────────────────
-// Load core bootstrap-table sequentially first so it registers on jQuery
 await import('bootstrap-table');
 
-// Now that core is guaranteed to be loaded, load extensions concurrently
 await Promise.all([
     import('bootstrap-table/dist/extensions/auto-refresh/bootstrap-table-auto-refresh.min.js'),
     import('bootstrap-table/dist/extensions/sticky-header/bootstrap-table-sticky-header.min.js'),
 ]);
 
-await Promise.all([
-    import('./darkmode.js'),
-    import('./table.js'),
-    import('./edit-watchlist.js'),
-]);
+// ─── 4. Load Table Formatters (registers window.* before Vue mounts) ─────────
+await import('./table.js');
 
-// trendschart.js must be fully evaluated (window.init_chart assigned) before
-// app.js runs, because app.js's $(document).ready calls init_chart() immediately.
-await import('./trendschart.js');
+// ─── 5. Register Bootstrap Table init listener BEFORE mounting Vue ────────────
+// This ensures the 'portfolio-table-mounted' event from PortfolioTable.vue's
+// onMounted hook is caught even if it fires synchronously during mount.
 await import('./app.js');
+
+// ─── 6. Mount Vue App ─────────────────────────────────────────────────────────
+import { createApp } from 'vue';
+import App from '../App.vue';
+
+const app = createApp(App);
+app.mount('#app');
