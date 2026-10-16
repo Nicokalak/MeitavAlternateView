@@ -1,79 +1,48 @@
-/*!
- * Color mode toggler — refactored for Vue 3 reactivity.
- * Original: Bootstrap docs (https://getbootstrap.com/)
- * Copyright 2011-2023 The Bootstrap Authors
- * Licensed under the Creative Commons Attribution 3.0 Unported License.
+/**
+ * Color mode manager — Vue 3 reactive theme state and Bootstrap 5 data-bs-theme synchronisation.
  */
 
 import { ref } from 'vue';
 
-/** Reactive theme value: 'light' | 'dark' | 'auto' */
-export const theme = ref(localStorage.getItem('theme') ?? 'auto');
+const storedTheme = localStorage.getItem('theme');
 
-/** Return the system-preferred or stored theme. */
-export function getPreferredTheme() {
-    const stored = localStorage.getItem('theme');
-    if (stored) return stored;
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+/** Reactive theme value: 'light' | 'dark' | 'auto' */
+export const theme = ref(
+    storedTheme && ['light', 'dark', 'auto'].includes(storedTheme) ? storedTheme : 'auto'
+);
+
+/** Resolve 'auto' to the current OS color scheme */
+export function resolveTheme(targetTheme) {
+    if (targetTheme === 'auto') {
+        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    return targetTheme;
 }
 
 /** Apply theme to the document root and update reactive state. */
-export function setTheme(newTheme) {
+export function setTheme(newTheme, persist = false) {
     theme.value = newTheme;
-    const resolved =
-        newTheme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches
-            ? 'dark'
-            : newTheme;
-    document.documentElement.setAttribute('data-bs-theme', resolved);
-}
-
-/** Update active-state UI for the theme switcher buttons (if present). */
-export function showActiveTheme(selectedTheme, focus = false) {
-    const themeSwitcher = document.querySelector('#bd-theme');
-    if (!themeSwitcher) return;
-
-    const themeSwitcherText = document.querySelector('#bd-theme-text');
-    const activeThemeIcon = document.querySelector('.theme-icon-active use');
-    const btnToActive = document.querySelector(`[data-bs-theme-value="${selectedTheme}"]`);
-    if (!btnToActive) return;
-    const svgOfActiveBtn = btnToActive.querySelector('svg use')?.getAttribute('href');
-
-    document.querySelectorAll('[data-bs-theme-value]').forEach((el) => {
-        el.classList.remove('active');
-        el.setAttribute('aria-pressed', 'false');
-    });
-
-    btnToActive.classList.add('active');
-    btnToActive.setAttribute('aria-pressed', 'true');
-    if (activeThemeIcon && svgOfActiveBtn) activeThemeIcon.setAttribute('href', svgOfActiveBtn);
-    if (themeSwitcherText) {
-        themeSwitcher.setAttribute(
-            'aria-label',
-            `${themeSwitcherText.textContent} (${btnToActive.dataset.bsThemeValue})`
-        );
+    if (persist) {
+        if (newTheme === 'auto') {
+            localStorage.removeItem('theme');
+        } else {
+            localStorage.setItem('theme', newTheme);
+        }
     }
-    if (focus) themeSwitcher.focus();
+    document.documentElement.setAttribute('data-bs-theme', resolveTheme(newTheme));
 }
 
-// Initialise on import: apply stored/preferred theme immediately.
-setTheme(getPreferredTheme());
+/** Return the current preferred theme. */
+export function getPreferredTheme() {
+    return theme.value;
+}
 
-// React to OS-level colour scheme changes.
+// Initialise theme immediately on module load
+setTheme(theme.value, false);
+
+// React to OS-level colour scheme changes when in 'auto' mode
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-    const stored = localStorage.getItem('theme');
-    if (stored !== 'light' && stored !== 'dark') {
-        setTheme(getPreferredTheme());
+    if (theme.value === 'auto') {
+        document.documentElement.setAttribute('data-bs-theme', resolveTheme('auto'));
     }
-});
-
-// Wire up any [data-bs-theme-value] toggle buttons once DOM is ready.
-window.addEventListener('DOMContentLoaded', () => {
-    showActiveTheme(getPreferredTheme());
-    document.querySelectorAll('[data-bs-theme-value]').forEach((toggle) => {
-        toggle.addEventListener('click', () => {
-            const selected = toggle.getAttribute('data-bs-theme-value');
-            setTheme(selected);
-            showActiveTheme(selected, true);
-        });
-    });
 });

@@ -7,7 +7,7 @@
           <input
             type="text"
             class="form-control form-control-sm text-uppercase fw-semibold watchlist-symbol"
-            :name="'watchlist-' + item.symbol"
+            :name="'watchlist-' + (item.symbol || item._key)"
             placeholder="Symbol"
             v-model="item.symbol"
             autocomplete="off"
@@ -18,9 +18,9 @@
       <div class="d-flex gap-1 flex-shrink-0">
         <button
           class="btn btn-sm toggle-item-details"
-          :class="hasValues ? 'btn-outline-primary' : 'btn-outline-secondary'"
+          :class="toggleBtnClass"
           type="button"
-          :title="hasValues ? 'Hide Qty & Cost' : 'Set Qty & Cost'"
+          :title="showExtra ? 'Hide Qty & Cost' : 'Set Qty & Cost'"
           :aria-expanded="showExtra"
           @click="toggleExtra"
         >
@@ -32,13 +32,16 @@
       </div>
     </div>
 
-    <div class="d-flex gap-2 mt-2 watchlist-extra-fields" v-show="showExtra">
+    <div
+      class="gap-2 mt-2 watchlist-extra-fields"
+      :class="showExtra ? 'd-flex' : 'd-none'"
+    >
       <div class="flex-fill">
         <div class="input-group input-group-sm">
           <span class="input-group-text px-2">Qty</span>
           <input
             type="number"
-            :name="'watchlist-qty-' + item.symbol"
+            :name="'watchlist-qty-' + (item.symbol || item._key)"
             min="0"
             step="1"
             class="form-control form-control-sm px-2 watchlist-qty"
@@ -52,7 +55,7 @@
           <span class="input-group-text px-2">Cost</span>
           <input
             type="number"
-            :name="'watchlist-cost-' + item.symbol"
+            :name="'watchlist-cost-' + (item.symbol || item._key)"
             min="0"
             step="any"
             class="form-control form-control-sm px-2 watchlist-cost"
@@ -75,15 +78,19 @@ const props = defineProps({
 });
 const emit = defineEmits(['remove']);
 
-const showExtra = ref(
-    (props.item.qty !== '' && Number(props.item.qty) > 0) ||
-    (props.item.cost !== '' && Number(props.item.cost) > 0)
-);
+const showExtra = ref(false);
 
 const hasValues = computed(() => {
     const q = parseInt(props.item.qty, 10);
     const c = parseFloat(props.item.cost);
     return (!isNaN(q) && q > 0) || (!isNaN(c) && c > 0);
+});
+
+const toggleBtnClass = computed(() => {
+    if (showExtra.value) {
+        return 'btn-primary';
+    }
+    return hasValues.value ? 'btn-outline-primary' : 'btn-outline-secondary';
 });
 
 function toggleExtra() {

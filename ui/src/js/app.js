@@ -13,13 +13,19 @@ function updateStickyOffsets() {
 }
 
 function initBootstrapTable() {
-    init_chart();
+    if (typeof window.init_chart === 'function') {
+        window.init_chart();
+    }
     $('#table').bootstrapTable({
         onLoadSuccess: function () {
             $.get('marketState', function (trendObj) {
-                trend_stats(trendObj);
+                if (typeof window.trend_stats === 'function') {
+                    window.trend_stats(trendObj);
+                }
             }).done(function () {
-                update_trends();
+                if (typeof window.update_trends === 'function') {
+                    window.update_trends();
+                }
                 updateStickyOffsets();
             }).fail(function (jqXHR) {
                 console.error('Failed to load market state:', jqXHR.status, jqXHR.statusText);
@@ -36,7 +42,7 @@ function initBootstrapTable() {
                     ' for <a target="_blank" href="https://finance.yahoo.com/quote/' + name + '">' + name + '</a>');
             }
         },
-        buttonsOrder: ['refresh', 'autoRefresh', 'columns', 'toggleWatchListBtn'],
+        buttonsOrder: ['refresh', 'autoRefresh', 'columns', 'toggleWatchListBtn', 'editWatchListBtn'],
         classes: ['table', 'table-sm', 'table-striped', 'table-hover', 'caption-top'],
     });
     $('.columns-start.btn-group').prepend($('#customSearch').detach());
@@ -49,6 +55,15 @@ function initBootstrapTable() {
     updateStickyOffsets();
 }
 
-// Wait for PortfolioTable.vue to render the <table> element before initialising.
-// Falls back to DOMContentLoaded in case the event fires before this module loads.
-document.addEventListener('portfolio-table-mounted', initBootstrapTable, { once: true });
+// Initialise when PortfolioTable.vue signals the <table> element is mounted.
+// Falls back to direct execution if already mounted or DOMContentLoaded.
+if (document.getElementById('table') && typeof window.init_chart === 'function') {
+    initBootstrapTable();
+} else {
+    document.addEventListener('portfolio-table-mounted', initBootstrapTable, { once: true });
+    window.addEventListener('DOMContentLoaded', () => {
+        if (!document.querySelector('.bootstrap-table') && document.getElementById('table')) {
+            initBootstrapTable();
+        }
+    }, { once: true });
+}

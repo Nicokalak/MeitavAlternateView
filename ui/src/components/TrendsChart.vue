@@ -10,7 +10,7 @@
   <!-- Market Stats Cards -->
   <div class="row pt-2">
     <div class="col-12">
-      <div id="market-stats" class="d-flex flex-wrap gap-2" :style="{ display: stats.loaded ? '' : 'none' }">
+      <div id="market-stats" class="d-flex flex-wrap gap-2">
         <!-- Gainer / % -->
         <div class="card flex-fill placeholder-glow" style="min-width:130px">
           <div class="card-body p-2 text-center">
@@ -94,7 +94,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, onMounted, onUnmounted } from 'vue';
 import { Chart } from 'chart.js';
 
 /**
@@ -157,26 +157,35 @@ function trend_stats(trendObj) {
     stats.down = round(trendObj['up-down'].down);
     stats.trending = trendObj.trending.symbol;
     stats.loaded = true;
-    console.log(trendObj);
 }
 
 /** Fetch /trends and push new data points into the chart. */
-function update_trends() {
+async function update_trends() {
     if (!chart) return;
-    $.get('trends', function (trends) {
+    try {
+        const res = await fetch('trends');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const trends = await res.json();
         for (const key in trends) {
             for (const t in trends[key]) {
                 trendsObj[key][t] = trends[key][t];
             }
         }
         chart.update();
-    }).fail(function (jqXHR) {
-        console.error('Failed to load trends:', jqXHR.status, jqXHR.statusText);
-    });
+    } catch (err) {
+        console.error('Failed to load trends:', err);
+    }
 }
 
 /** Initialise the Chart.js instance on the canvas element. */
 function init_chart() {
+    if (chart) {
+        chart.destroy();
+        chart = null;
+    }
+
+    if (!trendsCanvas.value) return;
+
     const down = (ctx) => ctx.p0.parsed.y > ctx.p1.parsed.y ? 'rgb(213, 76, 76)' : undefined;
     const up = (ctx) => ctx.p0.parsed.y < ctx.p1.parsed.y ? 'rgb(0, 139, 0)' : undefined;
     const skipped = (ctx, value) =>
@@ -254,5 +263,12 @@ onMounted(() => {
     window.init_chart = init_chart;
     window.update_trends = update_trends;
     window.trend_stats = trend_stats;
+});
+
+onUnmounted(() => {
+    if (chart) {
+        chart.destroy();
+        chart = null;
+    }
 });
 </script>

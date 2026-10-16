@@ -48,14 +48,14 @@
             <span
               id="successMessage"
               class="badge text-bg-success py-2 px-3 small"
-              v-show="successMsg"
+              v-if="successMsg"
             >
               <i class="fas fa-check-circle me-1"></i>{{ successMsg }}
             </span>
             <span
               id="errorMessage"
               class="badge text-bg-danger py-2 px-3 small"
-              v-show="errorMsg"
+              v-if="errorMsg"
             >
               <i class="fas fa-exclamation-circle me-1"></i>{{ errorMsg }}
             </span>
@@ -79,7 +79,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import WatchlistItem from './WatchlistItem.vue';
 
 /**
@@ -87,13 +87,15 @@ import WatchlistItem from './WatchlistItem.vue';
  * triggers a Bootstrap Table refresh when the modal closes after changes.
  */
 
-let _keyCounter = 0;
+let _keyCounter = Date.now();
 const items = ref([]);
 const saving = ref(false);
 const successMsg = ref('');
 const errorMsg = ref('');
 const modalEl = ref(null);
 let hasChanged = false;
+let successTimer = null;
+let errorTimer = null;
 
 function makeKey() {
     return ++_keyCounter;
@@ -112,12 +114,16 @@ async function loadWatchlist() {
         const res = await fetch('watchList');
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
-        items.value = (data || []).map((item) => ({
-            _key: makeKey(),
-            symbol: item.symbol ?? '',
-            qty: item.qty !== undefined && item.qty !== null ? item.qty : '',
-            cost: item.cost !== undefined && item.cost !== null ? item.cost : '',
-        }));
+        items.value = (data || []).map((item) => {
+            const rawQty = item.quantity ?? item.qty;
+            const rawCost = item.cost;
+            return {
+                _key: makeKey(),
+                symbol: item.symbol ?? '',
+                qty: rawQty !== undefined && rawQty !== null ? rawQty : '',
+                cost: rawCost !== undefined && rawCost !== null ? rawCost : '',
+            };
+        });
     } catch (err) {
         console.error('Failed to load watchlist:', err);
     }
@@ -141,6 +147,8 @@ async function saveChanges() {
     saving.value = true;
     errorMsg.value = '';
     successMsg.value = '';
+    if (successTimer) clearTimeout(successTimer);
+    if (errorTimer) clearTimeout(errorTimer);
 
     try {
         const res = await fetch('watchList', {
@@ -155,13 +163,26 @@ async function saveChanges() {
         const body = await res.json();
         hasChanged = true;
         successMsg.value = body.message || 'Saved successfully';
-        setTimeout(() => { successMsg.value = ''; }, 3000);
+        successTimer = setTimeout(() => { successMsg.value = ''; }, 3000);
     } catch (err) {
         console.error('Error saving watchlist:', err);
         errorMsg.value = 'Error: ' + err.message;
-        setTimeout(() => { errorMsg.value = ''; }, 4000);
+        errorTimer = setTimeout(() => { errorMsg.value = ''; }, 4000);
     } finally {
         saving.value = false;
+    }
+}
+
+function onModalShow() {
+    loadWatchlist();
+}
+
+function onModalHide() {
+    if (hasChanged) {
+        if (window.$ && $('#table').length) {
+            $('#table').bootstrapTable('refresh');
+        }
+        hasChanged = false;
     }
 }
 
@@ -169,14 +190,17 @@ onMounted(() => {
     loadWatchlist();
 
     if (modalEl.value) {
-        modalEl.value.addEventListener('show.bs.modal', loadWatchlist);
-        modalEl.value.addEventListener('hide.bs.modal', () => {
-            if (hasChanged) {
-                $('#table').bootstrapTable('refresh');
-                console.log('watchlist changed, refreshing table');
-                hasChanged = false;
-            }
-        });
+        modalEl.value.addEventListener('show.bs.modal', onModalShow);
+        modalEl.value.addEventListener('hide.bs.modal', onModalHide);
     }
+});
+
+onUnmounted(() => {
+    if (modalEl.value) {
+        modalEl.value.removeEventListener('show.bs.modal', onModalShow);
+        modalEl.value.removeEventListener('hide.bs.modal', onModalHide);
+    }
+    if (successTimer) clearTimeout(successTimer);
+    if (errorTimer) clearTimeout(errorTimer);
 });
 </script>

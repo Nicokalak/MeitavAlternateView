@@ -6,7 +6,6 @@
   <div class="row">
     <div class="col-12">
       <table
-        ref="tableEl"
         class="table-sm table-striped caption-top"
         id="table"
         data-auto-refresh="true"
@@ -103,7 +102,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { onMounted } from 'vue';
 
 /**
  * Wrapper component for the Bootstrap Table portfolio grid.
@@ -111,8 +110,6 @@ import { ref, onMounted } from 'vue';
  * (which calls bootstrapTable() after the component mounts and
  * all window.* formatters are registered by table.js).
  */
-
-const tableEl = ref(null);
 
 onMounted(() => {
     // Signal to app.js that the table DOM is ready.

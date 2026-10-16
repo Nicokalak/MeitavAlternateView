@@ -14,6 +14,9 @@ import * as bootstrap from 'bootstrap';
 import { Chart, registerables } from 'chart.js';
 import 'chartjs-adapter-date-fns';
 
+// Initialise theme before mounting to prevent flash of incorrect theme
+import './darkmode.js';
+
 Chart.register(...registerables);
 
 // Expose globals so legacy jQuery plugins can find them at evaluation time
