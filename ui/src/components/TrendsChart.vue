@@ -98,9 +98,9 @@ import { ref, reactive, onMounted, onUnmounted } from 'vue';
 import { Chart } from 'chart.js';
 
 /**
- * Encapsulates the trends Chart.js line chart and market stats header cards.
- * Exposes initChart() and updateTrends() on the window for backward-compat
- * calls from app.js (which still orchestrates load order).
+ * Market trends chart and stats header cards.
+ * Self-contained — fetches /marketState and /trends directly,
+ * with no window.* global exposure.
  */
 
 const trendsCanvas = ref(null);
@@ -141,7 +141,7 @@ function createSpan(val, val2) {
 }
 
 /** Populate market stats from the /marketState API response. */
-function trend_stats(trendObj) {
+function applyMarketState(trendObj) {
     const marketState = trendObj.marketState.toLowerCase();
     marketStatusHtml.value =
         marketState.charAt(0).toUpperCase() + marketState.slice(1) + ' market  ' +
@@ -160,7 +160,7 @@ function trend_stats(trendObj) {
 }
 
 /** Fetch /trends and push new data points into the chart. */
-async function update_trends() {
+async function fetchTrends() {
     if (!chart) return;
     try {
         const res = await fetch('trends');
@@ -177,8 +177,21 @@ async function update_trends() {
     }
 }
 
+/** Fetch /marketState then update trends. */
+async function fetchMarketState() {
+    try {
+        const res = await fetch('marketState');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        applyMarketState(data);
+        await fetchTrends();
+    } catch (err) {
+        console.error('Failed to load market state:', err);
+    }
+}
+
 /** Initialise the Chart.js instance on the canvas element. */
-function init_chart() {
+function initChart() {
     if (chart) {
         chart.destroy();
         chart = null;
@@ -259,10 +272,8 @@ function init_chart() {
 }
 
 onMounted(() => {
-    // Expose globally for backward-compatible calls from app.js
-    window.init_chart = init_chart;
-    window.update_trends = update_trends;
-    window.trend_stats = trend_stats;
+    initChart();
+    fetchMarketState();
 });
 
 onUnmounted(() => {
@@ -271,4 +282,6 @@ onUnmounted(() => {
         chart = null;
     }
 });
+
+defineExpose({ fetchMarketState, fetchTrends });
 </script>

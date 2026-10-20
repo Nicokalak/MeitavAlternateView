@@ -1,119 +1,424 @@
 <template>
-  <!-- Custom search input (Bootstrap Table will reposition it into the toolbar) -->
-  <input type="search" id="customSearch" class="form-control" />
-
-  <!-- Bootstrap Table — all data-* attributes preserved exactly as before -->
   <div class="row">
     <div class="col-12">
-      <table
-        class="table-sm table-striped caption-top"
-        id="table"
-        data-auto-refresh="true"
-        data-auto-refresh-interval="300"
-        data-auto-refresh-status="false"
-        data-url="portfolio"
-        data-show-refresh="true"
-        data-show-columns-toggle-all="true"
-        data-show-columns="true"
-        data-search="true"
-        data-show-footer="true"
-        data-sort-name="percent_change"
-        data-detail-view="true"
-        data-detail-view-icon="true"
-        data-detail-formatter="detailFormatter"
-        data-buttons-align="start"
-        data-regex-search="true"
-        data-search-selector="#customSearch"
-        data-sort-order="desc"
-        data-row-style="watchListStyle"
-        data-buttons="buttons"
-        data-buttons-prefix="btn-sm btn"
-        data-sticky-header="true"
-      >
-        <thead>
-          <tr>
-            <th data-field="symbol" data-formatter="symbolFormatter" data-sortable="true">Symbol</th>
-            <th
-              data-field="percent_change"
-              data-footer-formatter="totalDayPercent"
-              data-formatter="roundPercent"
-              data-cell-style="cellStyle"
-              data-sortable="true"
-            >% Change</th>
-            <th
-              data-visible="false"
-              data-field="principle_change"
-              data-footer-formatter="totalPercent"
-              data-formatter="roundPercent"
-              data-cell-style="cellStyle"
-              data-sortable="true"
-            >% PChange</th>
-            <th
-              data-visible="false"
-              data-field="change"
-              data-formatter="round"
-              data-cell-style="cellStyle"
-              data-sortable="true"
-            >Change</th>
-            <th data-field="last_price" data-formatter="round" data-sortable="true">Last</th>
-            <th data-field="cost" data-formatter="round" data-sortable="true">Cost</th>
-            <th
-              data-visible="false"
-              data-field="total_cost"
-              data-sortable="true"
-              data-formatter="bigNum"
-              data-footer-formatter="totalPriceNoStyle"
-            >Total Cost</th>
-            <th data-field="quantity" data-sortable="true">Qty</th>
-            <th
-              data-field="day_val"
-              data-footer-formatter="totalPrice"
-              data-cell-style="cellStyle"
-              data-sortable="true"
-            >Day's Value</th>
-            <th
-              data-field="gain"
-              data-formatter="roundPercent"
-              data-footer-formatter="gainTotal"
-              data-cell-style="cellStyle"
-              data-sortable="true"
-            >Gain %</th>
-            <th
-              data-field="total_change"
-              data-footer-formatter="totalPrice"
-              data-formatter="bigNum"
-              data-cell-style="cellStyle"
-              data-sortable="true"
-            >Profit/Loss</th>
-            <th data-field="total_val" data-footer-formatter="totalPrice" data-formatter="bigNum" data-sortable="true">Value</th>
-            <th
-              data-visible="false"
-              data-field="weight"
-              data-formatter="roundPercent"
-              data-sortable="true"
-            >Weight</th>
-          </tr>
-        </thead>
-        <tbody class="table-group-divider"></tbody>
-        <tfoot class="table-group-divider"></tfoot>
-      </table>
+      <!-- Toolbar -->
+      <div class="portfolio-toolbar sticky-top bg-body py-2 z-3 d-flex align-items-center">
+        <div class="btn-group btn-group-sm" role="group">
+          <input
+            type="search"
+            id="customSearch"
+            class="form-control form-control-sm"
+            v-model="searchQuery"
+          />
+          <button
+            class="btn-sm btn btn-sm btn-secondary"
+            type="button"
+            @click="fetchPortfolio"
+            title="Refresh"
+          >
+            <i class="bi bi-arrow-clockwise"></i>
+          </button>
+          <button
+            class="btn-sm btn btn-sm btn-secondary"
+            :class="{ active: autoRefreshActive }"
+            type="button"
+            @click="toggleAutoRefresh"
+            :title="autoRefreshActive ? 'Pause auto-refresh' : 'Start auto-refresh'"
+          >
+            <i class="bi bi-clock"></i>
+          </button>
+          <div class="btn-group btn-group-sm" role="group">
+            <button
+              class="btn-sm btn btn-sm btn-secondary dropdown-toggle"
+              type="button"
+              data-bs-toggle="dropdown"
+              aria-expanded="false"
+              title="Columns"
+            >
+              <i class="bi bi-list-ul"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end p-2" style="min-width: 180px" @click.stop>
+              <li v-for="col in allColumns" :key="col.key" class="form-check">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  :id="'col-' + col.key"
+                  :checked="visibleColumns[col.key]"
+                  @change="visibleColumns[col.key] = !visibleColumns[col.key]"
+                />
+                <label class="form-check-label small" :for="'col-' + col.key">{{ col.label }}</label>
+              </li>
+            </ul>
+          </div>
+          <button
+            class="btn-sm btn btn-sm btn-secondary"
+            type="button"
+            @click="watchlistHidden = !watchlistHidden"
+            title="Toggle watchlist"
+          >
+            <i class="bi" :class="watchlistHidden ? 'bi-toggle-on' : 'bi-toggle-off'"></i>
+          </button>
+          <button
+            class="btn-sm btn btn-sm btn-secondary"
+            type="button"
+            data-bs-toggle="modal"
+            data-bs-target="#editWatchListModal"
+            title="Edit watchlist"
+          >
+            <i class="bi bi-pencil"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Loading Overlay -->
+      <div v-if="loading && portfolio.length === 0" class="text-center py-5">
+        <div class="spinner-border text-secondary" role="status">
+          <span class="visually-hidden">Loading…</span>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="table-responsive" v-show="portfolio.length > 0">
+        <table class="table table-sm table-striped table-hover caption-top">
+          <thead class="portfolio-thead">
+            <tr>
+              <th class="detail-toggle-col" style="width: 30px"></th>
+              <template v-for="col in activeColumns" :key="col.key">
+                <th
+                  class="sortable-header user-select-none"
+                  :class="{ 'text-secondary': sortKey === col.key }"
+                  :style="col.width ? { width: col.width, minWidth: col.width } : null"
+                  @click="toggleSort(col.key)"
+                  role="button"
+                >
+                  {{ col.label }}
+                  <span v-if="sortKey === col.key" class="ms-1 small">
+                    <i :class="sortOrder === 'asc' ? 'bi bi-caret-up-fill' : 'bi bi-caret-down-fill'"></i>
+                  </span>
+                </th>
+              </template>
+            </tr>
+          </thead>
+          <tbody class="table-group-divider">
+            <template v-for="row in displayedRows" :key="row.symbol">
+              <tr :class="rowClass(row)">
+                <td
+                  class="detail-toggle-col"
+                  @click="toggleExpand(row.symbol)"
+                  role="button"
+                  :title="expandedRows[row.symbol] ? 'Hide details' : 'Show details'"
+                >
+                  <i class="bi" :class="expandedRows[row.symbol] ? 'bi-dash' : 'bi-plus'"></i>
+                </td>
+                <template v-for="col in activeColumns" :key="col.key">
+                  <td :class="cellClass(col, row)" :style="col.width ? { width: col.width, minWidth: col.width } : null">
+                    <template v-if="col.key === 'symbol'">
+                      <SymbolCell :row="row" />
+                    </template>
+                    <template v-else>
+                      {{ formatCell(col, row) }}
+                    </template>
+                  </td>
+                </template>
+              </tr>
+              <PortfolioDetailRow
+                v-if="expandedRows[row.symbol]"
+                :row="row"
+                :colspan="activeColumns.length + 1"
+              />
+            </template>
+          </tbody>
+          <tfoot class="table-group-divider fw-bold">
+            <tr>
+              <td></td>
+              <template v-for="col in activeColumns" :key="col.key">
+                <td :class="footerCellClass(col)" :style="col.width ? { width: col.width, minWidth: col.width } : null">
+                  <span v-if="col.footer" v-html="computeFooter(col)"></span>
+                </td>
+              </template>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { onMounted } from 'vue';
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue';
+import PortfolioDetailRow from './PortfolioDetailRow.vue';
+import SymbolCell from './SymbolCell.vue';
 
 /**
- * Wrapper component for the Bootstrap Table portfolio grid.
- * The table initialisation lifecycle is delegated to app.js
- * (which calls bootstrapTable() after the component mounts and
- * all window.* formatters are registered by table.js).
+ * Native Vue 3 portfolio grid — replaces Bootstrap Table and all
+ * associated jQuery code (app.js, table.js, window.* formatters).
  */
 
-onMounted(() => {
-    // Signal to app.js that the table DOM is ready.
-    // app.js listens for this event (or falls back to $(document).ready).
-    document.dispatchEvent(new CustomEvent('portfolio-table-mounted'));
+const emit = defineEmits(['portfolio-loaded']);
+
+// ─── State ─────────────────────────────────────────────────────────────────
+
+const portfolio = ref([]);
+const loading = ref(false);
+const searchQuery = ref('');
+const sortKey = ref('change');
+const sortOrder = ref('desc');
+const watchlistHidden = ref(false);
+const expandedRows = reactive({});
+const autoRefreshActive = ref(false);
+let autoRefreshTimer = null;
+const AUTO_REFRESH_INTERVAL = 300_000; // 5 minutes
+
+// ─── Column Definitions ────────────────────────────────────────────────────
+
+const allColumns = [
+    { key: 'symbol',           label: 'Symbol',       width: '130px',        format: null,          footer: null,              defaultVisible: true },
+    { key: 'percent_change',   label: '% Change',     format: 'percent',     footer: 'totalDayPercent', defaultVisible: true,  colored: true },
+    { key: 'principle_change', label: '% PChange',    format: 'percent',     footer: 'totalPercent',    defaultVisible: false, colored: true },
+    { key: 'change',           label: 'Change',       format: 'round',       footer: null,              defaultVisible: true,  colored: true },
+    { key: 'last_price',       label: 'Last',         format: 'round',       footer: null,              defaultVisible: true },
+    { key: 'cost',             label: 'Cost',         format: 'round',       footer: null,              defaultVisible: true },
+    { key: 'total_cost',       label: 'Total Cost',   format: 'bigNum',      footer: 'totalCostPlain',  defaultVisible: false },
+    { key: 'quantity',         label: 'Qty',          format: null,          footer: null,              defaultVisible: true },
+    { key: 'day_val',          label: "Day's Value",   format: null,          footer: 'totalPrice',      defaultVisible: true,  colored: true },
+    { key: 'gain',             label: 'Gain %',       format: 'percent',     footer: 'gainTotal',       defaultVisible: true,  colored: true },
+    { key: 'total_change',     label: 'Profit/Loss',  format: 'bigNum',      footer: 'totalPrice',      defaultVisible: true,  colored: true },
+    { key: 'total_val',        label: 'Value',        format: 'bigNum',      footer: 'totalPrice',      defaultVisible: true },
+    { key: 'weight',           label: 'Weight',       format: 'percent',     footer: null,              defaultVisible: false },
+];
+
+const visibleColumns = reactive(
+    Object.fromEntries(allColumns.map(c => [c.key, c.defaultVisible]))
+);
+
+const activeColumns = computed(() =>
+    allColumns.filter(c => visibleColumns[c.key])
+);
+
+// ─── Formatting Helpers ────────────────────────────────────────────────────
+
+function round(v) {
+    return Math.round((v + Number.EPSILON) * 100) / 100;
+}
+function roundPercent(v) {
+    return isNaN(v) ? '-' : round(v) + '%';
+}
+function bigNum(v) {
+    if (v === null || v === undefined || isNaN(v)) return '-';
+    return round(v).toLocaleString('en-US');
+}
+
+function formatCell(col, row) {
+    const v = row[col.key];
+    if (v === null || v === undefined) return '-';
+    switch (col.format) {
+        case 'percent': return roundPercent(v);
+        case 'round':   return round(v);
+        case 'bigNum':  return bigNum(v);
+        default:        return v;
+    }
+}
+
+function cellClass(col, row) {
+    if (!col.colored) return '';
+    const v = row[col.key];
+    if (v > 0) return 'text-success';
+    if (v < 0) return 'text-danger';
+    return '';
+}
+
+function rowClass(row) {
+    return !isInPortfolio(row) ? 'table-info bg-opacity-75' : '';
+}
+
+function footerCellClass(col) {
+    if (!col.footer) return '';
+    const val = computeFooterValue(col);
+    if (typeof val === 'number') {
+        if (val > 0) return 'text-success';
+        if (val < 0) return 'text-danger';
+    }
+    return '';
+}
+
+// ─── Portfolio Filtering ───────────────────────────────────────────────────
+
+function isInPortfolio(row) {
+    return row.type.toLowerCase() !== 'w';
+}
+
+// ─── Data Fetching ─────────────────────────────────────────────────────────
+
+async function fetchPortfolio() {
+    loading.value = true;
+    try {
+        const res = await fetch('portfolio');
+        if (res.status === 401) {
+            window.location.reload();
+            return;
+        }
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        portfolio.value = await res.json();
+        emit('portfolio-loaded');
+    } catch (err) {
+        console.error('Failed to load portfolio:', err);
+    } finally {
+        loading.value = false;
+    }
+}
+
+// ─── Sorting ───────────────────────────────────────────────────────────────
+
+function toggleSort(key) {
+    if (sortKey.value === key) {
+        sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc';
+    } else {
+        sortKey.value = key;
+        sortOrder.value = 'desc';
+    }
+}
+
+// ─── Search / Filter / Sort Pipeline ───────────────────────────────────────
+
+const filteredRows = computed(() => {
+    let rows = portfolio.value;
+
+    // Hide watchlist items when toggle is active
+    if (watchlistHidden.value) {
+        rows = rows.filter(isInPortfolio);
+    }
+
+    // Text/regex search
+    if (searchQuery.value.trim()) {
+        const query = searchQuery.value.trim();
+        let matcher;
+        try {
+            const regex = new RegExp(query, 'i');
+            matcher = (str) => regex.test(str);
+        } catch {
+            const lower = query.toLowerCase();
+            matcher = (str) => str.toLowerCase().includes(lower);
+        }
+        rows = rows.filter(r =>
+            matcher(r.symbol) ||
+            matcher(r.type) ||
+            matcher(r.api_data?.shortName ?? '') ||
+            matcher(r.api_data?.longName ?? '')
+        );
+    }
+
+    return rows;
 });
+
+const displayedRows = computed(() => {
+    const rows = [...filteredRows.value];
+    const key = sortKey.value;
+    const dir = sortOrder.value === 'asc' ? 1 : -1;
+    rows.sort((a, b) => {
+        const va = a[key] ?? 0;
+        const vb = b[key] ?? 0;
+        if (typeof va === 'string') return dir * va.localeCompare(vb);
+        return dir * (va - vb);
+    });
+    return rows;
+});
+
+// ─── Footer Computations ───────────────────────────────────────────────────
+
+function portfolioRows() {
+    return portfolio.value.filter(isInPortfolio);
+}
+
+function sumField(field) {
+    return round(portfolioRows().reduce((s, r) => s + (r[field] || 0), 0));
+}
+
+function calcAvgCost() {
+    return round(portfolioRows().reduce((s, r) => s + (r.total_val - r.total_change), 0));
+}
+
+function calcStartPrice() {
+    return round(portfolioRows().reduce((s, r) => {
+        const q = r.type.toLowerCase() === 'e' ? r.quantity : r.quantity * 100;
+        return s + (r.last_price - r.change) * q;
+    }, 0));
+}
+
+function computeFooterValue(col) {
+    switch (col.footer) {
+        case 'totalDayPercent': {
+            const startPrice = calcStartPrice();
+            return startPrice === 0 ? 0 : (sumField('day_val') / startPrice) * 100;
+        }
+        case 'totalPercent': {
+            const avgCost = calcAvgCost();
+            return avgCost === 0 ? 0 : (sumField('day_val') / avgCost) * 100;
+        }
+        case 'gainTotal': {
+            const totalProfit = sumField('total_change');
+            const avgCost = calcAvgCost();
+            return avgCost === 0 ? 0 : (totalProfit / avgCost) * 100;
+        }
+        case 'totalPrice':     return sumField(col.key);
+        case 'totalCostPlain': return sumField(col.key);
+        default:               return null;
+    }
+}
+
+function computeFooter(col) {
+    const val = computeFooterValue(col);
+    if (val === null) return '';
+
+    switch (col.footer) {
+        case 'totalDayPercent':
+        case 'totalPercent':
+        case 'gainTotal': {
+            const formatted = roundPercent(val);
+            if (val > 0) return `<span class="text-success">${formatted}</span>`;
+            if (val < 0) return `<span class="text-danger">${formatted}</span>`;
+            return formatted;
+        }
+        case 'totalPrice': {
+            const formatted = bigNum(val);
+            if (val > 0) return `<span class="text-success">${formatted}</span>`;
+            if (val < 0) return `<span class="text-danger">${formatted}</span>`;
+            return formatted;
+        }
+        case 'totalCostPlain':
+            return bigNum(val);
+        default:
+            return '';
+    }
+}
+
+// ─── Row Expansion ─────────────────────────────────────────────────────────
+
+function toggleExpand(symbol) {
+    expandedRows[symbol] = !expandedRows[symbol];
+}
+
+// ─── Auto-Refresh ──────────────────────────────────────────────────────────
+
+function toggleAutoRefresh() {
+    autoRefreshActive.value = !autoRefreshActive.value;
+    if (autoRefreshActive.value) {
+        autoRefreshTimer = setInterval(fetchPortfolio, AUTO_REFRESH_INTERVAL);
+    } else {
+        clearInterval(autoRefreshTimer);
+        autoRefreshTimer = null;
+    }
+}
+
+// ─── Lifecycle ─────────────────────────────────────────────────────────────
+
+onMounted(() => {
+    fetchPortfolio();
+});
+
+onUnmounted(() => {
+    if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+});
+
+// Expose fetchPortfolio for external use
+defineExpose({ fetchPortfolio });
 </script>

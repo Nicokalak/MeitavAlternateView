@@ -24,15 +24,21 @@
 .state-badge-success {
     color: #198754;
     border-color: #198754;
-    ;
 }
 
 #customSearch {
     min-width: 6rem;
+    max-width: 14rem;
 }
 
-/* Sticky toolbar position and background */
-.fixed-table-toolbar {
+.btn-group>#customSearch,
+.btn-group>.form-control {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+/* ─── Portfolio Toolbar ──────────────────────────────────────────────────── */
+.portfolio-toolbar {
     position: sticky;
     top: var(--toolbar-sticky-top, 0px);
     z-index: 1020;
@@ -41,18 +47,49 @@
     padding-bottom: 0.25rem;
 }
 
-/* Ensure sticky table header has body background to hide scrolling content */
-.bootstrap-table .fixed-table-container .sticky-header-container,
-#table thead,
-#table thead th,
-.fix-sticky table thead th {
-    background-color: var(--bs-body-bg) !important;
+/* ─── Sticky Table Header ────────────────────────────────────────────────── */
+.portfolio-thead {
+    position: sticky;
+    top: 0;
+    z-index: 1010;
+    background-color: var(--bs-body-bg);
 }
 
-/* Fix table loading overlay z-index and alignment so it is not hidden under sticky header */
-.bootstrap-table .fixed-table-container .fixed-table-body .fixed-table-loading {
-    z-index: 1015;
-    padding-top: 3rem;
+.portfolio-thead th {
+    background-color: var(--bs-body-bg);
+}
+
+/* ─── Sortable Column Headers ────────────────────────────────────────────── */
+.sortable-header {
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.sortable-header:hover {
+    color: var(--bs-secondary) !important;
+}
+
+/* ─── Detail Toggle Column ───────────────────────────────────────────────── */
+.detail-toggle-col {
+    width: 30px;
+    text-align: center;
+    cursor: pointer;
+    transition: color 0.15s ease-in-out;
+}
+
+.detail-toggle-col:hover {
+    color: var(--bs-gray);
+}
+
+/* ─── Symbol Cell ────────────────────────────────────────────────────────── */
+.symbol-cell {
+    min-width: 130px;
+    white-space: nowrap;
+}
+
+/* ─── Detail Row ─────────────────────────────────────────────────────────── */
+.detail-row>td {
+    background-color: var(--bs-body-bg);
 }
 
 /* Responsive height for trends chart (dvh = dynamic viewport, adjusts as mobile browser chrome collapses) */

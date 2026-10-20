@@ -153,7 +153,7 @@ class MeitavViewTestCase(unittest.TestCase):
         css_response = self.client.get("/css/main.css")
         self.assertEqual(css_response.status_code, 200)
 
-        js_response = self.client.get("/js/app.js")
+        js_response = self.client.get("/js/main.js")
         self.assertEqual(js_response.status_code, 200)
 
 

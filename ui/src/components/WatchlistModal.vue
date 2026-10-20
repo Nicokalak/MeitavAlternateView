@@ -84,8 +84,10 @@ import WatchlistItem from './WatchlistItem.vue';
 
 /**
  * Modal for editing the watchlist. Manages load/save lifecycle and
- * triggers a Bootstrap Table refresh when the modal closes after changes.
+ * emits a reactive event when the modal closes after changes.
  */
+
+const emit = defineEmits(['watchlist-saved']);
 
 let _keyCounter = Date.now();
 const items = ref([]);
@@ -179,9 +181,7 @@ function onModalShow() {
 
 function onModalHide() {
     if (hasChanged) {
-        if (window.$ && $('#table').length) {
-            $('#table').bootstrapTable('refresh');
-        }
+        emit('watchlist-saved');
         hasChanged = false;
     }
 }
