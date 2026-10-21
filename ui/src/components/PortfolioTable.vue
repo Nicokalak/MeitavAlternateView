@@ -167,7 +167,7 @@ const emit = defineEmits(['portfolio-loaded']);
 const portfolio = ref([]);
 const loading = ref(false);
 const searchQuery = ref('');
-const sortKey = ref('change');
+const sortKey = ref('percent_change');
 const sortOrder = ref('desc');
 const watchlistHidden = ref(false);
 const expandedRows = reactive({});
@@ -181,7 +181,7 @@ const allColumns = [
     { key: 'symbol',           label: 'Symbol',       width: '130px',        format: null,          footer: null,              defaultVisible: true },
     { key: 'percent_change',   label: '% Change',     format: 'percent',     footer: 'totalDayPercent', defaultVisible: true,  colored: true },
     { key: 'principle_change', label: '% PChange',    format: 'percent',     footer: 'totalPercent',    defaultVisible: false, colored: true },
-    { key: 'change',           label: 'Change',       format: 'round',       footer: null,              defaultVisible: true,  colored: true },
+    { key: 'change',           label: 'Change',       format: 'round',       footer: null,              defaultVisible: false,  colored: true },
     { key: 'last_price',       label: 'Last',         format: 'round',       footer: null,              defaultVisible: true },
     { key: 'cost',             label: 'Cost',         format: 'round',       footer: null,              defaultVisible: true },
     { key: 'total_cost',       label: 'Total Cost',   format: 'bigNum',      footer: 'totalCostPlain',  defaultVisible: false },
