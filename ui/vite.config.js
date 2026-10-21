@@ -6,6 +6,10 @@ export default defineConfig({
   root: 'src',
   base: './',
   plugins: [vue()],
+  test: {
+    root: resolve(import.meta.dirname),
+    environment: 'happy-dom',
+  },
   define: {
     global: 'window',
   },

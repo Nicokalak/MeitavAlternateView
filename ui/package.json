@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "./build.sh",
+    "test": "vitest run",
     "update-sri": "node ../scripts/update-sri.js"
   },
   "dependencies": {
@@ -23,6 +24,9 @@
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.10",
-    "vite": "^8.3.0"
+    "@vue/test-utils": "^2.5.1",
+    "happy-dom": "^21.0.4",
+    "vite": "^8.3.0",
+    "vitest": "^5.0.5"
   }
 }

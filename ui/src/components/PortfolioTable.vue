@@ -14,9 +14,10 @@
             class="btn-sm btn btn-sm btn-secondary"
             type="button"
             @click="fetchPortfolio"
-            title="Refresh"
+            :disabled="loading"
+            :title="loading ? 'Refreshing…' : 'Refresh'"
           >
-            <i class="bi bi-arrow-clockwise"></i>
+            <i class="bi bi-arrow-clockwise" :class="{ spin: loading }"></i>
           </button>
           <button
             class="btn-sm btn btn-sm btn-secondary"
@@ -70,6 +71,11 @@
         </div>
       </div>
 
+      <!-- Refresh Progress Bar -->
+      <div class="refresh-progress-bar-container" :class="{ 'is-loading': loading && portfolio.length > 0 }">
+        <div class="refresh-progress-bar"></div>
+      </div>
+
       <!-- Loading Overlay -->
       <div v-if="loading && portfolio.length === 0" class="text-center py-5">
         <div class="spinner-border text-secondary" role="status">
@@ -82,11 +88,11 @@
         <table class="table table-sm table-striped table-hover caption-top">
           <thead class="portfolio-thead">
             <tr>
-              <th class="detail-toggle-col" style="width: 30px"></th>
+              <th class="detail-toggle-col"></th>
               <template v-for="col in activeColumns" :key="col.key">
                 <th
                   class="sortable-header user-select-none"
-                  :class="{ 'text-secondary': sortKey === col.key }"
+                  :class="{ 'text-secondary-emphasis': sortKey === col.key }"
                   :style="col.width ? { width: col.width, minWidth: col.width } : null"
                   @click="toggleSort(col.key)"
                   role="button"
@@ -108,7 +114,7 @@
                   role="button"
                   :title="expandedRows[row.symbol] ? 'Hide details' : 'Show details'"
                 >
-                  <i class="bi" :class="expandedRows[row.symbol] ? 'bi-dash' : 'bi-plus'"></i>
+                  <i class="bi" :class="expandedRows[row.symbol] ? 'bi-dash-lg' : 'bi-plus-lg'"></i>
                 </td>
                 <template v-for="col in activeColumns" :key="col.key">
                   <td :class="cellClass(col, row)" :style="col.width ? { width: col.width, minWidth: col.width } : null">
@@ -300,8 +306,8 @@ const filteredRows = computed(() => {
             matcher = (str) => str.toLowerCase().includes(lower);
         }
         rows = rows.filter(r =>
-            matcher(r.symbol) ||
-            matcher(r.type) ||
+            matcher(r.symbol ?? '') ||
+            matcher(r.type ?? '') ||
             matcher(r.api_data?.shortName ?? '') ||
             matcher(r.api_data?.longName ?? '')
         );
@@ -325,20 +331,20 @@ const displayedRows = computed(() => {
 
 // ─── Footer Computations ───────────────────────────────────────────────────
 
-function portfolioRows() {
-    return portfolio.value.filter(isInPortfolio);
-}
+const portfolioRows = computed(() => {
+    return filteredRows.value.filter(isInPortfolio);
+});
 
 function sumField(field) {
-    return round(portfolioRows().reduce((s, r) => s + (r[field] || 0), 0));
+    return round(portfolioRows.value.reduce((s, r) => s + (r[field] || 0), 0));
 }
 
 function calcAvgCost() {
-    return round(portfolioRows().reduce((s, r) => s + (r.total_val - r.total_change), 0));
+    return round(portfolioRows.value.reduce((s, r) => s + (r.total_val - r.total_change), 0));
 }
 
 function calcStartPrice() {
-    return round(portfolioRows().reduce((s, r) => {
+    return round(portfolioRows.value.reduce((s, r) => {
         const q = r.type.toLowerCase() === 'e' ? r.quantity : r.quantity * 100;
         return s + (r.last_price - r.change) * q;
     }, 0));
