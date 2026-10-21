@@ -28,8 +28,24 @@
           >
             <i class="bi bi-clock"></i>
           </button>
-          <div class="btn-group btn-group" role="group">
-            <button
+          <button
+            class="btn btn-secondary"
+            type="button"
+            @click="watchlistHidden = !watchlistHidden"
+            title="Toggle watchlist"
+          >
+            <i class="bi" :class="watchlistHidden ? 'bi-toggle-on' : 'bi-toggle-off'"></i>
+          </button>
+          <button
+            class="btn btn-secondary"
+            type="button"
+            data-bs-toggle="modal"
+            data-bs-target="#editWatchListModal"
+            title="Edit watchlist"
+          >
+            <i class="bi bi-pencil"></i>
+          </button>
+                      <button
               class="btn btn-secondary dropdown-toggle"
               type="button"
               data-bs-toggle="dropdown"
@@ -50,24 +66,6 @@
                 <label class="form-check-label small" :for="'col-' + col.key">{{ col.label }}</label>
               </li>
             </ul>
-          </div>
-          <button
-            class="btn btn-secondary"
-            type="button"
-            @click="watchlistHidden = !watchlistHidden"
-            title="Toggle watchlist"
-          >
-            <i class="bi" :class="watchlistHidden ? 'bi-toggle-on' : 'bi-toggle-off'"></i>
-          </button>
-          <button
-            class="btn btn-secondary"
-            type="button"
-            data-bs-toggle="modal"
-            data-bs-target="#editWatchListModal"
-            title="Edit watchlist"
-          >
-            <i class="bi bi-pencil"></i>
-          </button>
         </div>
       </div>
 
