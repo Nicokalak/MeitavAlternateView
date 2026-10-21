@@ -3,7 +3,7 @@
     <div class="col-12">
       <!-- Toolbar -->
       <div class="portfolio-toolbar sticky-top bg-body py-2 z-3 d-flex align-items-center">
-        <div class="btn-group btn-group-sm" role="group">
+        <div class="btn-group btn-group" role="group">
           <input
             type="search"
             id="customSearch"
@@ -11,7 +11,7 @@
             v-model="searchQuery"
           />
           <button
-            class="btn-sm btn btn-sm btn-secondary"
+            class="btn btn-secondary"
             type="button"
             @click="fetchPortfolio"
             :disabled="loading"
@@ -20,7 +20,7 @@
             <i class="bi bi-arrow-clockwise" :class="{ spin: loading }"></i>
           </button>
           <button
-            class="btn-sm btn btn-sm btn-secondary"
+            class="btn btn-secondary"
             :class="{ active: autoRefreshActive }"
             type="button"
             @click="toggleAutoRefresh"
@@ -28,9 +28,9 @@
           >
             <i class="bi bi-clock"></i>
           </button>
-          <div class="btn-group btn-group-sm" role="group">
+          <div class="btn-group btn-group" role="group">
             <button
-              class="btn-sm btn btn-sm btn-secondary dropdown-toggle"
+              class="btn btn-secondary dropdown-toggle"
               type="button"
               data-bs-toggle="dropdown"
               aria-expanded="false"
@@ -52,7 +52,7 @@
             </ul>
           </div>
           <button
-            class="btn-sm btn btn-sm btn-secondary"
+            class="btn btn-secondary"
             type="button"
             @click="watchlistHidden = !watchlistHidden"
             title="Toggle watchlist"
@@ -60,7 +60,7 @@
             <i class="bi" :class="watchlistHidden ? 'bi-toggle-on' : 'bi-toggle-off'"></i>
           </button>
           <button
-            class="btn-sm btn btn-sm btn-secondary"
+            class="btn btn-secondary"
             type="button"
             data-bs-toggle="modal"
             data-bs-target="#editWatchListModal"
