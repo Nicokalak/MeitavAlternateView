@@ -49,8 +49,6 @@ if STATIC_DIR.exists():
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
     if (STATIC_DIR / "assets").exists():
         app.mount("/assets", StaticFiles(directory=STATIC_DIR / "assets"), name="assets")
-    if (STATIC_DIR / "js").exists():
-        app.mount("/js", StaticFiles(directory=STATIC_DIR / "js"), name="js")
     if (STATIC_DIR / "css").exists():
         app.mount("/css", StaticFiles(directory=STATIC_DIR / "css"), name="css")
     if (STATIC_DIR / "webfonts").exists():

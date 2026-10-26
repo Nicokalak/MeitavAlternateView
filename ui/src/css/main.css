@@ -24,35 +24,204 @@
 .state-badge-success {
     color: #198754;
     border-color: #198754;
-    ;
 }
 
 #customSearch {
     min-width: 6rem;
+    max-width: 14rem;
 }
 
-/* Sticky toolbar position and background */
-.fixed-table-toolbar {
+.btn-group>#customSearch,
+.btn-group>.form-control {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+/* ─── Sticky layout ──────────────────────────────────────────────────────────
+   Two sticky layers share one fixed height variable, so no JS measurement is
+   needed and no gap can open between them:
+   1. the market bar, pinned to the top of the window;
+   2. the portfolio block (toolbar, refresh indicator, column header), pinned
+      directly beneath it and tucked 1px under the bar to hide sub-pixel seams. */
+:root {
+    --market-bar-h: 3.5rem;
+}
+
+#market-status-container {
+    display: flex;
+    align-items: center;
+    height: var(--market-bar-h);
+    z-index: 1030 !important;
+}
+
+#market-status-container h2 {
+    white-space: nowrap;
+}
+
+.portfolio-sticky {
     position: sticky;
-    top: var(--toolbar-sticky-top, 0px);
+    top: calc(var(--market-bar-h) - 1px);
     z-index: 1020;
     background-color: var(--bs-body-bg);
-    padding-top: 0.25rem;
-    padding-bottom: 0.25rem;
 }
 
-/* Ensure sticky table header has body background to hide scrolling content */
-.bootstrap-table .fixed-table-container .sticky-header-container,
-#table thead,
-#table thead th,
-.fix-sticky table thead th {
-    background-color: var(--bs-body-bg) !important;
+.portfolio-toolbar {
+    padding: 0.25rem 0;
 }
 
-/* Fix table loading overlay z-index and alignment so it is not hidden under sticky header */
-.bootstrap-table .fixed-table-container .fixed-table-body .fixed-table-loading {
-    z-index: 1015;
-    padding-top: 3rem;
+/* The header lives outside the horizontal scroller so the block above can stick
+   to the window. Its horizontal position mirrors the body wrapper's scrollLeft. */
+.portfolio-head {
+    overflow: hidden;
+    background-color: var(--bs-body-bg);
+}
+
+.portfolio-head-table {
+    table-layout: fixed;
+    max-width: none;
+    will-change: transform;
+}
+
+.portfolio-head-table th {
+    white-space: nowrap;
+}
+
+/* The wrapper scrolls horizontally inside the container-fluid. It has no height
+   limit, so vertical scrolling stays with the window. */
+.portfolio-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+/* Collapsed borders belong to the table grid and are left behind by sticky cells.
+   Separate borders keep the header's bottom border attached while scrolling. */
+.portfolio-table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+/* Zero-height header in the body table: it contributes column widths only. */
+.portfolio-thead-sizer th {
+    height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    border: 0;
+    line-height: 0;
+    white-space: nowrap;
+}
+
+.thead-sizer {
+    height: 0;
+    overflow: hidden;
+    visibility: hidden;
+    line-height: 0;
+}
+
+/* ─── Sortable Column Headers ────────────────────────────────────────────── */
+.sortable-header {
+    cursor: pointer;
+    white-space: nowrap;
+    font-weight: 400;
+}
+
+.sortable-header.sortable-header-active {
+    font-weight: 700;
+}
+
+/* ─── Detail Toggle Column ───────────────────────────────────────────────── */
+.detail-toggle-col {
+    width: 30px;
+    min-width: 30px;
+    text-align: center;
+    vertical-align: middle !important;
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.15s ease-in-out;
+}
+
+.detail-toggle-col i,
+.detail-toggle-col .bi {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1;
+    vertical-align: middle;
+}
+
+.detail-toggle-col:hover {
+    color: var(--bs-secondary);
+}
+
+/* ─── Refresh Indicator & Animations ─────────────────────────────────────── */
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.spin {
+    animation: spin 0.8s linear infinite;
+    display: inline-block;
+}
+
+.refresh-progress-bar-container {
+    height: 3px;
+    width: 100%;
+    overflow: hidden;
+    background-color: transparent;
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out;
+}
+
+.refresh-progress-bar-container.is-loading {
+    opacity: 1;
+    background-color: var(--bs-border-color-subtle);
+}
+
+.refresh-progress-bar {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, var(--bs-primary), transparent);
+    animation: indeterminate-bar 1.2s infinite ease-in-out;
+    transform-origin: 0% 50%;
+}
+
+@keyframes indeterminate-bar {
+    0% {
+        transform: translateX(-100%);
+    }
+
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
+}
+
+/* ─── Symbol Cell ────────────────────────────────────────────────────────── */
+.symbol-cell {
+    min-width: 130px;
+    white-space: nowrap;
+}
+
+/* ─── Detail Row ─────────────────────────────────────────────────────────── */
+.detail-row>td {
+    background-color: var(--bs-body-bg);
 }
 
 /* Responsive height for trends chart (dvh = dynamic viewport, adjusts as mobile browser chrome collapses) */

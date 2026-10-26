@@ -73,7 +73,7 @@ jobs:
         run: uv run pytest
 
   ui_check:
-    name: UI Build & Validation
+    name: UI Tests & Validation
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -88,10 +88,19 @@ jobs:
           cache: "npm"
           cache-dependency-path: "ui/package-lock.json"
 
-      - name: Validate UI Build
+      - name: Install dependencies
         run: |
           cd ui
           npm ci
+
+      - name: Run UI Unit Tests
+        run: |
+          cd ui
+          npm test
+
+      - name: Validate UI Build
+        run: |
+          cd ui
           npm run build
 
   build_and_push:
