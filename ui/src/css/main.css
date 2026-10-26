@@ -37,7 +37,13 @@
     border-bottom-right-radius: 0;
 }
 
-/* ─── Portfolio Toolbar ──────────────────────────────────────────────────── */
+/* ─── Tier 1: Sticky Market Status ───────────────────────────────────────── */
+#market-status-container {
+    z-index: 1030 !important;
+}
+
+/* ─── Tier 2: Sticky Table Toolbar ───────────────────────────────────────── */
+.fixed-table-toolbar,
 .portfolio-toolbar {
     position: sticky;
     top: var(--toolbar-sticky-top, 0px);
@@ -47,16 +53,32 @@
     padding-bottom: 0.25rem;
 }
 
-/* ─── Sticky Table Header ────────────────────────────────────────────────── */
-.portfolio-thead {
-    position: sticky;
-    top: 0;
-    z-index: 1010;
-    background-color: var(--bs-body-bg);
+/* ─── Tier 3: Opaque Table Header ────────────────────────────────────────── */
+.bootstrap-table .fixed-table-container .sticky-header-container,
+.portfolio-thead,
+.portfolio-thead th,
+#table thead,
+#table thead th,
+.fix-sticky table thead th {
+    background-color: var(--bs-body-bg) !important;
 }
 
+.portfolio-thead,
 .portfolio-thead th {
-    background-color: var(--bs-body-bg);
+    position: sticky;
+    top: var(--table-sticky-top, 0px);
+    z-index: 1010;
+}
+
+.table-responsive {
+    overflow-x: clip;
+    overflow-y: visible;
+}
+
+/* ─── Table Loading Overlay Layering ──────────────────────────────────────── */
+.bootstrap-table .fixed-table-container .fixed-table-body .fixed-table-loading {
+    z-index: 1015;
+    padding-top: 3rem;
 }
 
 /* ─── Sortable Column Headers ────────────────────────────────────────────── */

@@ -13,14 +13,17 @@ import DarkModeToggle from './components/DarkModeToggle.vue';
 import TrendsChart from './components/TrendsChart.vue';
 import PortfolioTable from './components/PortfolioTable.vue';
 import WatchlistModal from './components/WatchlistModal.vue';
+import { useStickyHeaders } from './composables/useStickyHeaders.js';
 
 /** Root application component — composes all page-level Vue components. */
 
 const trendsChart = ref(null);
 const portfolioTable = ref(null);
+const { updateStickyOffsets } = useStickyHeaders();
 
 function onPortfolioLoaded() {
     trendsChart.value?.fetchMarketState();
+    updateStickyOffsets();
 }
 
 function onWatchlistSaved() {

@@ -2,7 +2,7 @@
   <div class="row">
     <div class="col-12">
       <!-- Toolbar -->
-      <div class="portfolio-toolbar sticky-top bg-body py-2 z-3 d-flex align-items-center">
+      <div class="portfolio-toolbar bg-body py-1 d-flex align-items-center">
         <div class="btn-group btn-group" role="group">
           <input
             type="search"
