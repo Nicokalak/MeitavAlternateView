@@ -3,17 +3,14 @@ name = "meitav-view"
 dynamic = ["version"]
 description = ""
 authors = [{name = "Nicola Kalak", email ="nicolas12345@gmail.com"}]
-requires-python = ">=3.12"
+requires-python = ">=3.14"
 dependencies = [
     "requests (>=2.32.5,<3.0.0)",
     "pandas (>=3.0.5,<4.0.0)",
     "lxml (>=6.0.2,<7.0.0)",
     "curl-cffi (>=0.16.0,<0.17.0)",
-    "types-requests (>=2.32.4.20250913,<3.0.0.0)",
-    "pandas-stubs (>=3.0.5.260730,<4.0.0.0)",
     "fastapi>=0.141.1",
     "uvicorn[standard]>=0.52.3",
-    "httpx>=0.28.1",
 ]
 
 [project.scripts]
@@ -30,6 +27,8 @@ source = "vcs"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/meitav_view"]
+artifacts = ["src/meitav_view/static/**"]
+exclude = ["**/__pycache__", "**/*.pyc"]
 
 [dependency-groups]
 test = [
@@ -40,22 +39,23 @@ test = [
 ]
 lint = [
     "ruff (>=0.13.1)",
-    "mypy (>=1.18.2,<2.0.0)"
+    "mypy (>=1.18.2,<2.0.0)",
+    "types-requests (>=2.32.4.20250913,<3.0.0.0)",
+    "pandas-stubs (>=3.0.5.260730,<4.0.0.0)",
 ]
 dev = [
     { include-group = "test" },
     { include-group = "lint" },
-    "tox",
 ]
 
 [tool.ruff]
 line-length = 120
-target-version = "py312"
+target-version = "py314"
 lint.select = ["E", "F", "B", "I", "N", "C", "S", "PL", "RUF"]
 lint.ignore = []
 
 [tool.mypy]
-python_version = "3.12"
+python_version = "3.14"
 strict = true
 warn_unused_ignores = true
 warn_redundant_casts = true
