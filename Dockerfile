@@ -2,7 +2,7 @@
 ARG PYTHON_VERSION=3.14
 
 # Stage 1: Build frontend static assets (runs natively on the build host)
-FROM --platform=$BUILDPLATFORM node:24-slim AS ui
+FROM --platform=$BUILDPLATFORM node:26-slim AS ui
 WORKDIR /app/ui
 
 COPY ui/package.json ui/package-lock.json ./
