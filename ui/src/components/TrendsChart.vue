@@ -102,6 +102,7 @@ import {
     type ScriptableLineSegmentContext,
 } from 'chart.js';
 import type { MarketState, TrendSeries, TrendsResponse } from '../types';
+import { apiFetch } from '../js/api';
 
 /**
  * Market trends chart and stats header cards.
@@ -169,7 +170,7 @@ function applyMarketState(trendObj: MarketState): void {
 async function fetchTrends(): Promise<void> {
     if (!chart) return;
     try {
-        const res = await fetch('trends');
+        const res = await apiFetch('trends');
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const trends = (await res.json()) as TrendsResponse;
         for (const key of Object.keys(trendsObj) as Array<keyof TrendsResponse>) {
@@ -184,7 +185,7 @@ async function fetchTrends(): Promise<void> {
 /** Fetch /marketState then update trends. */
 async function fetchMarketState(): Promise<void> {
     try {
-        const res = await fetch('marketState');
+        const res = await apiFetch('marketState');
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = (await res.json()) as MarketState;
         applyMarketState(data);

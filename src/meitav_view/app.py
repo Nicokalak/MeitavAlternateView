@@ -9,13 +9,14 @@ from pathlib import Path
 from typing import Any
 
 import uvicorn
-from fastapi import Depends, FastAPI, Header, HTTPException, Request, status
+from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.responses import Response
+from starlette.types import Scope
 
 from meitav_view.model.stock import Stock
 from meitav_view.model.watchlist import WatchlistItem
-from meitav_view.utils import auth_utils
 from meitav_view.utils.auth_utils import require_authentication
 from meitav_view.viewer import MeitavViewer
 
@@ -23,6 +24,19 @@ logger: logging.Logger = logging.getLogger("uvicorn")
 viewer: MeitavViewer = MeitavViewer()
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
+
+IMMUTABLE_CACHE_CONTROL = "public, max-age=31536000, immutable"
+REVALIDATE_CACHE_CONTROL = "no-cache"
+
+
+class FingerprintedStaticFiles(StaticFiles):
+    """Static files whose names carry a content hash and can be cached indefinitely."""
+
+    async def get_response(self, path: str, scope: Scope) -> Response:
+        response = await super().get_response(path, scope)
+        if response.status_code == status.HTTP_200_OK:
+            response.headers["Cache-Control"] = IMMUTABLE_CACHE_CONTROL
+        return response
 
 
 def get_version() -> str:
@@ -45,16 +59,8 @@ async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
 app = FastAPI(title="Meitav View", version=get_version(), lifespan=lifespan, root_path=os.getenv("URL_PREFIX", ""))
 
 
-if STATIC_DIR.exists():
-    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
-    if (STATIC_DIR / "assets").exists():
-        app.mount("/assets", StaticFiles(directory=STATIC_DIR / "assets"), name="assets")
-    if (STATIC_DIR / "css").exists():
-        app.mount("/css", StaticFiles(directory=STATIC_DIR / "css"), name="css")
-    if (STATIC_DIR / "webfonts").exists():
-        app.mount("/webfonts", StaticFiles(directory=STATIC_DIR / "webfonts"), name="webfonts")
-    if (STATIC_DIR / "favicon").exists():
-        app.mount("/favicon", StaticFiles(directory=STATIC_DIR / "favicon"), name="favicon")
+app.mount("/assets", FingerprintedStaticFiles(directory=STATIC_DIR / "assets", check_dir=False), name="assets")
+app.mount("/favicon", StaticFiles(directory=STATIC_DIR / "favicon", check_dir=False), name="favicon")
 
 
 @app.get("/trends")
@@ -111,26 +117,24 @@ def ticker_data(name: str, _auth: str | None = Depends(require_authentication)) 
 
 
 @app.get("/", response_class=FileResponse)
-def root(
-    request: Request,
-    x_email: str | None = Header(default=None, alias="X-Email"),
-) -> FileResponse:
-    target_file = (
-        STATIC_DIR / "index.html"
-        if auth_utils.is_authenticated(x_email=x_email, request=request)
-        else STATIC_DIR / "401.html"
-    )
-    if not target_file.exists():
+def root() -> FileResponse:
+    index_file = STATIC_DIR / "index.html"
+    if not index_file.exists():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"File '{target_file.name}' not found",
+            detail=f"File '{index_file.name}' not found",
         )
-    return FileResponse(target_file)
+    return FileResponse(index_file, headers={"Cache-Control": REVALIDATE_CACHE_CONTROL})
 
 
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.get("/version")
+def version() -> dict[str, str]:
+    return {"version": get_version()}
 
 
 @app.get("/watchList")

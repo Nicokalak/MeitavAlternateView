@@ -1,10 +1,16 @@
 <template>
   <DarkModeToggle />
-  <div class="container-fluid">
+  <ErrorPage
+    v-if="unauthorized"
+    :code="401"
+    title="Unauthorized"
+    message="Oops! You do not have permission to access this resource."
+  />
+  <div v-else class="container-fluid">
     <TrendsChart ref="trendsChart" />
     <PortfolioTable ref="portfolioTable" @portfolio-loaded="onPortfolioLoaded" />
   </div>
-  <WatchlistModal @watchlist-saved="onWatchlistSaved" />
+  <WatchlistModal v-if="!unauthorized" @watchlist-saved="onWatchlistSaved" />
 </template>
 
 <script setup lang="ts">
@@ -13,6 +19,8 @@ import DarkModeToggle from './components/DarkModeToggle.vue';
 import TrendsChart from './components/TrendsChart.vue';
 import PortfolioTable from './components/PortfolioTable.vue';
 import WatchlistModal from './components/WatchlistModal.vue';
+import ErrorPage from './components/ErrorPage.vue';
+import { unauthorized } from './js/api';
 
 /** Root application component — composes all page-level Vue components. */
 

@@ -8,22 +8,20 @@ on:
       - 'v*'
     paths-ignore:
       - '**.md'
-      - 'plans/**'
       - '.gitignore'
   pull_request:
     branches:
       - master
     paths-ignore:
       - '**.md'
-      - 'plans/**'
       - '.gitignore'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
-  IMAGE_NAME: ${{ secrets.DOCKER_USER }}/meitav-alternate-view
+  IMAGE_NAME: ${{ vars.DOCKER_USER && format('{0}/meitav-alternate-view', vars.DOCKER_USER) || 'meitav-alternate-view' }}
 
 permissions:
   contents: read
@@ -32,9 +30,10 @@ jobs:
   python_checks:
     name: Python Quality & Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
 
@@ -42,29 +41,15 @@ jobs:
         uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
         with:
           enable-cache: true
-          python-version: "3.14"
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: "24"
-          cache: "npm"
-          cache-dependency-path: "ui/package-lock.json"
-
-      - name: Build UI assets
-        run: |
-          cd ui
-          npm ci
-          npm run build
 
       - name: Install Python dependencies
-        run: uv sync --frozen --all-groups
+        run: uv sync --frozen --group test --group lint
 
       - name: Run Ruff Lint
-        run: uv run ruff check src --output-format=github
+        run: uv run ruff check src tests --output-format=github
 
       - name: Run Ruff Format Check
-        run: uv run ruff format --check src
+        run: uv run ruff format --check src tests
 
       - name: Run Mypy Type Check
         run: uv run mypy src
@@ -72,113 +57,201 @@ jobs:
       - name: Run Pytest
         run: uv run pytest
 
-  ui_check:
-    name: UI Tests & Validation
+  ui_checks:
+    name: UI Typecheck & Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
 
       - name: Set up Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "24"
           cache: "npm"
           cache-dependency-path: "ui/package-lock.json"
 
       - name: Install dependencies
-        run: |
-          cd ui
-          npm ci
+        working-directory: ui
+        run: npm ci --ignore-scripts --no-audit --no-fund
 
-      - name: Run UI Unit Tests
-        run: |
-          cd ui
-          npm test
+      - name: Run UI type check
+        working-directory: ui
+        run: npm run typecheck
 
-      - name: Validate UI Build
-        run: |
-          cd ui
-          npm run build
+      - name: Run UI unit tests
+        working-directory: ui
+        run: npm test
 
-  build_and_push:
-    name: Build and Publish Docker Image
-    runs-on: ubuntu-latest
+  build:
+    name: Build image (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
     needs:
       - python_checks
-      - ui_check
-    # Runs on all triggers; push is skipped on PRs (build-only validation)
-
+      - ui_checks
+    strategy:
+      fail-fast: true
+      matrix:
+        include: ${{ fromJSON(github.event_name == 'pull_request' && '[{"platform":"linux/amd64","arch":"amd64","runner":"ubuntu-latest"}]' || '[{"platform":"linux/amd64","arch":"amd64","runner":"ubuntu-latest"},{"platform":"linux/arm64","arch":"arm64","runner":"ubuntu-24.04-arm"}]') }}
+    env:
+      PUBLISH: ${{ github.event_name == 'push' && vars.DOCKER_USER != '' && secrets.DOCKER_TOKEN != '' }}
+    outputs:
+      publish: ${{ env.PUBLISH }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # Full history required for git describe --tags
+          # Full history is required to derive the version from git tags
           fetch-depth: 0
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+
+      - name: Resolve app version
+        id: version
+        run: echo "value=$(uvx --from setuptools-scm python -m setuptools_scm)" >> "$GITHUB_OUTPUT"
 
       - name: Docker meta
         id: meta
-        uses: docker/metadata-action@v6
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          labels: |
+            org.opencontainers.image.version=${{ steps.version.outputs.value }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Login to Docker Hub
+        if: env.PUBLISH == 'true'
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
+        with:
+          username: ${{ vars.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: Build and push by digest
+        id: docker_build
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: ${{ matrix.platform }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: APP_VERSION=${{ steps.version.outputs.value }}
+          outputs: ${{ env.PUBLISH == 'true' && format('type=image,name={0},push-by-digest=true,name-canonical=true,push=true', env.IMAGE_NAME) || 'type=cacheonly' }}
+          provenance: ${{ env.PUBLISH == 'true' && 'mode=max' || 'false' }}
+          sbom: ${{ env.PUBLISH == 'true' }}
+          cache-from: type=gha,scope=${{ matrix.arch }}
+          cache-to: ${{ github.ref == 'refs/heads/master' && format('type=gha,mode=max,scope={0}', matrix.arch) || '' }}
+
+      - name: Export digest
+        if: env.PUBLISH == 'true'
+        env:
+          DIGEST: ${{ steps.docker_build.outputs.digest }}
+        run: |
+          mkdir -p "${RUNNER_TEMP}/digests"
+          touch "${RUNNER_TEMP}/digests/${DIGEST#sha256:}"
+
+      - name: Upload digest
+        if: env.PUBLISH == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: digests-${{ matrix.arch }}
+          path: ${{ runner.temp }}/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Generate Run Summary
+        if: always()
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF: ${{ github.ref }}
+          APP_VERSION: ${{ steps.version.outputs.value }}
+          PLATFORM: ${{ matrix.platform }}
+          DIGEST: ${{ steps.docker_build.outputs.digest }}
+        run: |
+          cat >> "$GITHUB_STEP_SUMMARY" <<SUMMARY
+          ## 🐳 Docker Build Summary (${PLATFORM})
+
+          | Property | Value |
+          | :--- | :--- |
+          | **Event** | \`${EVENT_NAME}\` |
+          | **Ref** | \`${REF}\` |
+          | **App Version** | \`${APP_VERSION}\` |
+          | **Platform** | \`${PLATFORM}\` |
+          | **Pushed by digest** | \`${PUBLISH}\` |
+          | **Digest** | \`${DIGEST:-n/a}\` |
+          SUMMARY
+
+  merge:
+    name: Publish multi-arch manifest
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs:
+      - build
+    if: needs.build.outputs.publish == 'true'
+    steps:
+      - name: Download digests
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          path: ${{ runner.temp }}/digests
+          pattern: digests-*
+          merge-multiple: true
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
           images: ${{ env.IMAGE_NAME }}
           flavor: |
-            latest=true
+            latest=auto
           tags: |
             type=ref,event=branch
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
 
-      - name: Set up QEMU (for multi-arch build)
-        if: github.event_name == 'push'
-        uses: docker/setup-qemu-action@v4
-
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 
       - name: Login to Docker Hub
-        if: github.event_name == 'push'
-        uses: docker/login-action@v4
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
-          username: ${{ secrets.DOCKER_USER }}
+          username: ${{ vars.DOCKER_USER }}
           password: ${{ secrets.DOCKER_TOKEN }}
 
-      - name: Resolve app version
-        id: version
-        run: echo "value=$(git describe --tags --always)" >> $GITHUB_OUTPUT
+      - name: Create manifest list
+        working-directory: ${{ runner.temp }}/digests
+        run: |
+          tag_args=()
+          while IFS= read -r tag; do
+            tag_args+=(-t "$tag")
+          done < <(jq -r '.tags[]' <<< "$DOCKER_METADATA_OUTPUT_JSON")
+          refs=()
+          for digest in *; do
+            refs+=("${IMAGE_NAME}@sha256:${digest}")
+          done
+          docker buildx imagetools create "${tag_args[@]}" "${refs[@]}"
 
-      - name: Build and push
-        id: docker_build
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          file: ./Dockerfile
-          platforms: ${{ github.event_name == 'push' && 'linux/amd64,linux/arm64' || 'linux/amd64' }}
-          push: ${{ github.event_name == 'push' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          build-args: APP_VERSION=${{ steps.version.outputs.value }}
-          cache-from: type=gha
-          cache-to: ${{ github.ref == 'refs/heads/master' && 'type=gha,mode=max' || '' }}
+      - name: Inspect manifest list
+        env:
+          VERSION_TAG: ${{ steps.meta.outputs.version }}
+        run: docker buildx imagetools inspect "${IMAGE_NAME}:${VERSION_TAG}"
 
       - name: Generate Run Summary
         if: always()
+        env:
+          TAGS: ${{ steps.meta.outputs.tags }}
         run: |
-          echo "## 🐳 Docker Build Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
-          echo "| :--- | :--- |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Event** | \`${{ github.event_name }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Ref** | \`${{ github.ref }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| **App Version** | \`${{ steps.version.outputs.value }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Platforms** | \`${{ github.event_name == 'push' && 'linux/amd64,linux/arm64' || 'linux/amd64' }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Pushed to Registry** | \`${{ github.event_name == 'push' }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          if [ -n "${{ steps.meta.outputs.tags }}" ]; then
-            echo "### Generated Tags" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            echo "${{ steps.meta.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-          fi
+          {
+            echo "## 🐳 Published Manifest"
+            echo
+            echo "### Generated Tags"
+            echo '```'
+            echo "$TAGS"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

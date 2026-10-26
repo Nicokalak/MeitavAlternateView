@@ -3,7 +3,7 @@
     <div class="d-flex align-items-center gap-2">
       <div class="flex-grow-1">
         <div class="input-group input-group-sm">
-          <span class="input-group-text px-2"><i class="fas fa-tag text-muted"></i></span>
+          <span class="input-group-text px-2"><IconTag class="icon text-muted" /></span>
           <input
             type="text"
             class="form-control form-control-sm text-uppercase fw-semibold watchlist-symbol"
@@ -24,10 +24,10 @@
           :aria-expanded="showExtra"
           @click="toggleExtra"
         >
-          <i class="fas fa-sliders-h"></i>
+          <IconSliders class="icon" />
         </button>
         <button class="btn btn-sm btn-outline-danger remove-item delete-item" type="button" title="Remove" @click="emit('remove')">
-          <i class="fas fa-trash-alt"></i>
+          <IconTrash class="icon" />
         </button>
       </div>
     </div>
@@ -70,6 +70,9 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import IconSliders from '~icons/bi/sliders';
+import IconTag from '~icons/bi/tag';
+import IconTrash from '~icons/bi/trash';
 import type { WatchlistEntry } from '../types';
 
 /** Single watchlist row with inline Qty/Cost toggle. */
