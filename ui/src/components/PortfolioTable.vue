@@ -56,13 +56,26 @@
               <IconListUl class="icon" />
             </button>
             <ul class="dropdown-menu dropdown-menu-end p-2" style="min-width: 180px" @click.stop>
+              <li class="form-check">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  id="col-toggle-all"
+                  :checked="allOptionalVisible"
+                  :indeterminate="someOptionalVisible && !allOptionalVisible"
+                  @change="toggleAllColumns"
+                />
+                <label class="form-check-label small fw-semibold" for="col-toggle-all">Toggle all</label>
+              </li>
+              <li><hr class="dropdown-divider" /></li>
               <li v-for="col in allColumns" :key="col.key" class="form-check">
                 <input
                   class="form-check-input"
                   type="checkbox"
                   :id="'col-' + col.key"
                   :checked="visibleColumns[col.key]"
-                  @change="visibleColumns[col.key] = !visibleColumns[col.key]"
+                  :disabled="col.mandatory"
+                  @change="toggleColumn(col)"
                 />
                 <label class="form-check-label small" :for="'col-' + col.key">{{ col.label }}</label>
               </li>
@@ -237,6 +250,8 @@ interface Column {
     format: CellFormat;
     footer: FooterKind;
     defaultVisible: boolean;
+    /** Always shown; cannot be hidden from the column menu. */
+    mandatory?: boolean;
     colored?: boolean;
 }
 
@@ -255,7 +270,7 @@ const SKELETON_ROW_COUNT = 8;
 // ─── Column Definitions ────────────────────────────────────────────────────
 
 const allColumns: Column[] = [
-    { key: 'symbol',           label: 'Symbol',       width: '130px',        format: null,          footer: null,              defaultVisible: true },
+    { key: 'symbol',           label: 'Symbol',       width: '130px',        format: null,          footer: null,              defaultVisible: true,  mandatory: true },
     { key: 'percent_change',   label: '% Change',     format: 'percent',     footer: 'totalDayPercent', defaultVisible: true,  colored: true },
     { key: 'principle_change', label: '% PChange',    format: 'percent',     footer: 'totalPercent',    defaultVisible: false, colored: true },
     { key: 'change',           label: 'Change',       format: 'round',       footer: null,              defaultVisible: false,  colored: true },
@@ -271,12 +286,27 @@ const allColumns: Column[] = [
 ];
 
 const visibleColumns = reactive<Record<string, boolean>>(
-    Object.fromEntries(allColumns.map(c => [c.key, c.defaultVisible]))
+    Object.fromEntries(allColumns.map(c => [c.key, c.mandatory || c.defaultVisible]))
 );
 
 const activeColumns = computed(() =>
-    allColumns.filter(c => visibleColumns[c.key])
+    allColumns.filter(c => c.mandatory || visibleColumns[c.key])
 );
+
+const optionalColumns = allColumns.filter(c => !c.mandatory);
+const allOptionalVisible = computed(() => optionalColumns.every(c => visibleColumns[c.key]));
+const someOptionalVisible = computed(() => optionalColumns.some(c => visibleColumns[c.key]));
+
+function toggleColumn(col: Column): void {
+    if (col.mandatory) return;
+    visibleColumns[col.key] = !visibleColumns[col.key];
+}
+
+/** Shows every optional column, or hides them all when all are already visible. */
+function toggleAllColumns(): void {
+    const show = !allOptionalVisible.value;
+    for (const col of optionalColumns) visibleColumns[col.key] = show;
+}
 
 // ─── Formatting Helpers ────────────────────────────────────────────────────
 
