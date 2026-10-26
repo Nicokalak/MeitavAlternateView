@@ -10,11 +10,11 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 /** Displays a disabled range slider between min and max with current value indicator. */
-defineProps({
-    min: { type: Number, required: true },
-    max: { type: Number, required: true },
-    value: { type: Number, required: true },
-});
+defineProps<{
+    min: number;
+    max: number;
+    value: number;
+}>();
 </script>

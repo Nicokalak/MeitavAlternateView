@@ -95,55 +95,57 @@
   </tr>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import RangeBar from './RangeBar.vue';
+import type { ApiData, PortfolioRow, TickerResponse } from '../types';
 
 /**
  * Expandable detail row for a single stock — replaces the legacy
  * detailFormatter() / getDetailedRow() string concatenator.
  */
 
-const props = defineProps({
-    row: { type: Object, required: true },
-    colspan: { type: Number, default: 14 },
-});
+const props = withDefaults(
+    defineProps<{
+        row: PortfolioRow;
+        colspan?: number;
+    }>(),
+    { colspan: 14 },
+);
 
 const loading = ref(true);
 const error = ref('');
-const detail = ref(null);
+const detail = ref<ApiData | null>(null);
 const marketStateKey = ref('regular');
 
-function round(v) {
-    return Math.round((v + Number.EPSILON) * 100) / 100;
+function round(v: number | undefined): number {
+    return Math.round(((v ?? NaN) + Number.EPSILON) * 100) / 100;
 }
-function roundPercent(v) {
-    return isNaN(v) ? '-' : round(v) + '%';
+function roundPercent(v: number | undefined): string {
+    return v === undefined || isNaN(v) ? '-' : round(v) + '%';
 }
-function bigNum(v) {
-    if (isNaN(v)) return '-';
+function bigNum(v: number | undefined): string {
+    if (v === undefined || isNaN(v)) return '-';
     return round(v).toLocaleString('en-US');
 }
-function colorClass(v) {
+function colorClass(v: number): string {
     if (v > 0) return 'text-success';
     if (v < 0) return 'text-danger';
     return '';
 }
 
-const price = computed(() => {
-    if (!detail.value) return 0;
-    return detail.value[marketStateKey.value + 'MarketPrice'] ?? 0;
-});
+function numericField(key: string): number {
+    const value = detail.value?.[key];
+    return typeof value === 'number' ? value : 0;
+}
 
-const changeVal = computed(() => {
-    if (!detail.value) return 0;
-    return (detail.value[marketStateKey.value + 'MarketChange'] ?? 0) * props.row.quantity;
-});
+const price = computed(() => numericField(marketStateKey.value + 'MarketPrice'));
 
-const changePct = computed(() => {
-    if (!detail.value) return 0;
-    return detail.value[marketStateKey.value + 'MarketChangePercent'] ?? 0;
-});
+const changeVal = computed(
+    () => numericField(marketStateKey.value + 'MarketChange') * props.row.quantity,
+);
+
+const changePct = computed(() => numericField(marketStateKey.value + 'MarketChangePercent'));
 
 const earningsDisplay = computed(() => {
     if (!detail.value || !detail.value.earningsTimestamp) return '';
@@ -156,7 +158,7 @@ const earningsDisplay = computed(() => {
 
 const trendRatio = computed(() => {
     if (!detail.value) return '-';
-    const ratio = (detail.value.regularMarketVolume / detail.value.averageDailyVolume3Month) * 100;
+    const ratio = (numericField('regularMarketVolume') / numericField('averageDailyVolume3Month')) * 100;
     return roundPercent(ratio);
 });
 
@@ -164,11 +166,11 @@ onMounted(async () => {
     try {
         const res = await fetch('ticker/' + props.row.symbol);
         if (!res.ok) throw new Error(String(res.status));
-        const data = await res.json();
+        const data = (await res.json()) as TickerResponse;
         marketStateKey.value = (data['market-state-4calc'] || 'regular').toLowerCase();
         detail.value = data.stock.api_data;
     } catch (err) {
-        error.value = err.message;
+        error.value = err instanceof Error ? err.message : String(err);
     } finally {
         loading.value = false;
     }

@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "./build.sh",
     "test": "vitest run",
+    "typecheck": "vue-tsc --noEmit",
     "update-sri": "node ../scripts/update-sri.js"
   },
   "dependencies": {
@@ -23,10 +24,13 @@
     "core-js@3.50.0": true
   },
   "devDependencies": {
+    "@types/bootstrap": "^5.2.11",
     "@vitejs/plugin-vue": "^6.0.10",
     "@vue/test-utils": "^2.5.1",
     "happy-dom": "^21.0.4",
+    "typescript": "~5.9",
     "vite": "^8.3.0",
-    "vitest": "^5.0.5"
+    "vitest": "^5.0.5",
+    "vue-tsc": "^3.3.13"
   }
 }

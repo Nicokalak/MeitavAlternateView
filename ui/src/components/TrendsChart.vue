@@ -1,6 +1,6 @@
 <template>
   <!-- Market Status Header (sticky) -->
-  <div id="market-status-container" class="sticky-top bg-body py-2 z-3">
+  <div id="market-status-container" class="sticky-top bg-body">
     <h2 class="m-0 placeholder-glow" id="market_status">
       <span v-if="!marketStatusHtml" class="placeholder col-3 rounded"></span>
       <span v-else v-html="marketStatusHtml"></span>
@@ -93,9 +93,15 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, reactive, onMounted, onUnmounted } from 'vue';
-import { Chart } from 'chart.js';
+import {
+    Chart,
+    type ChartConfiguration,
+    type ChartData,
+    type ScriptableLineSegmentContext,
+} from 'chart.js';
+import type { MarketState, TrendSeries, TrendsResponse } from '../types';
 
 /**
  * Market trends chart and stats header cards.
@@ -103,7 +109,7 @@ import { Chart } from 'chart.js';
  * with no window.* global exposure.
  */
 
-const trendsCanvas = ref(null);
+const trendsCanvas = ref<HTMLCanvasElement | null>(null);
 const marketStatusHtml = ref('');
 const stats = reactive({
     loaded: false,
@@ -118,20 +124,20 @@ const stats = reactive({
     down: 0,
 });
 
-const trendsObj = {
+const trendsObj: Record<keyof TrendsResponse, TrendSeries> = {
     PRE_histo: {},
     REGULAR_histo: {},
     POST_histo: {},
 };
 
-let chart = null;
+let chart: Chart<'line', TrendSeries> | null = null;
 
-function round(value) {
+function round(value: number): number {
     return Math.round((value + Number.EPSILON) * 100) / 100;
 }
 
-function createSpan(val, val2) {
-    function getClass(v) {
+function createSpan(val: number, val2: number): string {
+    function getClass(v: number): string {
         return v > 0 ? 'success' : v < 0 ? 'danger' : 'secondary';
     }
     return (
@@ -141,7 +147,7 @@ function createSpan(val, val2) {
 }
 
 /** Populate market stats from the /marketState API response. */
-function applyMarketState(trendObj) {
+function applyMarketState(trendObj: MarketState): void {
     const marketState = trendObj.marketState.toLowerCase();
     marketStatusHtml.value =
         marketState.charAt(0).toUpperCase() + marketState.slice(1) + ' market  ' +
@@ -160,16 +166,14 @@ function applyMarketState(trendObj) {
 }
 
 /** Fetch /trends and push new data points into the chart. */
-async function fetchTrends() {
+async function fetchTrends(): Promise<void> {
     if (!chart) return;
     try {
         const res = await fetch('trends');
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const trends = await res.json();
-        for (const key in trends) {
-            for (const t in trends[key]) {
-                trendsObj[key][t] = trends[key][t];
-            }
+        const trends = (await res.json()) as TrendsResponse;
+        for (const key of Object.keys(trendsObj) as Array<keyof TrendsResponse>) {
+            Object.assign(trendsObj[key], trends[key]);
         }
         chart.update();
     } catch (err) {
@@ -178,11 +182,11 @@ async function fetchTrends() {
 }
 
 /** Fetch /marketState then update trends. */
-async function fetchMarketState() {
+async function fetchMarketState(): Promise<void> {
     try {
         const res = await fetch('marketState');
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
+        const data = (await res.json()) as MarketState;
         applyMarketState(data);
         await fetchTrends();
     } catch (err) {
@@ -191,7 +195,7 @@ async function fetchMarketState() {
 }
 
 /** Initialise the Chart.js instance on the canvas element. */
-function initChart() {
+function initChart(): void {
     if (chart) {
         chart.destroy();
         chart = null;
@@ -199,12 +203,15 @@ function initChart() {
 
     if (!trendsCanvas.value) return;
 
-    const down = (ctx) => ctx.p0.parsed.y > ctx.p1.parsed.y ? 'rgb(213, 76, 76)' : undefined;
-    const up = (ctx) => ctx.p0.parsed.y < ctx.p1.parsed.y ? 'rgb(0, 139, 0)' : undefined;
-    const skipped = (ctx, value) =>
-        new Date(ctx.p1.parsed.x) - new Date(ctx.p0.parsed.x) > 3.6e+7 ? value : undefined;
+    type SegmentCtx = ScriptableLineSegmentContext;
+    const down = (ctx: SegmentCtx): string | undefined =>
+        (ctx.p0.parsed.y ?? 0) > (ctx.p1.parsed.y ?? 0) ? 'rgb(213, 76, 76)' : undefined;
+    const up = (ctx: SegmentCtx): string | undefined =>
+        (ctx.p0.parsed.y ?? 0) < (ctx.p1.parsed.y ?? 0) ? 'rgb(0, 139, 0)' : undefined;
+    const skipped = <T,>(ctx: SegmentCtx, value: T): T | undefined =>
+        (ctx.p1.parsed.x ?? 0) - (ctx.p0.parsed.x ?? 0) > 3.6e7 ? value : undefined;
 
-    const data = {
+    const data: ChartData<'line', TrendSeries> = {
         datasets: [
             {
                 label: 'PRE Market',
@@ -245,7 +252,7 @@ function initChart() {
         ],
     };
 
-    const config = {
+    const config: ChartConfiguration<'line', TrendSeries> = {
         type: 'line',
         data,
         options: {

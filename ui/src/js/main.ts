@@ -13,10 +13,10 @@ Chart.register(...registerables);
 
 // Bootstrap JS is needed for modals/dropdowns — attach to window for Bootstrap's
 // internal use (data-bs-toggle attributes require bootstrap on window/global).
-window.bootstrap = bootstrap;
+(window as Window & { bootstrap?: typeof bootstrap }).bootstrap = bootstrap;
 
 // ─── 3. Initialise Theme Before Mount ────────────────────────────────────────
-import './darkmode.js';
+import './darkmode';
 
 // ─── 4. Mount Vue App ────────────────────────────────────────────────────────
 import { createApp } from 'vue';

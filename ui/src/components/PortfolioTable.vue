@@ -1,8 +1,9 @@
 <template>
   <div class="row">
     <div class="col-12">
-      <!-- Toolbar -->
-      <div class="portfolio-toolbar bg-body py-1 d-flex align-items-center">
+      <!-- Sticky block: toolbar, refresh indicator and column header move as one element -->
+      <div class="portfolio-sticky">
+      <div class="portfolio-toolbar d-flex align-items-center">
         <div class="btn-group btn-group" role="group">
           <input
             type="search"
@@ -69,29 +70,27 @@
         </div>
       </div>
 
-      <!-- Refresh Progress Bar -->
       <div class="refresh-progress-bar-container" :class="{ 'is-loading': loading && portfolio.length > 0 }">
         <div class="refresh-progress-bar"></div>
       </div>
 
-      <!-- Loading Overlay -->
-      <div v-if="loading && portfolio.length === 0" class="text-center py-5">
-        <div class="spinner-border text-secondary" role="status">
-          <span class="visually-hidden">Loading…</span>
-        </div>
-      </div>
-
-      <!-- Table -->
-      <div class="table-responsive" v-show="portfolio.length > 0">
-        <table class="table table-sm table-striped table-hover caption-top">
-          <thead class="portfolio-thead">
+      <!-- Header lives outside the horizontal scroller so it can stick to the window -->
+      <div v-show="portfolio.length > 0" class="portfolio-head">
+        <table
+          ref="headTableEl"
+          class="table table-sm portfolio-table portfolio-head-table mb-0"
+          :style="headTableWidth ? { width: headTableWidth + 'px' } : null"
+        >
+          <colgroup>
+            <col v-for="(w, i) in colWidths" :key="i" :style="{ width: w + 'px' }" />
+          </colgroup>
+          <thead class="portfolio-thead border border-secondary">
             <tr>
               <th class="detail-toggle-col"></th>
               <template v-for="col in activeColumns" :key="col.key">
                 <th
                   class="sortable-header user-select-none"
                   :class="{ 'text-secondary-emphasis': sortKey === col.key }"
-                  :style="col.width ? { width: col.width, minWidth: col.width } : null"
                   @click="toggleSort(col.key)"
                   role="button"
                 >
@@ -99,6 +98,32 @@
                   <span v-if="sortKey === col.key" class="ms-1 small">
                     <i :class="sortOrder === 'asc' ? 'bi bi-caret-up-fill' : 'bi bi-caret-down-fill'"></i>
                   </span>
+                </th>
+              </template>
+            </tr>
+          </thead>
+        </table>
+      </div>
+      </div>
+
+      <div v-if="loading && portfolio.length === 0" class="text-center py-5">
+        <div class="spinner-border text-secondary" role="status">
+          <span class="visually-hidden">Loading…</span>
+        </div>
+      </div>
+
+      <div v-show="portfolio.length > 0">
+        <div class="portfolio-table-wrap" ref="wrapEl" @scroll.passive="syncHeaderScroll">
+        <table class="table table-sm table-striped table-hover caption-top portfolio-table" ref="bodyTableEl">
+          <!-- Zero-height header: keeps column widths content-driven and in sync with the sticky header -->
+          <thead class="portfolio-thead-sizer" aria-hidden="true">
+            <tr>
+              <th class="detail-toggle-col"><div class="thead-sizer"></div></th>
+              <template v-for="col in activeColumns" :key="col.key">
+                <th :style="col.width ? { width: col.width, minWidth: col.width } : null">
+                  <div class="thead-sizer fw-semibold">
+                    {{ col.label }}<span class="ms-1 small"><i class="bi bi-caret-down-fill"></i></span>
+                  </div>
                 </th>
               </template>
             </tr>
@@ -143,39 +168,60 @@
             </tr>
           </tfoot>
         </table>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
-<script setup>
-import { ref, reactive, computed, onMounted, onUnmounted } from 'vue';
+<script setup lang="ts">
+import { ref, reactive, computed, watch, onMounted, onUnmounted } from 'vue';
 import PortfolioDetailRow from './PortfolioDetailRow.vue';
 import SymbolCell from './SymbolCell.vue';
+import type { PortfolioRow } from '../types';
 
 /**
  * Native Vue 3 portfolio grid — replaces Bootstrap Table and all
  * associated jQuery code (app.js, table.js, window.* formatters).
  */
 
-const emit = defineEmits(['portfolio-loaded']);
+const emit = defineEmits<{ 'portfolio-loaded': [] }>();
 
 // ─── State ─────────────────────────────────────────────────────────────────
 
-const portfolio = ref([]);
+type CellFormat = 'percent' | 'round' | 'bigNum' | null;
+type FooterKind =
+    | 'totalDayPercent'
+    | 'totalPercent'
+    | 'gainTotal'
+    | 'totalPrice'
+    | 'totalCostPlain'
+    | null;
+
+interface Column {
+    key: keyof PortfolioRow;
+    label: string;
+    width?: string;
+    format: CellFormat;
+    footer: FooterKind;
+    defaultVisible: boolean;
+    colored?: boolean;
+}
+
+const portfolio = ref<PortfolioRow[]>([]);
 const loading = ref(false);
 const searchQuery = ref('');
-const sortKey = ref('percent_change');
-const sortOrder = ref('desc');
+const sortKey = ref<keyof PortfolioRow>('percent_change');
+const sortOrder = ref<'asc' | 'desc'>('desc');
 const watchlistHidden = ref(false);
-const expandedRows = reactive({});
+const expandedRows = reactive<Record<string, boolean>>({});
 const autoRefreshActive = ref(false);
-let autoRefreshTimer = null;
+let autoRefreshTimer: ReturnType<typeof setInterval> | null = null;
 const AUTO_REFRESH_INTERVAL = 300_000; // 5 minutes
 
 // ─── Column Definitions ────────────────────────────────────────────────────
 
-const allColumns = [
+const allColumns: Column[] = [
     { key: 'symbol',           label: 'Symbol',       width: '130px',        format: null,          footer: null,              defaultVisible: true },
     { key: 'percent_change',   label: '% Change',     format: 'percent',     footer: 'totalDayPercent', defaultVisible: true,  colored: true },
     { key: 'principle_change', label: '% PChange',    format: 'percent',     footer: 'totalPercent',    defaultVisible: false, colored: true },
@@ -191,7 +237,7 @@ const allColumns = [
     { key: 'weight',           label: 'Weight',       format: 'percent',     footer: null,              defaultVisible: false },
 ];
 
-const visibleColumns = reactive(
+const visibleColumns = reactive<Record<string, boolean>>(
     Object.fromEntries(allColumns.map(c => [c.key, c.defaultVisible]))
 );
 
@@ -201,41 +247,43 @@ const activeColumns = computed(() =>
 
 // ─── Formatting Helpers ────────────────────────────────────────────────────
 
-function round(v) {
+function round(v: number): number {
     return Math.round((v + Number.EPSILON) * 100) / 100;
 }
-function roundPercent(v) {
+function roundPercent(v: number): string {
     return isNaN(v) ? '-' : round(v) + '%';
 }
-function bigNum(v) {
+function bigNum(v: number | null | undefined): string {
     if (v === null || v === undefined || isNaN(v)) return '-';
     return round(v).toLocaleString('en-US');
 }
 
-function formatCell(col, row) {
+function formatCell(col: Column, row: PortfolioRow): string | number {
     const v = row[col.key];
     if (v === null || v === undefined) return '-';
+    if (typeof v === 'object') return '-';
     switch (col.format) {
-        case 'percent': return roundPercent(v);
-        case 'round':   return round(v);
-        case 'bigNum':  return bigNum(v);
+        case 'percent': return roundPercent(Number(v));
+        case 'round':   return round(Number(v));
+        case 'bigNum':  return bigNum(Number(v));
         default:        return v;
     }
 }
 
-function cellClass(col, row) {
+function cellClass(col: Column, row: PortfolioRow): string {
     if (!col.colored) return '';
     const v = row[col.key];
+    if (typeof v !== 'number') return '';
     if (v > 0) return 'text-success';
     if (v < 0) return 'text-danger';
     return '';
 }
 
-function rowClass(row) {
+function rowClass(row: PortfolioRow): string {
     return !isInPortfolio(row) ? 'table-info bg-opacity-75' : '';
 }
 
-function footerCellClass(col) {
+function footerCellClass(col: Column): string {
     if (!col.footer) return '';
     const val = computeFooterValue(col);
     if (typeof val === 'number') {
@@ -247,13 +295,13 @@ function footerCellClass(col) {
 
 // ─── Portfolio Filtering ───────────────────────────────────────────────────
 
-function isInPortfolio(row) {
+function isInPortfolio(row: PortfolioRow): boolean {
     return row.type.toLowerCase() !== 'w';
 }
 
 // ─── Data Fetching ─────────────────────────────────────────────────────────
 
-async function fetchPortfolio() {
+async function fetchPortfolio(): Promise<void> {
     loading.value = true;
     try {
         const res = await fetch('portfolio');
@@ -262,7 +310,7 @@ async function fetchPortfolio() {
             return;
         }
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        portfolio.value = await res.json();
+        portfolio.value = (await res.json()) as PortfolioRow[];
         emit('portfolio-loaded');
     } catch (err) {
         console.error('Failed to load portfolio:', err);
@@ -273,7 +321,7 @@ async function fetchPortfolio() {
 
 // ─── Sorting ───────────────────────────────────────────────────────────────
 
-function toggleSort(key) {
+function toggleSort(key: keyof PortfolioRow): void {
     if (sortKey.value === key) {
         sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc';
     } else {
@@ -295,7 +343,7 @@ const filteredRows = computed(() => {
     // Text/regex search
     if (searchQuery.value.trim()) {
         const query = searchQuery.value.trim();
-        let matcher;
+        let matcher: (str: string) => boolean;
         try {
             const regex = new RegExp(query, 'i');
             matcher = (str) => regex.test(str);
@@ -321,8 +369,9 @@ const displayedRows = computed(() => {
     rows.sort((a, b) => {
         const va = a[key] ?? 0;
         const vb = b[key] ?? 0;
-        if (typeof va === 'string') return dir * va.localeCompare(vb);
-        return dir * (va - vb);
+        if (typeof va === 'string' && typeof vb === 'string') return dir * va.localeCompare(vb);
+        if (typeof va === 'number' && typeof vb === 'number') return dir * (va - vb);
+        return 0;
     });
     return rows;
 });
@@ -333,22 +382,27 @@ const portfolioRows = computed(() => {
     return filteredRows.value.filter(isInPortfolio);
 });
 
-function sumField(field) {
-    return round(portfolioRows.value.reduce((s, r) => s + (r[field] || 0), 0));
+function sumField(field: keyof PortfolioRow): number {
+    return round(
+        portfolioRows.value.reduce((s, r) => {
+            const v = r[field];
+            return s + (typeof v === 'number' ? v : 0);
+        }, 0),
+    );
 }
 
-function calcAvgCost() {
+function calcAvgCost(): number {
     return round(portfolioRows.value.reduce((s, r) => s + (r.total_val - r.total_change), 0));
 }
 
-function calcStartPrice() {
+function calcStartPrice(): number {
     return round(portfolioRows.value.reduce((s, r) => {
         const q = r.type.toLowerCase() === 'e' ? r.quantity : r.quantity * 100;
         return s + (r.last_price - r.change) * q;
     }, 0));
 }
 
-function computeFooterValue(col) {
+function computeFooterValue(col: Column): number | null {
     switch (col.footer) {
         case 'totalDayPercent': {
             const startPrice = calcStartPrice();
@@ -369,7 +423,7 @@ function computeFooterValue(col) {
     }
 }
 
-function computeFooter(col) {
+function computeFooter(col: Column): string {
     const val = computeFooterValue(col);
     if (val === null) return '';
 
@@ -397,30 +451,82 @@ function computeFooter(col) {
 
 // ─── Row Expansion ─────────────────────────────────────────────────────────
 
-function toggleExpand(symbol) {
+function toggleExpand(symbol: string): void {
     expandedRows[symbol] = !expandedRows[symbol];
 }
 
 // ─── Auto-Refresh ──────────────────────────────────────────────────────────
 
-function toggleAutoRefresh() {
+function toggleAutoRefresh(): void {
     autoRefreshActive.value = !autoRefreshActive.value;
     if (autoRefreshActive.value) {
         autoRefreshTimer = setInterval(fetchPortfolio, AUTO_REFRESH_INTERVAL);
     } else {
-        clearInterval(autoRefreshTimer);
+        if (autoRefreshTimer) clearInterval(autoRefreshTimer);
         autoRefreshTimer = null;
     }
 }
 
+// ─── Sticky Header Sync ────────────────────────────────────────────────────
+
+const headTableEl = ref<HTMLTableElement | null>(null);
+const wrapEl = ref<HTMLElement | null>(null);
+const bodyTableEl = ref<HTMLTableElement | null>(null);
+const colWidths = ref<number[]>([]);
+const headTableWidth = ref(0);
+let resizeObserver: ResizeObserver | null = null;
+
+const roundPx = (v: number): number => Math.round(v * 100) / 100;
+
+/** Copies the body table's measured column widths onto the sticky header table. */
+function syncHeaderWidths(): void {
+    const table = bodyTableEl.value;
+    if (!table) return;
+
+    const widths = Array.from(table.querySelectorAll<HTMLElement>('thead th'), th =>
+        roundPx(th.getBoundingClientRect().width)
+    );
+    const tableWidth = roundPx(table.getBoundingClientRect().width);
+    if (tableWidth === 0 || widths.every(w => w === 0)) return;
+
+    const unchanged =
+        widths.length === colWidths.value.length &&
+        widths.every((w, i) => w === colWidths.value[i]);
+    if (!unchanged) colWidths.value = widths;
+    if (tableWidth !== headTableWidth.value) headTableWidth.value = tableWidth;
+    syncHeaderScroll();
+}
+
+let scrollFrame = 0;
+
+/** Mirrors the body wrapper's horizontal scroll onto the sticky header, once per frame. */
+function syncHeaderScroll(): void {
+    if (scrollFrame) return;
+    scrollFrame = requestAnimationFrame(() => {
+        scrollFrame = 0;
+        if (headTableEl.value && wrapEl.value) {
+            headTableEl.value.style.transform = `translate3d(${-wrapEl.value.scrollLeft}px, 0, 0)`;
+        }
+    });
+}
+
+watch([portfolio, activeColumns], syncHeaderWidths, { flush: 'post' });
+
 // ─── Lifecycle ─────────────────────────────────────────────────────────────
 
 onMounted(() => {
-    fetchPortfolio();
+    void fetchPortfolio();
+    if (typeof ResizeObserver !== 'undefined') {
+        resizeObserver = new ResizeObserver(syncHeaderWidths);
+        if (bodyTableEl.value) resizeObserver.observe(bodyTableEl.value);
+        if (wrapEl.value) resizeObserver.observe(wrapEl.value);
+    }
 });
 
 onUnmounted(() => {
     if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+    if (resizeObserver) resizeObserver.disconnect();
+    if (scrollFrame) cancelAnimationFrame(scrollFrame);
 });
 
 // Expose fetchPortfolio for external use

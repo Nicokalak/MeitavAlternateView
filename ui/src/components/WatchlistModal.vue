@@ -78,45 +78,46 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
 import WatchlistItem from './WatchlistItem.vue';
+import type { WatchlistEntry, WatchlistPayload } from '../types';
 
 /**
  * Modal for editing the watchlist. Manages load/save lifecycle and
  * emits a reactive event when the modal closes after changes.
  */
 
-const emit = defineEmits(['watchlist-saved']);
+const emit = defineEmits<{ 'watchlist-saved': [] }>();
 
 let _keyCounter = Date.now();
-const items = ref([]);
+const items = ref<WatchlistEntry[]>([]);
 const saving = ref(false);
 const successMsg = ref('');
 const errorMsg = ref('');
-const modalEl = ref(null);
+const modalEl = ref<HTMLElement | null>(null);
 let hasChanged = false;
-let successTimer = null;
-let errorTimer = null;
+let successTimer: ReturnType<typeof setTimeout> | null = null;
+let errorTimer: ReturnType<typeof setTimeout> | null = null;
 
-function makeKey() {
+function makeKey(): number {
     return ++_keyCounter;
 }
 
-function addItem() {
+function addItem(): void {
     items.value.push({ _key: makeKey(), symbol: '', qty: '', cost: '' });
 }
 
-function removeItem(index) {
+function removeItem(index: number): void {
     items.value.splice(index, 1);
 }
 
-async function loadWatchlist() {
+async function loadWatchlist(): Promise<void> {
     try {
         const res = await fetch('watchList');
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        items.value = (data || []).map((item) => {
+        const data = (await res.json()) as Array<Partial<WatchlistPayload> & { qty?: number }> | null;
+        items.value = (data || []).map((item): WatchlistEntry => {
             const rawQty = item.quantity ?? item.qty;
             const rawCost = item.cost;
             return {
@@ -131,20 +132,20 @@ async function loadWatchlist() {
     }
 }
 
-async function saveChanges() {
+async function saveChanges(): Promise<void> {
     const updatedList = items.value
-        .map((item) => {
+        .map((item): WatchlistPayload | null => {
             const symbol = String(item.symbol ?? '').trim().toUpperCase();
             if (!symbol) return null;
-            const quantity = item.qty === '' ? 0 : parseInt(item.qty, 10);
-            const cost = item.cost === '' ? 0.0 : parseFloat(item.cost);
+            const quantity = item.qty === '' ? 0 : parseInt(String(item.qty), 10);
+            const cost = item.cost === '' ? 0.0 : parseFloat(String(item.cost));
             return {
                 symbol,
                 quantity: isNaN(quantity) ? 0 : Math.max(0, quantity),
                 cost: isNaN(cost) ? 0.0 : Math.max(0.0, cost),
             };
         })
-        .filter(Boolean);
+        .filter((entry): entry is WatchlistPayload => entry !== null);
 
     saving.value = true;
     errorMsg.value = '';
@@ -159,27 +160,27 @@ async function saveChanges() {
             body: JSON.stringify(updatedList),
         });
         if (!res.ok) {
-            const body = await res.json().catch(() => ({}));
-            throw new Error(body.detail || `HTTP ${res.status}`);
+            const errBody = (await res.json().catch(() => ({}))) as { detail?: string };
+            throw new Error(errBody.detail || `HTTP ${res.status}`);
         }
-        const body = await res.json();
+        const body = (await res.json()) as { message?: string };
         hasChanged = true;
         successMsg.value = body.message || 'Saved successfully';
         successTimer = setTimeout(() => { successMsg.value = ''; }, 3000);
     } catch (err) {
         console.error('Error saving watchlist:', err);
-        errorMsg.value = 'Error: ' + err.message;
+        errorMsg.value = 'Error: ' + (err instanceof Error ? err.message : String(err));
         errorTimer = setTimeout(() => { errorMsg.value = ''; }, 4000);
     } finally {
         saving.value = false;
     }
 }
 
-function onModalShow() {
-    loadWatchlist();
+function onModalShow(): void {
+    void loadWatchlist();
 }
 
-function onModalHide() {
+function onModalHide(): void {
     if (hasChanged) {
         emit('watchlist-saved');
         hasChanged = false;
@@ -187,7 +188,7 @@ function onModalHide() {
 }
 
 onMounted(() => {
-    loadWatchlist();
+    void loadWatchlist();
 
     if (modalEl.value) {
         modalEl.value.addEventListener('show.bs.modal', onModalShow);

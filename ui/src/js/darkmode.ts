@@ -2,17 +2,27 @@
  * Color mode manager — Vue 3 reactive theme state and Bootstrap 5 data-bs-theme synchronisation.
  */
 
-import { ref } from 'vue';
+import { ref, type Ref } from 'vue';
+
+/** Theme preference selectable by the user. */
+export type Theme = 'light' | 'dark' | 'auto';
+
+/** Theme actually applied to the document after resolving 'auto'. */
+export type ResolvedTheme = 'light' | 'dark';
+
+const THEMES: readonly Theme[] = ['light', 'dark', 'auto'];
+
+function isTheme(value: string | null): value is Theme {
+    return value !== null && (THEMES as readonly string[]).includes(value);
+}
 
 const storedTheme = localStorage.getItem('theme');
 
 /** Reactive theme value: 'light' | 'dark' | 'auto' */
-export const theme = ref(
-    storedTheme && ['light', 'dark', 'auto'].includes(storedTheme) ? storedTheme : 'auto'
-);
+export const theme: Ref<Theme> = ref<Theme>(isTheme(storedTheme) ? storedTheme : 'auto');
 
 /** Resolve 'auto' to the current OS color scheme */
-export function resolveTheme(targetTheme) {
+export function resolveTheme(targetTheme: Theme): ResolvedTheme {
     if (targetTheme === 'auto') {
         return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     }
@@ -20,7 +30,7 @@ export function resolveTheme(targetTheme) {
 }
 
 /** Apply theme to the document root and update reactive state. */
-export function setTheme(newTheme, persist = false) {
+export function setTheme(newTheme: Theme, persist = false): void {
     theme.value = newTheme;
     if (persist) {
         if (newTheme === 'auto') {
@@ -33,7 +43,7 @@ export function setTheme(newTheme, persist = false) {
 }
 
 /** Return the current preferred theme. */
-export function getPreferredTheme() {
+export function getPreferredTheme(): Theme {
     return theme.value;
 }
 

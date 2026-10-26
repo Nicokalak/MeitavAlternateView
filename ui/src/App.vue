@@ -7,26 +7,23 @@
   <WatchlistModal @watchlist-saved="onWatchlistSaved" />
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue';
 import DarkModeToggle from './components/DarkModeToggle.vue';
 import TrendsChart from './components/TrendsChart.vue';
 import PortfolioTable from './components/PortfolioTable.vue';
 import WatchlistModal from './components/WatchlistModal.vue';
-import { useStickyHeaders } from './composables/useStickyHeaders.js';
 
 /** Root application component — composes all page-level Vue components. */
 
-const trendsChart = ref(null);
-const portfolioTable = ref(null);
-const { updateStickyOffsets } = useStickyHeaders();
+const trendsChart = ref<InstanceType<typeof TrendsChart> | null>(null);
+const portfolioTable = ref<InstanceType<typeof PortfolioTable> | null>(null);
 
-function onPortfolioLoaded() {
-    trendsChart.value?.fetchMarketState();
-    updateStickyOffsets();
+function onPortfolioLoaded(): void {
+    void trendsChart.value?.fetchMarketState();
 }
 
-function onWatchlistSaved() {
-    portfolioTable.value?.fetchPortfolio();
+function onWatchlistSaved(): void {
+    void portfolioTable.value?.fetchPortfolio();
 }
 </script>

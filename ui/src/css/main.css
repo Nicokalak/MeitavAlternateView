@@ -37,48 +37,85 @@
     border-bottom-right-radius: 0;
 }
 
-/* ─── Tier 1: Sticky Market Status ───────────────────────────────────────── */
+/* ─── Sticky layout ──────────────────────────────────────────────────────────
+   Two sticky layers share one fixed height variable, so no JS measurement is
+   needed and no gap can open between them:
+   1. the market bar, pinned to the top of the window;
+   2. the portfolio block (toolbar, refresh indicator, column header), pinned
+      directly beneath it and tucked 1px under the bar to hide sub-pixel seams. */
+:root {
+    --market-bar-h: 3.5rem;
+}
+
 #market-status-container {
+    display: flex;
+    align-items: center;
+    height: var(--market-bar-h);
     z-index: 1030 !important;
 }
 
-/* ─── Tier 2: Sticky Table Toolbar ───────────────────────────────────────── */
-.fixed-table-toolbar,
-.portfolio-toolbar {
+#market-status-container h2 {
+    white-space: nowrap;
+}
+
+.portfolio-sticky {
     position: sticky;
-    top: var(--toolbar-sticky-top, 0px);
+    top: calc(var(--market-bar-h) - 1px);
     z-index: 1020;
     background-color: var(--bs-body-bg);
-    padding-top: 0.25rem;
-    padding-bottom: 0.25rem;
 }
 
-/* ─── Tier 3: Opaque Table Header ────────────────────────────────────────── */
-.bootstrap-table .fixed-table-container .sticky-header-container,
-.portfolio-thead,
-.portfolio-thead th,
-#table thead,
-#table thead th,
-.fix-sticky table thead th {
-    background-color: var(--bs-body-bg) !important;
+.portfolio-toolbar {
+    padding: 0.25rem 0;
 }
 
-.portfolio-thead,
-.portfolio-thead th {
-    position: sticky;
-    top: var(--table-sticky-top, 0px);
-    z-index: 1010;
+/* The header lives outside the horizontal scroller so the block above can stick
+   to the window. Its horizontal position mirrors the body wrapper's scrollLeft. */
+.portfolio-head {
+    overflow: hidden;
+    background-color: var(--bs-body-bg);
 }
 
-.table-responsive {
-    overflow-x: clip;
-    overflow-y: visible;
+.portfolio-head-table {
+    table-layout: fixed;
+    max-width: none;
+    will-change: transform;
 }
 
-/* ─── Table Loading Overlay Layering ──────────────────────────────────────── */
-.bootstrap-table .fixed-table-container .fixed-table-body .fixed-table-loading {
-    z-index: 1015;
-    padding-top: 3rem;
+.portfolio-head-table th {
+    white-space: nowrap;
+}
+
+/* The wrapper scrolls horizontally inside the container-fluid. It has no height
+   limit, so vertical scrolling stays with the window. */
+.portfolio-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+/* Collapsed borders belong to the table grid and are left behind by sticky cells.
+   Separate borders keep the header's bottom border attached while scrolling. */
+.portfolio-table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+/* Zero-height header in the body table: it contributes column widths only. */
+.portfolio-thead-sizer th {
+    height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    border: 0;
+    line-height: 0;
+    white-space: nowrap;
+}
+
+.thead-sizer {
+    height: 0;
+    overflow: hidden;
+    visibility: hidden;
+    line-height: 0;
 }
 
 /* ─── Sortable Column Headers ────────────────────────────────────────────── */

@@ -68,21 +68,22 @@
   </li>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed } from 'vue';
+import type { WatchlistEntry } from '../types';
 
 /** Single watchlist row with inline Qty/Cost toggle. */
 
-const props = defineProps({
-    item: { type: Object, required: true },
-});
-const emit = defineEmits(['remove']);
+const props = defineProps<{
+    item: WatchlistEntry;
+}>();
+const emit = defineEmits<{ remove: [] }>();
 
 const showExtra = ref(false);
 
 const hasValues = computed(() => {
-    const q = parseInt(props.item.qty, 10);
-    const c = parseFloat(props.item.cost);
+    const q = parseInt(String(props.item.qty), 10);
+    const c = parseFloat(String(props.item.cost));
     return (!isNaN(q) && q > 0) || (!isNaN(c) && c > 0);
 });
 
@@ -93,7 +94,7 @@ const toggleBtnClass = computed(() => {
     return hasValues.value ? 'btn-outline-primary' : 'btn-outline-secondary';
 });
 
-function toggleExtra() {
+function toggleExtra(): void {
     showExtra.value = !showExtra.value;
 }
 </script>

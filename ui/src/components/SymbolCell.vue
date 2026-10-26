@@ -22,14 +22,15 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue';
+import type { PortfolioRow } from '../types';
 
 /** Renders the symbol column with contextual badges for options, earnings, and dividends. */
 
-const props = defineProps({
-    row: { type: Object, required: true },
-});
+const props = defineProps<{
+    row: PortfolioRow;
+}>();
 
 const _dateFmtShort = new Intl.DateTimeFormat('en-GB', {
     day: '2-digit', month: '2-digit', year: 'numeric',
@@ -39,18 +40,17 @@ const _dateFmtDayMonth = new Intl.DateTimeFormat('en-GB', {
     day: '2-digit', month: '2-digit',
 });
 
-function round(v) {
+function round(v: number): number {
     return Math.round((v + Number.EPSILON) * 100) / 100;
 }
 
-function daysCountToEarn(timestampMs) {
-    return Math.ceil((new Date(timestampMs) - new Date()) / (1000 * 60 * 60 * 24));
+function daysCountToEarn(timestampMs: number): number {
+    return Math.ceil((timestampMs - Date.now()) / (1000 * 60 * 60 * 24));
 }
 
-function formatCalendar(unixMs) {
+function formatCalendar(unixMs: number): string {
     const target = new Date(unixMs);
-    const now = new Date();
-    const diffDays = Math.round((target - now) / (1000 * 60 * 60 * 24));
+    const diffDays = Math.round((unixMs - Date.now()) / (1000 * 60 * 60 * 24));
     const timeStr = target.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
     if (diffDays === 0) return 'Today at ' + timeStr;
     if (diffDays === 1) return 'Tomorrow at ' + timeStr;
@@ -81,7 +81,7 @@ const showDividend = computed(() => {
 
 const dividendLabel = computed(() => {
     const api = props.row.api_data;
-    if (!api) return '';
+    if (!api || api.dividendDate === undefined) return '';
     const divAmount = (api.trailingAnnualDividendRate ?? 0) / 4;
     return (
         _dateFmtDayMonth.format(new Date(api.dividendDate * 1000)) + ' ' +
