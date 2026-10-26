@@ -122,10 +122,11 @@
 .sortable-header {
     cursor: pointer;
     white-space: nowrap;
+    font-weight: 400;
 }
 
-.sortable-header:hover {
-    color: var(--bs-secondary-emphasis) !important;
+.sortable-header.sortable-header-active {
+    font-weight: 700;
 }
 
 /* ─── Detail Toggle Column ───────────────────────────────────────────────── */
