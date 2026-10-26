@@ -106,10 +106,31 @@
       </div>
       </div>
 
-      <div v-if="loading && portfolio.length === 0" class="text-center py-5">
-        <div class="spinner-border text-secondary" role="status">
-          <span class="visually-hidden">Loading…</span>
-        </div>
+      <div
+        v-if="loading && portfolio.length === 0"
+        class="portfolio-skeleton placeholder-glow"
+        role="status"
+        aria-busy="true"
+      >
+        <span class="visually-hidden">Loading…</span>
+        <table class="table table-sm table-striped portfolio-table mb-0" aria-hidden="true">
+          <thead>
+            <tr>
+              <th class="detail-toggle-col"></th>
+              <th v-for="col in activeColumns" :key="col.key" class="fw-normal">
+                <span class="placeholder rounded" :style="{ width: col.width ?? '3.5rem' }"></span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="n in SKELETON_ROW_COUNT" :key="n">
+              <td class="detail-toggle-col"><span class="placeholder rounded" style="width: 1rem"></span></td>
+              <td v-for="col in activeColumns" :key="col.key">
+                <span class="placeholder rounded" :style="{ width: col.width ?? '3.5rem' }"></span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
       <div v-show="portfolio.length > 0">
@@ -218,6 +239,7 @@ const expandedRows = reactive<Record<string, boolean>>({});
 const autoRefreshActive = ref(false);
 let autoRefreshTimer: ReturnType<typeof setInterval> | null = null;
 const AUTO_REFRESH_INTERVAL = 300_000; // 5 minutes
+const SKELETON_ROW_COUNT = 8;
 
 // ─── Column Definitions ────────────────────────────────────────────────────
 
