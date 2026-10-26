@@ -12,7 +12,7 @@
       <div class="modal-content shadow">
         <div class="modal-header py-2 px-3 bg-body-tertiary">
           <h5 class="modal-title fs-6 fw-bold" id="editModalLabel">
-            <i class="fas fa-list-check me-2 text-primary"></i>Edit Watch List
+            <IconListCheck class="icon me-2 text-primary" />Edit Watch List
           </h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
@@ -20,7 +20,7 @@
         <div class="modal-body p-3">
           <div class="d-flex justify-content-end align-items-center mb-3">
             <button type="button" class="btn btn-success btn-sm px-3" id="addItemBtn" @click="addItem">
-              <i class="fas fa-plus me-1"></i>Add Symbol
+              <IconPlusLg class="icon me-1" />Add Symbol
             </button>
           </div>
 
@@ -38,7 +38,7 @@
             class="text-center py-4 text-body-secondary"
             v-show="items.length === 0"
           >
-            <i class="fas fa-layer-group fa-2x mb-2 opacity-50"></i>
+            <IconLayers class="icon fs-2 mb-2 opacity-50" />
             <p class="mb-0 small">No symbols in watchlist. Click "Add Symbol" to add one.</p>
           </div>
         </div>
@@ -50,14 +50,14 @@
               class="badge text-bg-success py-2 px-3 small"
               v-if="successMsg"
             >
-              <i class="fas fa-check-circle me-1"></i>{{ successMsg }}
+              <IconCheckCircle class="icon me-1" />{{ successMsg }}
             </span>
             <span
               id="errorMessage"
               class="badge text-bg-danger py-2 px-3 small"
               v-if="errorMsg"
             >
-              <i class="fas fa-exclamation-circle me-1"></i>{{ errorMsg }}
+              <IconExclamationCircle class="icon me-1" />{{ errorMsg }}
             </span>
           </div>
           <div class="d-flex gap-2">
@@ -69,7 +69,7 @@
               :disabled="saving"
               @click="saveChanges"
             >
-              <i class="fas fa-save me-1"></i>Save changes
+              <IconFloppy class="icon me-1" />Save changes
             </button>
           </div>
         </div>
@@ -81,6 +81,12 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
 import WatchlistItem from './WatchlistItem.vue';
+import IconCheckCircle from '~icons/bi/check-circle';
+import IconExclamationCircle from '~icons/bi/exclamation-circle';
+import IconFloppy from '~icons/bi/floppy';
+import IconLayers from '~icons/bi/layers';
+import IconListCheck from '~icons/bi/list-check';
+import IconPlusLg from '~icons/bi/plus-lg';
 import type { WatchlistEntry, WatchlistPayload } from '../types';
 
 /**

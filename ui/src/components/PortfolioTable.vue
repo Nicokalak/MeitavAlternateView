@@ -18,7 +18,7 @@
             :disabled="loading"
             :title="loading ? 'Refreshing…' : 'Refresh'"
           >
-            <i class="bi bi-arrow-clockwise" :class="{ spin: loading }"></i>
+            <IconArrowClockwise class="icon" :class="{ spin: loading }" />
           </button>
           <button
             class="btn btn-secondary"
@@ -27,7 +27,7 @@
             @click="toggleAutoRefresh"
             :title="autoRefreshActive ? 'Pause auto-refresh' : 'Start auto-refresh'"
           >
-            <i class="bi bi-clock"></i>
+            <IconClock class="icon" />
           </button>
           <button
             class="btn btn-secondary"
@@ -35,7 +35,7 @@
             @click="watchlistHidden = !watchlistHidden"
             title="Toggle watchlist"
           >
-            <i class="bi" :class="watchlistHidden ? 'bi-toggle-on' : 'bi-toggle-off'"></i>
+            <component :is="watchlistHidden ? IconToggleOn : IconToggleOff" class="icon" />
           </button>
           <button
             class="btn btn-secondary"
@@ -44,7 +44,7 @@
             data-bs-target="#editWatchListModal"
             title="Edit watchlist"
           >
-            <i class="bi bi-pencil"></i>
+            <IconPencil class="icon" />
           </button>
                       <button
               class="btn btn-secondary dropdown-toggle"
@@ -53,7 +53,7 @@
               aria-expanded="false"
               title="Columns"
             >
-              <i class="bi bi-list-ul"></i>
+              <IconListUl class="icon" />
             </button>
             <ul class="dropdown-menu dropdown-menu-end p-2" style="min-width: 180px" @click.stop>
               <li v-for="col in allColumns" :key="col.key" class="form-check">
@@ -96,7 +96,7 @@
                 >
                   {{ col.label }}
                   <span v-if="sortKey === col.key" class="ms-1 small">
-                    <i :class="sortOrder === 'asc' ? 'bi bi-caret-up-fill' : 'bi bi-caret-down-fill'"></i>
+                    <component :is="sortOrder === 'asc' ? IconCaretUpFill : IconCaretDownFill" class="icon" />
                   </span>
                 </th>
               </template>
@@ -122,7 +122,7 @@
               <template v-for="col in activeColumns" :key="col.key">
                 <th :style="col.width ? { width: col.width, minWidth: col.width } : null">
                   <div class="thead-sizer fw-semibold">
-                    {{ col.label }}<span class="ms-1 small"><i class="bi bi-caret-down-fill"></i></span>
+                    {{ col.label }}<span class="ms-1 small"><IconCaretDownFill class="icon" /></span>
                   </div>
                 </th>
               </template>
@@ -137,7 +137,7 @@
                   role="button"
                   :title="expandedRows[row.symbol] ? 'Hide details' : 'Show details'"
                 >
-                  <i class="bi" :class="expandedRows[row.symbol] ? 'bi-dash-lg' : 'bi-plus-lg'"></i>
+                  <component :is="expandedRows[row.symbol] ? IconDashLg : IconPlusLg" class="icon" />
                 </td>
                 <template v-for="col in activeColumns" :key="col.key">
                   <td :class="cellClass(col, row)" :style="col.width ? { width: col.width, minWidth: col.width } : null">
@@ -178,6 +178,16 @@
 import { ref, reactive, computed, watch, onMounted, onUnmounted } from 'vue';
 import PortfolioDetailRow from './PortfolioDetailRow.vue';
 import SymbolCell from './SymbolCell.vue';
+import IconArrowClockwise from '~icons/bi/arrow-clockwise';
+import IconCaretDownFill from '~icons/bi/caret-down-fill';
+import IconCaretUpFill from '~icons/bi/caret-up-fill';
+import IconClock from '~icons/bi/clock';
+import IconDashLg from '~icons/bi/dash-lg';
+import IconListUl from '~icons/bi/list-ul';
+import IconPencil from '~icons/bi/pencil';
+import IconPlusLg from '~icons/bi/plus-lg';
+import IconToggleOff from '~icons/bi/toggle-off';
+import IconToggleOn from '~icons/bi/toggle-on';
 import type { PortfolioRow } from '../types';
 
 /**

@@ -1,3 +1,11 @@
+/* Inline SVG icons: sized to the surrounding font, tinted by currentColor. */
+.icon {
+    width: 1em;
+    height: 1em;
+    vertical-align: -0.125em;
+    flex-shrink: 0;
+}
+
 .state-badge {
     display: inline-block;
     text-align: center;
@@ -139,14 +147,8 @@
     transition: color 0.15s ease-in-out;
 }
 
-.detail-toggle-col i,
-.detail-toggle-col .bi {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+.detail-toggle-col .icon {
     font-size: 1rem;
-    font-weight: 700;
-    line-height: 1;
     vertical-align: middle;
 }
 
