@@ -1,59 +1,58 @@
-# Stage 1: Build Frontend Static Assets
-FROM node:24-slim AS frontend-builder
+# syntax=docker/dockerfile:1
+ARG PYTHON_VERSION=3.14
+
+# Stage 1: Build frontend static assets (runs natively on the build host)
+FROM --platform=$BUILDPLATFORM node:24-slim AS ui
 WORKDIR /app/ui
 
-# Install UI dependencies into ui/node_modules
-COPY ./ui/package*.json ./
-RUN npm ci --ignore-scripts
+COPY ui/package.json ui/package-lock.json ./
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --ignore-scripts --no-audit --no-fund
 
-COPY ./ui ./
-RUN npm run build
+# The build writes to ../src/meitav_view/static, i.e. /app/src/meitav_view/static
+COPY ui/ ./
+ARG APP_VERSION=0.0.0+local
+RUN APP_VERSION="${APP_VERSION}" npm run build
 
-# Stage 2: Install Python Dependencies & Project with uv
-FROM python:3.14-slim AS python-builder
+# Stage 2: Install Python dependencies and the project with uv
+FROM python:${PYTHON_VERSION}-slim AS python-builder
 
 # Pin uv to a stable minor version to ensure build repeatability
 COPY --from=ghcr.io/astral-sh/uv:0.12 /uv /uvx /bin/
 
-# Version injected at build time (e.g. from `git describe --tags`)
-ARG APP_VERSION=0.0.0.dev0
+ENV UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy \
+    UV_PYTHON_DOWNLOADS=0
 
 WORKDIR /app
 
-# Copy dependency specifications first for Docker layer caching
-COPY pyproject.toml uv.lock ./
-
-# Install main runtime dependencies into /app/.venv (cached layer)
+# Dependencies only: this layer is independent of source and version changes
 RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
     uv sync --frozen --no-dev --no-install-project
 
-# Copy application source and compiled frontend static assets
 COPY src ./src
-COPY --from=frontend-builder /app/ui/dist ./src/meitav_view/static
+COPY --from=ui /app/src/meitav_view/static ./src/meitav_view/static
 
-# Sanitize git tag version strings (e.g., v1.1.2-12-g7d88f12) into a PEP 440-compliant 
-# format (e.g., 1.1.2.dev12+g7d88f12) right before running the final sync.
+ARG APP_VERSION=0.0.0+local
 RUN --mount=type=cache,target=/root/.cache/uv \
-    CLEAN_VERSION=$(echo "${APP_VERSION}" | sed 's/^v//;s/-\([0-9]\+\)-g/.dev\1+/') && \
-    SETUPTOOLS_SCM_PRETEND_VERSION=${CLEAN_VERSION} \
-    HATCH_BUILD_VERSION=${CLEAN_VERSION} \
-    UV_COMPILE_BYTECODE=1 \
-    UV_LINK_MODE=copy \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    SETUPTOOLS_SCM_PRETEND_VERSION_FOR_MEITAV_VIEW="${APP_VERSION}" \
     uv sync --frozen --no-dev --no-editable
 
-# Stage 3: Slim Production Runtime
-FROM python:3.14-slim AS runtime
+# Stage 3: Slim production runtime
+FROM python:${PYTHON_VERSION}-slim AS runtime
 
 ENV PYTHONUNBUFFERED=1 \
     PATH="/app/.venv/bin:$PATH"
 
 WORKDIR /app
 
-# Create non-root system user for security
-RUN apt update && apt upgrade -y && useradd -m -u 1000 appuser && \
-    mkdir -p /app/data && chown -R appuser:appuser /app
+RUN useradd --system --uid 1000 --create-home appuser && \
+    install -d -o appuser -g appuser /app/data
 
-# Copy pre-built Python virtual environment (contains your built, non-editable meitav-view package)
 COPY --from=python-builder --chown=appuser:appuser /app/.venv /app/.venv
 
 USER appuser
@@ -61,6 +60,10 @@ USER appuser
 EXPOSE 8080
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
-    CMD python -m meitav_view.healthcheck || exit 1
+    CMD ["python", "-m", "meitav_view.healthcheck"]
+
+ARG APP_VERSION=0.0.0+local
+LABEL org.opencontainers.image.title="meitav-view" \
+      org.opencontainers.image.version="${APP_VERSION}"
 
 CMD ["meitav_view"]
