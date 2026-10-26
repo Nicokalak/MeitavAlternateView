@@ -63,9 +63,13 @@ Python tests do not need a UI build.
 ## Running with Docker from source
 
 ```shell
-cp .env.example .env   # fill in portfolio_link
+mkdir -p .secrets && printf '%s' '<your link>' > .secrets/portfolio_url
 ./run.sh               # add --rebuild to ignore the build cache
 ```
+
+The link is mounted into the container as a read-only secret file and read through
+`MEITAV_PORTFOLIO_URL_FILE`; it is never placed in the environment. Optional non-secret
+settings (see `.env.example`) are picked up from a local `.env` if present.
 
 The image, wheel and UI all take their version from the git tag; `GET /version` returns it.
 

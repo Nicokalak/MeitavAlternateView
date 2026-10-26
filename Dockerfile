@@ -39,7 +39,7 @@ ARG APP_VERSION=0.0.0+local
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     --mount=type=bind,source=uv.lock,target=uv.lock \
-    SETUPTOOLS_SCM_PRETEND_VERSION_FOR_MEITAV_VIEW="${APP_VERSION}" \
+    SETUPTOOLS_SCM_PRETEND_VERSION="${APP_VERSION}" \
     uv sync --frozen --no-dev --no-editable
 
 # Stage 3: Slim production runtime
