@@ -12,6 +12,8 @@ import uvicorn
 from fastapi import Depends, FastAPI, Header, HTTPException, Request, status
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.responses import Response
+from starlette.types import Scope
 
 from meitav_view.model.stock import Stock
 from meitav_view.model.watchlist import WatchlistItem
@@ -23,6 +25,19 @@ logger: logging.Logger = logging.getLogger("uvicorn")
 viewer: MeitavViewer = MeitavViewer()
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
+
+IMMUTABLE_CACHE_CONTROL = "public, max-age=31536000, immutable"
+REVALIDATE_CACHE_CONTROL = "no-cache"
+
+
+class FingerprintedStaticFiles(StaticFiles):
+    """Static files whose names carry a content hash and can be cached indefinitely."""
+
+    async def get_response(self, path: str, scope: Scope) -> Response:
+        response = await super().get_response(path, scope)
+        if response.status_code == status.HTTP_200_OK:
+            response.headers["Cache-Control"] = IMMUTABLE_CACHE_CONTROL
+        return response
 
 
 def get_version() -> str:
@@ -45,16 +60,8 @@ async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
 app = FastAPI(title="Meitav View", version=get_version(), lifespan=lifespan, root_path=os.getenv("URL_PREFIX", ""))
 
 
-if STATIC_DIR.exists():
-    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
-    if (STATIC_DIR / "assets").exists():
-        app.mount("/assets", StaticFiles(directory=STATIC_DIR / "assets"), name="assets")
-    if (STATIC_DIR / "css").exists():
-        app.mount("/css", StaticFiles(directory=STATIC_DIR / "css"), name="css")
-    if (STATIC_DIR / "webfonts").exists():
-        app.mount("/webfonts", StaticFiles(directory=STATIC_DIR / "webfonts"), name="webfonts")
-    if (STATIC_DIR / "favicon").exists():
-        app.mount("/favicon", StaticFiles(directory=STATIC_DIR / "favicon"), name="favicon")
+app.mount("/assets", FingerprintedStaticFiles(directory=STATIC_DIR / "assets", check_dir=False), name="assets")
+app.mount("/favicon", StaticFiles(directory=STATIC_DIR / "favicon", check_dir=False), name="favicon")
 
 
 @app.get("/trends")
@@ -125,12 +132,17 @@ def root(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"File '{target_file.name}' not found",
         )
-    return FileResponse(target_file)
+    return FileResponse(target_file, headers={"Cache-Control": REVALIDATE_CACHE_CONTROL})
 
 
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.get("/version")
+def version() -> dict[str, str]:
+    return {"version": get_version()}
 
 
 @app.get("/watchList")

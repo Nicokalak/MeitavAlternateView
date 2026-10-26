@@ -1,19 +1,27 @@
-import shutil
+from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
+from starlette.routing import Mount
+from starlette.staticfiles import StaticFiles
+
+from meitav_view import app as app_module
 
 
-def pytest_sessionstart(session: pytest.Session) -> None:
-    """Hook that runs before test collection.
+@pytest.fixture(autouse=True)
+def static_tree(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[Path]:
+    """Point the app at a minimal built-UI tree so tests never depend on a UI build."""
+    (tmp_path / "assets").mkdir()
+    (tmp_path / "favicon").mkdir()
+    (tmp_path / "index.html").write_text("<!doctype html><title>index</title>")
+    (tmp_path / "401.html").write_text("<!doctype html><title>401</title>")
+    (tmp_path / "assets" / "app-abc123.js").write_text("export {};")
+    (tmp_path / "favicon" / "favicon.svg").write_text("<svg xmlns='http://www.w3.org/2000/svg'/>")
 
-    Ensures static files from ui/src are copied to src/meitav_view/static if missing.
-    """
-    repo_root = Path(__file__).resolve().parent.parent
-    static_dir = repo_root / "src" / "meitav_view" / "static"
-    ui_src_dir = repo_root / "ui" / "src"
-    index_file = static_dir / "index.html"
-
-    if not index_file.exists() and ui_src_dir.exists():
-        static_dir.mkdir(parents=True, exist_ok=True)
-        shutil.copytree(ui_src_dir, static_dir, dirs_exist_ok=True)
+    monkeypatch.setattr(app_module, "STATIC_DIR", tmp_path)
+    for route in app_module.app.routes:
+        if isinstance(route, Mount) and isinstance(route.app, StaticFiles) and route.name in {"assets", "favicon"}:
+            mounted = route.app
+            monkeypatch.setattr(mounted, "directory", tmp_path / route.name)
+            monkeypatch.setattr(mounted, "all_directories", [tmp_path / route.name])
+    yield tmp_path

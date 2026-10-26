@@ -149,9 +149,41 @@ class MeitavViewTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 401)
         self.assertEqual(response.json(), {"detail": "Unauthorized"})
 
-    def test_static_files_served(self) -> None:
-        css_response = self.client.get("/css/main.css")
-        self.assertEqual(css_response.status_code, 200)
+    def test_assets_served_with_immutable_cache(self) -> None:
+        response = self.client.get("/assets/app-abc123.js")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.headers["Cache-Control"], "public, max-age=31536000, immutable")
+
+    def test_favicon_served(self) -> None:
+        response = self.client.get("/favicon/favicon.svg")
+        self.assertEqual(response.status_code, 200)
+
+    def test_missing_asset_is_not_found(self) -> None:
+        response = self.client.get("/assets/missing.js")
+        self.assertEqual(response.status_code, 404)
+        self.assertNotIn("immutable", response.headers.get("Cache-Control", ""))
+
+    def test_raw_static_tree_is_not_exposed(self) -> None:
+        self.assertEqual(self.client.get("/static/index.html").status_code, 404)
+
+    def test_root_serves_index_with_revalidation(self) -> None:
+        response = self.client.get("/")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("<title>index</title>", response.text)
+        self.assertEqual(response.headers["Cache-Control"], "no-cache")
+
+    @patch("meitav_view.utils.auth_utils.Config")
+    def test_root_serves_401_page_when_unauthorized(self, mock_config_cls: MagicMock) -> None:
+        mock_config_cls.return_value.get.return_value = ["allowed@example.com"]
+        response = self.client.get("/", headers={"X-Email": "other@example.com"})
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("<title>401</title>", response.text)
+
+    def test_version_endpoint(self) -> None:
+        with patch("meitav_view.app.get_version", return_value="1.2.3"):
+            response = self.client.get("/version")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"version": "1.2.3"})
 
 
 if __name__ == "__main__":
