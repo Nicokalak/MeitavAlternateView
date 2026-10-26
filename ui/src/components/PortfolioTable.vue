@@ -90,7 +90,7 @@
               <template v-for="col in activeColumns" :key="col.key">
                 <th
                   class="sortable-header user-select-none"
-                  :class="{ 'text-secondary-emphasis': sortKey === col.key }"
+                  :class="{ 'sortable-header-active': sortKey === col.key }"
                   @click="toggleSort(col.key)"
                   role="button"
                 >
@@ -121,7 +121,7 @@
               <th class="detail-toggle-col"><div class="thead-sizer"></div></th>
               <template v-for="col in activeColumns" :key="col.key">
                 <th :style="col.width ? { width: col.width, minWidth: col.width } : null">
-                  <div class="thead-sizer fw-semibold">
+                  <div class="thead-sizer fw-bold">
                     {{ col.label }}<span class="ms-1 small"><IconCaretDownFill class="icon" /></span>
                   </div>
                 </th>
