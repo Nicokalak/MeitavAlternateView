@@ -8,7 +8,6 @@
 !ui/package.json
 !ui/package-lock.json
 !ui/vite.config.ts
-!ui/vite.config.js
 !ui/tsconfig*.json
 !ui/src/**
 

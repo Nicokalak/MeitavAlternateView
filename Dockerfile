@@ -46,12 +46,13 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 FROM python:${PYTHON_VERSION}-slim AS runtime
 
 ENV PYTHONUNBUFFERED=1 \
-    PATH="/app/.venv/bin:$PATH"
+    PATH="/app/.venv/bin:$PATH" \
+    APP_HOST=0.0.0.0
 
 WORKDIR /app
 
 RUN useradd --system --uid 1000 --create-home appuser && \
-    install -d -o appuser -g appuser /app/data
+    install -d -o appuser -g appuser /app /app/data
 
 COPY --from=python-builder --chown=appuser:appuser /app/.venv /app/.venv
 

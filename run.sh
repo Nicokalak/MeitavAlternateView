@@ -40,6 +40,8 @@ docker run --rm \
   "${ENV_FILE[@]+"${ENV_FILE[@]}"}" \
   --name meitav-app \
   -e MEITAV_PORTFOLIO_URL_FILE=/run/secrets/portfolio_url \
+  -e PERSIST_FILE=/app/data/meitav_trends.json \
+  -e DEFAULT_CONF=/app/data/config.json \
   -v "${SECRET_FILE}:/run/secrets/portfolio_url:ro" \
   -p 8080:8080 \
   -v "$(pwd)/data:/app/data" \
