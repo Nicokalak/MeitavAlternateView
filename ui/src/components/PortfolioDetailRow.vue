@@ -98,6 +98,7 @@ import { ref, computed, onMounted } from 'vue';
 import RangeBar from './RangeBar.vue';
 import IconArrowUpRightCircle from '~icons/bi/arrow-up-right-circle';
 import type { ApiData, PortfolioRow, TickerResponse } from '../types';
+import { apiFetch } from '../js/api';
 
 /**
  * Expandable detail row for a single stock — replaces the legacy
@@ -163,7 +164,7 @@ const trendRatio = computed(() => {
 
 onMounted(async () => {
     try {
-        const res = await fetch('ticker/' + props.row.symbol);
+        const res = await apiFetch('ticker/' + props.row.symbol);
         if (!res.ok) throw new Error(String(res.status));
         const data = (await res.json()) as TickerResponse;
         marketStateKey.value = (data['market-state-4calc'] || 'regular').toLowerCase();

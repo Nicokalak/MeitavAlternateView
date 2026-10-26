@@ -189,6 +189,7 @@ import IconPlusLg from '~icons/bi/plus-lg';
 import IconToggleOff from '~icons/bi/toggle-off';
 import IconToggleOn from '~icons/bi/toggle-on';
 import type { PortfolioRow } from '../types';
+import { apiFetch } from '../js/api';
 
 /**
  * Native Vue 3 portfolio grid — replaces Bootstrap Table and all
@@ -314,11 +315,8 @@ function isInPortfolio(row: PortfolioRow): boolean {
 async function fetchPortfolio(): Promise<void> {
     loading.value = true;
     try {
-        const res = await fetch('portfolio');
-        if (res.status === 401) {
-            window.location.reload();
-            return;
-        }
+        const res = await apiFetch('portfolio');
+        if (res.status === 401) return;
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         portfolio.value = (await res.json()) as PortfolioRow[];
         emit('portfolio-loaded');

@@ -23,12 +23,6 @@ export default defineConfig({
     outDir: resolve(here, '../src/meitav_view/static'),
     emptyOutDir: true,
     reportCompressedSize: false,
-    rollupOptions: {
-      input: {
-        main: resolve(here, 'src/index.html'),
-        unauthorized: resolve(here, 'src/401.html'),
-      },
-    },
   },
   server: {
     port: 5173,

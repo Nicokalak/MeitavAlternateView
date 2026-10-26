@@ -88,6 +88,7 @@ import IconLayers from '~icons/bi/layers';
 import IconListCheck from '~icons/bi/list-check';
 import IconPlusLg from '~icons/bi/plus-lg';
 import type { WatchlistEntry, WatchlistPayload } from '../types';
+import { apiFetch } from '../js/api';
 
 /**
  * Modal for editing the watchlist. Manages load/save lifecycle and
@@ -120,7 +121,7 @@ function removeItem(index: number): void {
 
 async function loadWatchlist(): Promise<void> {
     try {
-        const res = await fetch('watchList');
+        const res = await apiFetch('watchList');
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = (await res.json()) as Array<Partial<WatchlistPayload> & { qty?: number }> | null;
         items.value = (data || []).map((item): WatchlistEntry => {
@@ -160,7 +161,7 @@ async function saveChanges(): Promise<void> {
     if (errorTimer) clearTimeout(errorTimer);
 
     try {
-        const res = await fetch('watchList', {
+        const res = await apiFetch('watchList', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(updatedList),

@@ -14,7 +14,6 @@ def static_tree(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[Pat
     (tmp_path / "assets").mkdir()
     (tmp_path / "favicon").mkdir()
     (tmp_path / "index.html").write_text("<!doctype html><title>index</title>")
-    (tmp_path / "401.html").write_text("<!doctype html><title>401</title>")
     (tmp_path / "assets" / "app-abc123.js").write_text("export {};")
     (tmp_path / "favicon" / "favicon.svg").write_text("<svg xmlns='http://www.w3.org/2000/svg'/>")
 

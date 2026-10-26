@@ -173,11 +173,11 @@ class MeitavViewTestCase(unittest.TestCase):
         self.assertEqual(response.headers["Cache-Control"], "no-cache")
 
     @patch("meitav_view.utils.auth_utils.Config")
-    def test_root_serves_401_page_when_unauthorized(self, mock_config_cls: MagicMock) -> None:
+    def test_root_serves_app_shell_even_when_unauthorized(self, mock_config_cls: MagicMock) -> None:
         mock_config_cls.return_value.get.return_value = ["allowed@example.com"]
         response = self.client.get("/", headers={"X-Email": "other@example.com"})
         self.assertEqual(response.status_code, 200)
-        self.assertIn("<title>401</title>", response.text)
+        self.assertIn("<title>index</title>", response.text)
 
     def test_version_endpoint(self) -> None:
         with patch("meitav_view.app.get_version", return_value="1.2.3"):

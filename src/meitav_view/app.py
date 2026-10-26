@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 import uvicorn
-from fastapi import Depends, FastAPI, Header, HTTPException, Request, status
+from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.responses import Response
@@ -17,7 +17,6 @@ from starlette.types import Scope
 
 from meitav_view.model.stock import Stock
 from meitav_view.model.watchlist import WatchlistItem
-from meitav_view.utils import auth_utils
 from meitav_view.utils.auth_utils import require_authentication
 from meitav_view.viewer import MeitavViewer
 
@@ -118,21 +117,14 @@ def ticker_data(name: str, _auth: str | None = Depends(require_authentication)) 
 
 
 @app.get("/", response_class=FileResponse)
-def root(
-    request: Request,
-    x_email: str | None = Header(default=None, alias="X-Email"),
-) -> FileResponse:
-    target_file = (
-        STATIC_DIR / "index.html"
-        if auth_utils.is_authenticated(x_email=x_email, request=request)
-        else STATIC_DIR / "401.html"
-    )
-    if not target_file.exists():
+def root() -> FileResponse:
+    index_file = STATIC_DIR / "index.html"
+    if not index_file.exists():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"File '{target_file.name}' not found",
+            detail=f"File '{index_file.name}' not found",
         )
-    return FileResponse(target_file, headers={"Cache-Control": REVALIDATE_CACHE_CONTROL})
+    return FileResponse(index_file, headers={"Cache-Control": REVALIDATE_CACHE_CONTROL})
 
 
 @app.get("/health")
