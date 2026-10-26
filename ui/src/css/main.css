@@ -58,6 +58,18 @@
     white-space: nowrap;
 }
 
+/* The bar shrink-wraps its content, so percentage-width placeholders collapse to 0. */
+.market-status-placeholder {
+    width: 14rem;
+    max-width: 60vw;
+    height: 1.75rem;
+    vertical-align: middle;
+}
+
+.portfolio-skeleton .placeholder {
+    max-width: 100%;
+}
+
 .portfolio-sticky {
     position: sticky;
     top: calc(var(--market-bar-h) - 1px);

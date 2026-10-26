@@ -2,7 +2,7 @@
   <!-- Market Status Header (sticky) -->
   <div id="market-status-container" class="sticky-top bg-body">
     <h2 class="m-0 placeholder-glow" id="market_status">
-      <span v-if="!marketStatusHtml" class="placeholder col-3 rounded"></span>
+      <span v-if="!marketStatusHtml" class="placeholder market-status-placeholder rounded"></span>
       <span v-else v-html="marketStatusHtml"></span>
     </h2>
   </div>
