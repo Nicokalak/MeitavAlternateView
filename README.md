@@ -45,6 +45,34 @@ uv run meitav_view
 
 4. Open the app in browser http://localhost:8080/
 
+## Building the UI
+
+The UI (Vue 3 + Vite) builds straight into `src/meitav_view/static/`, which the backend serves:
+
+```shell
+cd ui
+npm ci --ignore-scripts
+npm run build      # production bundle -> ../src/meitav_view/static
+npm run dev        # Vite dev server on :5173, proxying API calls to :8080
+npm run typecheck
+npm test
+```
+
+Python tests do not need a UI build.
+
+## Running with Docker from source
+
+```shell
+mkdir -p .secrets && printf '%s' '<your link>' > .secrets/portfolio_url
+./run.sh               # add --rebuild to ignore the build cache
+```
+
+The link is mounted into the container as a read-only secret file and read through
+`MEITAV_PORTFOLIO_URL_FILE`; it is never placed in the environment. Optional non-secret
+settings (see `.env.example`) are picked up from a local `.env` if present.
+
+The image, wheel and UI all take their version from the git tag; `GET /version` returns it.
+
 ## Quality checks
 run with uv
 ```shell

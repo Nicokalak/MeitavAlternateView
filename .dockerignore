@@ -1,15 +1,18 @@
-*.md
-.git
-__pycache__
-.github
-venv
-.venv
-.pytest_cache
-.mypy_cache
-.ruff_cache
-data
-plans
-node_modules
-images
-ui/node_modules
-ui/dist
+# Allowlist: exclude everything, then re-include only what the build needs
+**
+
+!pyproject.toml
+!uv.lock
+!src/**
+
+!ui/package.json
+!ui/package-lock.json
+!ui/vite.config.ts
+!ui/tsconfig*.json
+!ui/src/**
+
+# Re-exclude generated and local artifacts
+**/__pycache__
+**/node_modules
+**/.DS_Store
+src/meitav_view/static/*

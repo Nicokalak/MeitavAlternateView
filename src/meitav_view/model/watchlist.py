@@ -28,11 +28,11 @@ class WatchlistItem(BaseModel):
             cost_raw = entry.get("cost", entry.get("Cost", entry.get("Average Cost", 0.0)))
             try:
                 qty = int(qty_raw) if qty_raw is not None else 0
-            except (ValueError, TypeError):
+            except ValueError, TypeError:
                 qty = 0
             try:
                 cost = float(cost_raw) if cost_raw is not None else 0.0
-            except (ValueError, TypeError):
+            except ValueError, TypeError:
                 cost = 0.0
             return cls(symbol=symbol, quantity=max(0, qty), cost=max(0.0, cost))
         if isinstance(entry, cls):

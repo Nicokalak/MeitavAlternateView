@@ -20,10 +20,10 @@ class MeitavViewer:
     PORTFOLIO_URL_FILE = "MEITAV_PORTFOLIO_URL_FILE"
 
     def __init__(self) -> None:
+        self.logger = logging.getLogger(MeitavViewer.__name__)
         self.config = Config()
         self.trends_persist = TrendPersist(self.config).load()
         self.url = self._get_url()
-        self.logger = logging.getLogger(MeitavViewer.__name__)
         self._stocks: list[Stock] = []
         self.yahoo_requestor = YahooRequestor()
 

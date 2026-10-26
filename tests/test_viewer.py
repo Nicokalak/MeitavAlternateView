@@ -1,4 +1,7 @@
+import os
+import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from meitav_view.model.stock import Stock
@@ -12,6 +15,28 @@ class TestMeitavViewer(unittest.TestCase):
     @patch("meitav_view.viewer.YahooRequestor")
     def setUp(self, _mock_yahoo: MagicMock, _mock_trends: MagicMock, _mock_config: MagicMock) -> None:
         self.viewer = MeitavViewer()
+
+    def test_get_url_reads_secret_file(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            secret = Path(tmp) / "portfolio_url"
+            secret.write_text("https://example.test/link\n")
+            with patch.dict(os.environ, {MeitavViewer.PORTFOLIO_URL_FILE: str(secret)}):
+                self.assertEqual(self.viewer._get_url(), "https://example.test/link")
+
+    def test_get_url_missing_secret_file_falls_back_to_env(self) -> None:
+        env = {MeitavViewer.PORTFOLIO_URL_FILE: "/nonexistent/secret", "portfolio_link": "https://fallback.test"}
+        with patch.dict(os.environ, env), self.assertLogs(MeitavViewer.__name__, level="ERROR"):
+            self.assertEqual(self.viewer._get_url(), "https://fallback.test")
+
+    @patch("meitav_view.viewer.Config")
+    @patch("meitav_view.viewer.TrendPersist")
+    @patch("meitav_view.viewer.YahooRequestor")
+    def test_init_survives_missing_secret_file(
+        self, _mock_yahoo: MagicMock, _mock_trends: MagicMock, _mock_config: MagicMock
+    ) -> None:
+        with patch.dict(os.environ, {MeitavViewer.PORTFOLIO_URL_FILE: "/nonexistent/secret"}):
+            viewer = MeitavViewer()
+        self.assertEqual(viewer.url, os.getenv("portfolio_link", ""))
 
     def test_get_current_market_state_key_empty(self) -> None:
         self.viewer._stocks = []

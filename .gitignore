@@ -1,7 +1,5 @@
 .idea/*
-MeitavView.iml
 config.json
-run.sh
 **/__pycache__
 venv
 .venv
@@ -10,10 +8,14 @@ venv
 .ruff_cache/
 data/
 node_modules
-ui/node_modules
-ui/dist
 dist/
-src/meitav_view/static/*
-!src/meitav_view/static/.gitkeep
+src/meitav_view/static/
 plans/
 AGENTS.local.md
+.DS_Store
+.env
+*.tsbuildinfo
+coverage/
+ui/.build.lock
+*.mov
+.secrets/
