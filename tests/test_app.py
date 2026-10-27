@@ -185,6 +185,30 @@ class MeitavViewTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), {"version": "1.2.3"})
 
+    @patch("meitav_view.utils.auth_utils.Config")
+    def test_protected_routes_reject_unauthorized(self, mock_config_cls: MagicMock) -> None:
+        mock_config_cls.return_value.get.return_value = ["allowed@example.com"]
+        for method, path in (
+            ("get", "/version"),
+            ("get", "/docs"),
+            ("get", "/redoc"),
+            ("get", "/openapi.json"),
+            ("get", "/watchList"),
+            ("post", "/watchList"),
+        ):
+            response = getattr(self.client, method)(path)
+            self.assertEqual(response.status_code, 401, path)
+
+    @patch("meitav_view.utils.auth_utils.Config")
+    def test_docs_and_openapi_accessible_when_authorized(self, mock_config_cls: MagicMock) -> None:
+        mock_config_cls.return_value.get.return_value = ["allowed@example.com"]
+        headers = {"X-Email": "allowed@example.com"}
+        self.assertEqual(self.client.get("/docs", headers=headers).status_code, 200)
+        self.assertEqual(self.client.get("/redoc", headers=headers).status_code, 200)
+        response = self.client.get("/openapi.json", headers=headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("/portfolio", response.json()["paths"])
+
 
 if __name__ == "__main__":
     unittest.main()

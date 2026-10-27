@@ -10,7 +10,8 @@ from typing import Any
 
 import uvicorn
 from fastapi import Depends, FastAPI, HTTPException, Request, status
-from fastapi.responses import FileResponse
+from fastapi.openapi.docs import get_redoc_html, get_swagger_ui_html
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.responses import Response
 from starlette.types import Scope
@@ -56,11 +57,37 @@ async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
     yield
 
 
-app = FastAPI(title="Meitav View", version=get_version(), lifespan=lifespan)
+app = FastAPI(
+    title="Meitav View",
+    version=get_version(),
+    lifespan=lifespan,
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None,
+)
 
 
 app.mount("/assets", FingerprintedStaticFiles(directory=STATIC_DIR / "assets", check_dir=False), name="assets")
 app.mount("/favicon", StaticFiles(directory=STATIC_DIR / "favicon", check_dir=False), name="favicon")
+
+
+@app.get("/openapi.json", include_in_schema=False)
+def openapi_schema(_auth: str | None = Depends(require_authentication)) -> dict[str, Any]:
+    return app.openapi()
+
+
+@app.get("/docs", include_in_schema=False)
+def swagger_ui(request: Request, _auth: str | None = Depends(require_authentication)) -> HTMLResponse:
+    return get_swagger_ui_html(
+        openapi_url=f"{request.scope.get('root_path', '')}/openapi.json", title=f"{app.title} - Docs"
+    )
+
+
+@app.get("/redoc", include_in_schema=False)
+def redoc_ui(request: Request, _auth: str | None = Depends(require_authentication)) -> HTMLResponse:
+    return get_redoc_html(
+        openapi_url=f"{request.scope.get('root_path', '')}/openapi.json", title=f"{app.title} - ReDoc"
+    )
 
 
 @app.get("/trends")
@@ -133,17 +160,20 @@ def health() -> dict[str, str]:
 
 
 @app.get("/version")
-def version() -> dict[str, str]:
+def version(_auth: str | None = Depends(require_authentication)) -> dict[str, str]:
     return {"version": get_version()}
 
 
 @app.get("/watchList")
-def get_watchlist() -> list[WatchlistItem]:
+def get_watchlist(_auth: str | None = Depends(require_authentication)) -> list[WatchlistItem]:
     return viewer.get_watchlist_items()
 
 
 @app.post("/watchList")
-def update_watchlist(new_watchlist: list[WatchlistItem | str]) -> dict[str, str]:
+def update_watchlist(
+    new_watchlist: list[WatchlistItem | str],
+    _auth: str | None = Depends(require_authentication),
+) -> dict[str, str]:
     items = [WatchlistItem.from_entry(item) for item in new_watchlist]
     valid_items = [item for item in items if item.symbol]
     viewer.save_watchlist(valid_items)
@@ -198,7 +228,7 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--root-path",
         type=str,
-        default=os.getenv("URL_PREFIX", ""),
+        default=os.getenv("URL_PREFIX", "/"),
         help="Root path for the application (default: / or $URL_PREFIX).",
     )
 
