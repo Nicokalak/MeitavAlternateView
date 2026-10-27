@@ -198,7 +198,7 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--root-path",
         type=str,
-        default=os.getenv("URL_PREFIX", "/"),
+        default=os.getenv("URL_PREFIX", ""),
         help="Root path for the application (default: / or $URL_PREFIX).",
     )
 
