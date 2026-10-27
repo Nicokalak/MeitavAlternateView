@@ -56,7 +56,7 @@ async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
     yield
 
 
-app = FastAPI(title="Meitav View", version=get_version(), lifespan=lifespan, root_path=os.getenv("URL_PREFIX", ""))
+app = FastAPI(title="Meitav View", version=get_version(), lifespan=lifespan)
 
 
 app.mount("/assets", FingerprintedStaticFiles(directory=STATIC_DIR / "assets", check_dir=False), name="assets")
@@ -196,6 +196,13 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
+        "--root-path",
+        type=str,
+        default=os.getenv("URL_PREFIX", "/"),
+        help="Root path for the application (default: / or $URL_PREFIX).",
+    )
+
+    parser.add_argument(
         "--log-level",
         type=str,
         default=os.getenv("APP_LOG_LEVEL", "INFO"),
@@ -219,6 +226,7 @@ def main() -> None:
         port=args.port,
         proxy_headers=True,
         log_level=args.log_level.lower(),
+        root_path=args.root_path,
         workers=args.workers,
     )
 
