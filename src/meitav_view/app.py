@@ -228,8 +228,8 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--root-path",
         type=str,
-        default=os.getenv("URL_PREFIX", "/"),
-        help="Root path for the application (default: / or $URL_PREFIX).",
+        default=os.getenv("URL_PREFIX", ""),
+        help="Root path for the application (default: empty or $URL_PREFIX).",
     )
 
     parser.add_argument(
@@ -255,6 +255,7 @@ def main() -> None:
         host=args.bind,
         port=args.port,
         proxy_headers=True,
+        forwarded_allow_ips="*",
         log_level=args.log_level.lower(),
         root_path=args.root_path,
         workers=args.workers,
