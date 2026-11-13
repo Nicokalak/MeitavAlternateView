@@ -1,5 +1,5 @@
 import logging
-from functools import cached_property, lru_cache
+from functools import cached_property
 from http import HTTPStatus
 from typing import Any
 
@@ -8,7 +8,6 @@ from curl_cffi import Session, requests
 logger = logging.getLogger()
 
 
-@lru_cache(maxsize=1)
 class YahooRequestor:
     API = "https://query2.finance.yahoo.com/v7/finance/quote?crumb={}&symbols={}"
 

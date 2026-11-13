@@ -88,7 +88,7 @@
       </div>
 
       <!-- Header lives outside the horizontal scroller so it can stick to the window -->
-      <div v-show="portfolio.length > 0" class="portfolio-head">
+      <div v-show="portfolio.length > 0 && !(searchQuery.trim() && displayedRows.length === 0)" class="portfolio-head">
         <table
           ref="headTableEl"
           class="table table-sm portfolio-table portfolio-head-table mb-0"
@@ -119,7 +119,19 @@
       </div>
       </div>
 
-      <div v-show="portfolio.length > 0">
+      <div
+        v-if="portfolio.length > 0 && searchQuery.trim() && displayedRows.length === 0"
+        class="text-center text-muted py-3"
+      >
+        No results found —
+        <a
+          :href="`https://finance.yahoo.com/quote/${encodeURIComponent(searchQuery.trim())}`"
+          target="_blank"
+          rel="noopener noreferrer"
+        >look up "{{ searchQuery.trim() }}" on Yahoo Finance</a>
+      </div>
+
+      <div v-show="portfolio.length > 0 && !(searchQuery.trim() && displayedRows.length === 0)">
         <div class="portfolio-table-wrap" ref="wrapEl" @scroll.passive="syncHeaderScroll">
         <table class="table table-sm table-striped table-hover caption-top portfolio-table" ref="bodyTableEl">
           <!-- Zero-height header: keeps column widths content-driven and in sync with the sticky header -->
@@ -136,15 +148,15 @@
             </tr>
           </thead>
           <tbody class="table-group-divider">
-            <template v-for="row in displayedRows" :key="row.symbol">
+            <template v-for="row in displayedRows" :key="rowKey(row)">
               <tr :class="rowClass(row)">
                 <td
                   class="detail-toggle-col"
-                  @click="toggleExpand(row.symbol)"
+                  @click="toggleExpand(rowKey(row))"
                   role="button"
-                  :title="expandedRows[row.symbol] ? 'Hide details' : 'Show details'"
+                  :title="expandedRows[rowKey(row)] ? 'Hide details' : 'Show details'"
                 >
-                  <component :is="expandedRows[row.symbol] ? IconDashLg : IconPlusLg" class="icon" />
+                  <component :is="expandedRows[rowKey(row)] ? IconDashLg : IconPlusLg" class="icon" />
                 </td>
                 <template v-for="col in activeColumns" :key="col.key">
                   <td :class="cellClass(col, row)" :style="col.width ? { width: col.width, minWidth: col.width } : null">
@@ -158,7 +170,7 @@
                 </template>
               </tr>
               <PortfolioDetailRow
-                v-if="expandedRows[row.symbol]"
+                v-if="expandedRows[rowKey(row)]"
                 :row="row"
                 :colspan="activeColumns.length + 1"
               />
@@ -483,8 +495,13 @@ function computeFooter(col: Column): string {
 
 // ─── Row Expansion ─────────────────────────────────────────────────────────
 
-function toggleExpand(symbol: string): void {
-    expandedRows[symbol] = !expandedRows[symbol];
+/** Returns a unique key for a row, stable across symbol/type/strike/expiration combinations. */
+function rowKey(row: PortfolioRow): string {
+    return `${row.symbol}-${row.type}-${row.strike ?? ''}-${row.expiration ?? ''}`;
+}
+
+function toggleExpand(key: string): void {
+    expandedRows[key] = !expandedRows[key];
 }
 
 // ─── Auto-Refresh ──────────────────────────────────────────────────────────
