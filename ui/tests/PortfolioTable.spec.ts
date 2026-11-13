@@ -138,4 +138,49 @@ describe('PortfolioTable tfoot updating with search', () => {
     expect(footerTexts).toContain('500');
     expect(footerTexts).toContain('6,000');
   });
+
+  it('does not duplicate rows when clearing the search with options sharing a symbol', async () => {
+    const portfolioWithOption = [
+      ...mockPortfolio,
+      {
+        symbol: 'AAPL',
+        type: 'o',
+        quantity: 1,
+        last_price: 10,
+        cost: 8,
+        change: 1,
+        percent_change: 10,
+        day_val: 10,
+        total_val: 1000,
+        total_change: 200,
+        strike: 150,
+        expiration: '2025-01-17',
+        p_or_c: 'C',
+        api_data: { shortName: 'Apple Inc.', longName: 'Apple Inc.' },
+      },
+    ];
+
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => JSON.parse(JSON.stringify(portfolioWithOption)),
+    }));
+
+    const wrapper = mount(PortfolioTable);
+    await flushPromises();
+
+    expect(wrapper.findAll('tbody tr').length).toBe(4); // 3 original + 1 option
+
+    const searchInput = wrapper.find('#customSearch');
+    await searchInput.setValue('AAPL');
+    await flushPromises();
+
+    expect(wrapper.findAll('tbody tr').length).toBe(2); // equity AAPL + option AAPL
+
+    await searchInput.setValue('');
+    await flushPromises();
+
+    // After clearing, must not duplicate: still exactly 4 rows
+    expect(wrapper.findAll('tbody tr').length).toBe(4);
+  });
 });
