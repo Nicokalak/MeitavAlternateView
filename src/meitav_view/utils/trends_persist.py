@@ -70,11 +70,7 @@ class TrendPersist:
             key: (
                 {}
                 if key in clear_keys
-                else {
-                    date: val
-                    for date, val in histo.items()
-                    if (now - _parse_dt(date, time_fmt)) <= _STALE_THRESHOLD
-                }
+                else {date: val for date, val in histo.items() if (now - _parse_dt(date, time_fmt)) <= _STALE_THRESHOLD}
             )
             for key, histo in self.trends.items()
         }
