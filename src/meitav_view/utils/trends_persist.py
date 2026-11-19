@@ -1,18 +1,12 @@
-"""Trend History Manager for Stock Portfolio Viewer.
-
-Persists chart trend data to a JSON file and prunes entries older than 36 hours.
-Stores trends as a dict with keys 'PRE_histo', 'REGULAR_histo', 'POST_histo',
-each mapping date-string keys to float values.
-
-All public methods are thread-safe via copy-on-write snapshots (no locks).
-"""
+"""Persist and prune chart trend history (PRE / REGULAR / POST histograms)."""
 
 import copy
 import json
 import os
 import threading
 from datetime import datetime, timedelta
-from typing import Any
+from functools import lru_cache
+from typing import Any, ClassVar
 
 from meitav_view.model.config import Config
 from meitav_view.model.stock import Stock
@@ -20,14 +14,14 @@ from meitav_view.model.stock import Stock
 _STALE_THRESHOLD = timedelta(days=1, seconds=43200)
 
 
+@lru_cache(maxsize=64)
+def _parse_dt(date_str: str, fmt: str) -> datetime:
+    """Cache parsed timestamps to avoid redundant strptime calls."""
+    return datetime.strptime(date_str, fmt)
+
+
 class TrendPersist:
-    """Manage trend history with thread-safe copy-on-write operations.
-
-    Trends dict structure: ``{'PRE_histo': {date_str: float, ...}, ...}``
-
-    Thread safety is achieved by building new dicts and atomically reassigning
-    ``self.trends``, avoiding iteration-during-mutation races under free-threading.
-    """
+    """Thread-safe copy-on-write trend history manager."""
 
     _DEFAULT_PERSIST_FILE = "meitav_trends.json"
 
@@ -40,7 +34,7 @@ class TrendPersist:
         return os.environ.get("PERSIST_FILE", self._DEFAULT_PERSIST_FILE)
 
     def save(self) -> None:
-        """Snapshot trends and write to disk in a background daemon thread."""
+        """Write a snapshot of trends to disk in a background thread."""
         snapshot = copy.deepcopy(self.trends)
         t = threading.Thread(target=self._save_snapshot, args=(snapshot,), daemon=True)
         t.start()
@@ -56,25 +50,28 @@ class TrendPersist:
         return self
 
     def get_trends(self) -> dict[str, Any]:
-        """Return a deep copy of trends so callers never race with mutations."""
+        """Return a deep copy of trends to avoid mutation races."""
         return copy.deepcopy(self.trends)
 
-    def trends_for_chart(self, state_histo_key: str, histo_val: float) -> None:
-        """Prune stale entries and record a new data point — copy-on-write.
+    # On session transition, clear histograms from prior sessions.
+    _SESSION_PREDECESSORS: ClassVar[dict[str, tuple[str, ...]]] = {
+        "PRE_histo": ("REGULAR_histo", "POST_histo"),
+        "REGULAR_histo": ("POST_histo",),
+        "POST_histo": (),
+    }
 
-        Builds a brand-new ``trends`` dict with old entries filtered out and
-        the new value inserted, then atomically reassigns ``self.trends``.
-        No iteration-during-mutation is possible.
-        """
+    def trends_for_chart(self, state_histo_key: str, histo_val: float) -> None:
+        """Prune stale entries, clear prior sessions, and record a new data point."""
         now = datetime.now()
         time_fmt = self.config.time_format()
+        clear_keys = self._SESSION_PREDECESSORS.get(state_histo_key, ())
 
         new_trends = {
-            key: {
-                date: val
-                for date, val in histo.items()
-                if (now - datetime.strptime(date, time_fmt)) <= _STALE_THRESHOLD
-            }
+            key: (
+                {}
+                if key in clear_keys
+                else {date: val for date, val in histo.items() if (now - _parse_dt(date, time_fmt)) <= _STALE_THRESHOLD}
+            )
             for key, histo in self.trends.items()
         }
         new_trends[state_histo_key][now.strftime(time_fmt)] = histo_val
