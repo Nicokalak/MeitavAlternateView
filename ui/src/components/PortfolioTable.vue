@@ -395,12 +395,7 @@ const filteredRows = computed(() => {
             const lower = query.toLowerCase();
             matcher = (str) => str.toLowerCase().includes(lower);
         }
-        rows = rows.filter(r =>
-            matcher(r.symbol ?? '') ||
-            matcher(r.type ?? '') ||
-            matcher(r.api_data?.shortName ?? '') ||
-            matcher(r.api_data?.longName ?? '')
-        );
+        rows = rows.filter(r => matcher(r.symbol ?? ''));
     }
 
     return rows;

@@ -122,12 +122,19 @@ describe('PortfolioTable tfoot updating with search', () => {
     expect(restoredFooters).toContain('7,500');
   });
 
-  it('filters by shortName and updates tfoot accordingly', async () => {
+  it('searches only by symbol key', async () => {
     const wrapper = mount(PortfolioTable);
     await flushPromises();
 
     const searchInput = wrapper.find('#customSearch');
+
+    // Searching by company name should NOT match anything
     await searchInput.setValue('Microsoft');
+    await flushPromises();
+    expect(wrapper.findAll('tbody tr').length).toBe(0);
+
+    // Searching by symbol should match
+    await searchInput.setValue('MSFT');
     await flushPromises();
 
     const footerTexts = wrapper.findAll('tfoot tr td')
