@@ -281,7 +281,6 @@ function initChart(): void {
 
 onMounted(() => {
     initChart();
-    fetchMarketState();
 });
 
 onUnmounted(() => {
